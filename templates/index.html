@@ -1,0 +1,393 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | Student Attendance System{% endblock %}
+
+{% block content %}
+<!-- Page Hero & Quick Actions -->
+<div class="page-hero">
+    <div>
+        <h2>Student Attendance & Biometric Directory</h2>
+        <p>Manage student profiles, view unique QR credentials, and oversee department enrollment.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('register') }}" class="btn btn-primary">
+            <span>👤</span> + Add Student
+        </a>
+        <a href="{{ url_for('departments_page') }}" class="btn btn-outline">
+            <span>🏢</span> Departments Roster
+        </a>
+        <button id="btn-train-model" class="btn btn-accent" onclick="triggerModelTraining(this)">
+            <span>🧠</span> Train Face Model
+        </button>
+        <a href="{{ url_for('attendance_page') }}" class="btn btn-success">
+            <span>📷</span> Attendance Terminal
+        </a>
+    </div>
+</div>
+
+<!-- Metrics Cards -->
+<div class="grid-cols-4" style="margin-bottom: 2rem;">
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-cyan">👥</div>
+        <div class="stat-content">
+            <h3>Total Students</h3>
+            <div class="stat-number">{{ metrics.total_persons or 0 }}</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-green">✅</div>
+        <div class="stat-content">
+            <h3>Present Today</h3>
+            <div class="stat-number">{{ metrics.present_today or 0 }}</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-purple">🏢</div>
+        <div class="stat-content">
+            <h3>Departments</h3>
+            <div class="stat-number">{{ metrics.total_departments or grouped_students|length }}</div>
+        </div>
+    </div>
+
+    <div class="glass-card stat-card">
+        <div class="stat-icon icon-amber">🤖</div>
+        <div class="stat-content">
+            <h3>LBPH Model</h3>
+            <div style="margin-top: 0.4rem;">
+                {% if model_exists %}
+                    <span id="model-status-badge" class="badge badge-success"><span class="pulse-dot"></span> Trained & Ready</span>
+                {% else %}
+                    <span id="model-status-badge" class="badge badge-warning">Needs Training</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Tap Department to View List & QR -->
+<h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
+    <span>🏢</span> Tap Department to View Students &amp; QR Credentials
+</h3>
+
+<div class="grid-cols-3" style="margin-bottom: 2rem;">
+    {% for dept in departments %}
+        <div 
+            class="glass-card dept-quick-card" 
+            onclick="filterDepartment('{{ dept.department_name|escape }}')"
+            style="cursor: pointer; padding: 1.25rem; border: 1px solid var(--border-glass); transition: var(--transition);"
+            onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-2px)';"
+            onmouseout="this.style.borderColor='var(--border-glass)'; this.style.transform='none';"
+        >
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                <span style="font-size: 1.5rem;">🏛️</span>
+                <span class="badge badge-cyan">{{ dept.student_count }} Student{% if dept.student_count != 1 %}s{% endif %}</span>
+            </div>
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-bottom: 0.25rem;">
+                {{ dept.department_name }}
+            </h4>
+            <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600;">
+                Tap to View Roster &amp; QR &rarr;
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Filter Bar with Pill Tabs & Search -->
+<div class="glass-card" style="margin-bottom: 2rem; padding: 1.25rem 1.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <!-- Department Pill Tabs -->
+        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;" id="dept-tabs">
+            <button class="btn btn-outline dept-tab active" onclick="filterDepartment('ALL')" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: var(--radius-full);">
+                All Departments ({{ metrics.total_persons or 0 }})
+            </button>
+            {% for dept_name, students in grouped_students.items() %}
+                <button class="btn btn-outline dept-tab" onclick="filterDepartment('{{ dept_name|escape }}')" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: var(--radius-full);">
+                    {{ dept_name }} ({{ students|length }})
+                </button>
+            {% endfor %}
+        </div>
+
+        <!-- Search Bar -->
+        <div style="min-width: 260px; flex: 1; max-width: 360px;">
+            <input 
+                type="text" 
+                id="student-search-input" 
+                class="form-control" 
+                placeholder="🔍 Search student name or ID..." 
+                onkeyup="filterStudentsLive()"
+                style="padding: 0.6rem 1rem; font-size: 0.875rem;"
+            >
+        </div>
+    </div>
+</div>
+
+<!-- Department-Wise Students Section -->
+{% if grouped_students %}
+    <div id="departments-container">
+        {% for dept_name, students in grouped_students.items() %}
+            <div class="department-block" data-department="{{ dept_name }}" style="margin-bottom: 2.5rem;">
+                <!-- Department Header -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-glass);">
+                    <div style="display: flex; align-items: center; gap: 0.75rem;">
+                        <span style="font-size: 1.4rem;">🏛️</span>
+                        <h3 style="font-size: 1.35rem; font-weight: 800; color: #ffffff;">{{ dept_name }}</h3>
+                        <span class="badge badge-cyan">{{ students|length }} Student{% if students|length != 1 %}s{% endif %}</span>
+                    </div>
+                    <a href="{{ url_for('register') }}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
+                        + Add Student
+                    </a>
+                </div>
+
+                <!-- Students Grid inside Department -->
+                <div class="grid-cols-3">
+                    {% for student in students %}
+                        <div 
+                            class="glass-card student-card" 
+                            id="dashboard-student-{{ student.id }}"
+                            data-student-name="{{ student.name|lower }}" 
+                            data-student-code="{{ student.person_code|lower }}" 
+                            style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; border-radius: var(--radius-md);"
+                        >
+                            <div>
+                                <!-- Top Row: Student Info & QR thumbnail -->
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;">
+                                    <div>
+                                        <div style="font-weight: 700; font-size: 1.05rem; color: #ffffff; line-height: 1.2; margin-bottom: 0.25rem;">
+                                            {{ student.name }}
+                                        </div>
+                                        <div style="font-family: monospace; font-size: 0.8rem; color: var(--primary); font-weight: 600;">
+                                            ID: {{ student.person_code }}
+                                        </div>
+                                        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                            {{ student.department }}
+                                        </div>
+                                    </div>
+
+                                    <!-- Student QR Code Thumbnail -->
+                                    <div 
+                                        style="cursor: pointer; background: #ffffff; padding: 4px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;"
+                                        onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ student.department|escape }}', '{{ student.qr_code_path }}')"
+                                        title="Click to view & download QR Code"
+                                    >
+                                        {% if student.qr_code_path %}
+                                            <img src="{{ student.qr_code_path }}" alt="QR" style="width: 54px; height: 54px; display: block;">
+                                        {% else %}
+                                            <div style="width: 54px; height: 54px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #0f172a;">
+                                                📱
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Biometric Face Dataset Status -->
+                                <div style="margin-bottom: 1rem;">
+                                    {% if student.sample_count >= 50 %}
+                                        <span class="badge badge-success" style="font-size: 0.75rem;">
+                                            ✓ Face Enrolled ({{ student.sample_count }}/50)
+                                        </span>
+                                    {% elif student.sample_count > 0 %}
+                                        <span class="badge badge-warning" style="font-size: 0.75rem;">
+                                            ⚠️ Incomplete ({{ student.sample_count }}/50)
+                                        </span>
+                                    {% else %}
+                                        <span class="badge badge-danger" style="font-size: 0.75rem;">
+                                            ⚠️ Needs Face Capture
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div style="display: flex; gap: 0.4rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                                <button 
+                                    class="btn btn-primary" 
+                                    onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ student.department|escape }}', '{{ student.qr_code_path }}')"
+                                    style="flex: 1; padding: 0.45rem 0.4rem; font-size: 0.78rem;"
+                                >
+                                    📱 View QR
+                                </button>
+                                <a href="{{ url_for('capture_face_page', person_id=student.id) }}" class="btn btn-outline" style="padding: 0.45rem 0.5rem; font-size: 0.78rem;">
+                                    📷 Capture
+                                </a>
+                                <button 
+                                    class="btn btn-outline" 
+                                    onclick="confirmDeleteStudentDashboard('{{ student.id }}', '{{ student.name|escape }}', '{{ student.person_code|escape }}')"
+                                    style="padding: 0.45rem 0.55rem; font-size: 0.78rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);"
+                                    title="Delete Student"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="glass-card" style="text-align: center; padding: 3.5rem 1rem; color: var(--text-muted);">
+        <div style="font-size: 3.5rem; margin-bottom: 0.75rem;">👥</div>
+        <h3 style="color: var(--text-main); font-size: 1.25rem; margin-bottom: 0.5rem;">No Students Enrolled Yet</h3>
+        <p style="font-size: 0.9rem; max-width: 420px; margin: 0 auto 1.5rem;">
+            Register your first student. The system will automatically issue a unique attendance QR code and prepare face data capture.
+        </p>
+        <a href="{{ url_for('register') }}" class="btn btn-primary">
+            <span>👤</span> Register First Student
+        </a>
+    </div>
+{% endif %}
+
+<!-- QR Modal for Viewing and Downloading Student QR Code -->
+<div id="qr-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 440px; width: 90%; text-align: center; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 700; color: #ffffff;">Student Attendance QR</h4>
+            <button onclick="closeQRModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+
+        <div style="background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.9)); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div id="modal-student-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.2rem;"></div>
+            <div id="modal-student-meta" style="font-family: monospace; font-size: 0.85rem; color: var(--primary); margin-bottom: 1rem;"></div>
+            
+            <div style="background: #ffffff; padding: 0.75rem; border-radius: var(--radius-sm); display: inline-block;">
+                <img id="modal-qr-img" src="" alt="Student QR" style="width: 200px; height: 200px; display: block;">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <a id="modal-download-btn" href="" download="" class="btn btn-primary" style="flex: 1;">
+                <span>📥</span> Download QR
+            </a>
+            <button onclick="closeQRModal()" class="btn btn-outline" style="flex: 1;">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="dashboard-delete-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 420px; width: 90%; text-align: center; padding: 2rem;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--danger); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.25rem;">
+            ⚠️
+        </div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem;">Delete Student?</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;" id="dash-delete-text">
+            Are you sure you want to permanently delete this student record?
+        </p>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="closeDashDeleteModal()" class="btn btn-outline" style="flex: 1;">Cancel</button>
+            <button id="btn-dash-do-delete" onclick="executeDeleteStudentDashboard()" class="btn btn-primary" style="background: var(--danger); border-color: var(--danger); flex: 1;">
+                Delete Student
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let activeDept = 'ALL';
+    let dashDeleteStudentId = null;
+
+    function filterDepartment(deptName) {
+        activeDept = deptName;
+        const tabs = document.querySelectorAll('.dept-tab');
+        tabs.forEach(tab => {
+            if ((deptName === 'ALL' && tab.innerText.includes('All Departments')) || tab.innerText.startsWith(deptName)) {
+                tab.classList.add('active');
+            } else {
+                tab.classList.remove('active');
+            }
+        });
+
+        const blocks = document.querySelectorAll('.department-block');
+        blocks.forEach(block => {
+            const blockDept = block.getAttribute('data-department');
+            if (deptName === 'ALL' || blockDept === deptName) {
+                block.style.display = 'block';
+            } else {
+                block.style.display = 'none';
+            }
+        });
+        filterStudentsLive();
+    }
+
+    function filterStudentsLive() {
+        const query = document.getElementById('student-search-input').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.student-card');
+
+        cards.forEach(card => {
+            const name = card.getAttribute('data-student-name') || '';
+            const code = card.getAttribute('data-student-code') || '';
+            const parentBlock = card.closest('.department-block');
+            const parentDept = parentBlock.getAttribute('data-department');
+
+            const matchesDept = (activeDept === 'ALL' || parentDept === activeDept);
+            const matchesQuery = (!query || name.includes(query) || code.includes(query));
+
+            if (matchesDept && matchesQuery) {
+                card.style.display = 'flex';
+            } else {
+                card.style.display = 'none';
+            }
+        });
+    }
+
+    function showQRModal(name, code, dept, qrPath) {
+        document.getElementById('modal-student-name').innerText = name;
+        document.getElementById('modal-student-meta').innerText = `ID: ${code} • ${dept}`;
+        const img = document.getElementById('modal-qr-img');
+        img.src = qrPath;
+        const dlBtn = document.getElementById('modal-download-btn');
+        dlBtn.href = qrPath;
+        dlBtn.download = `${code}_${name}_QR.png`;
+        document.getElementById('qr-preview-modal').style.display = 'flex';
+    }
+
+    function closeQRModal() {
+        document.getElementById('qr-preview-modal').style.display = 'none';
+    }
+
+    // Delete student from dashboard
+    function confirmDeleteStudentDashboard(id, name, code) {
+        dashDeleteStudentId = id;
+        document.getElementById('dash-delete-text').innerHTML = 
+            `Permanently delete <strong>${name}</strong> (${code})? This removes attendance logs, QR credential, and face samples.`;
+        document.getElementById('dashboard-delete-modal').style.display = 'flex';
+    }
+
+    function closeDashDeleteModal() {
+        document.getElementById('dashboard-delete-modal').style.display = 'none';
+        dashDeleteStudentId = null;
+    }
+
+    async function executeDeleteStudentDashboard() {
+        if (!dashDeleteStudentId) return;
+        const btn = document.getElementById('btn-dash-do-delete');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Deleting...`;
+
+        try {
+            const res = await fetch(`/delete-student/${dashDeleteStudentId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+            if (res.ok && data.success) {
+                showToast(data.message, 'success', 5000);
+                const el = document.getElementById(`dashboard-student-${dashDeleteStudentId}`);
+                if (el) el.remove();
+                closeDashDeleteModal();
+            } else {
+                showToast(data.message || 'Error deleting student.', 'danger');
+            }
+        } catch (e) {
+            showToast('Server error while deleting student.', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Delete Student';
+        }
+    }
+</script>
+{% endblock %}

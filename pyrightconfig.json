@@ -1,0 +1,11 @@
+{
+    "pythonPath": "C:\\Python313\\python.exe",
+    "extraPaths": [
+        "C:\\Users\\Sakth\\AppData\\Roaming\\Python\\Python313\\site-packages",
+        "C:\\Python313\\Lib\\site-packages",
+        "s:\\Learning\\Mythili",
+        "C:\\Python313\\Lib\\site-packages\\cv2",
+        "C:\\Python313\\Lib\\site-packages\\PIL",
+        "C:\\Python313\\Lib\\site-packages\\numpy"
+    ]
+}

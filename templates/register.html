@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Register Person | Face & QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Register Person</h2>
+        <p>Enroll a new employee or student profile. Upon saving, you will proceed to webcam face capture.</p>
+    </div>
+    <a href="{{ url_for('index') }}" class="btn btn-outline">← Back to Dashboard</a>
+</div>
+
+<div style="max-width: 680px; margin: 0 auto;">
+    <div class="glass-card">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass);">
+            <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.4rem;">👤</div>
+            <div>
+                <h3 style="font-size: 1.2rem; font-weight: 700;">Enrollment Form</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">All fields marked with an asterisk are required.</p>
+            </div>
+        </div>
+
+        <form action="{{ url_for('register') }}" method="POST">
+            <!-- Person ID / Code -->
+            <div class="form-group">
+                <label for="person_id" class="form-label">
+                    Person ID / Roll No. / Employee Code <span style="color: var(--danger);">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="person_id" 
+                    name="person_id" 
+                    class="form-control" 
+                    placeholder="e.g. EMP001, STU2026, 101" 
+                    value="{{ person_code or '' }}" 
+                    required 
+                    autofocus
+                >
+                <small style="color: var(--text-muted); font-size: 0.78rem; margin-top: 0.35rem; display: block;">
+                    Must be unique in the database. Used in image naming (Name.Serial.PersonID.SampleNumber.jpg).
+                </small>
+            </div>
+
+            <!-- Full Name -->
+            <div class="form-group">
+                <label for="name" class="form-label">
+                    Full Name <span style="color: var(--danger);">*</span>
+                </label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    class="form-control" 
+                    placeholder="e.g. Sakthi Ganesh, Mythili" 
+                    value="{{ name or '' }}" 
+                    required
+                >
+            </div>
+
+            <!-- Department -->
+            <div class="form-group">
+                <label for="department" class="form-label">Department / Class / Division</label>
+                <input 
+                    type="text" 
+                    id="department" 
+                    name="department" 
+                    class="form-control" 
+                    placeholder="e.g. Computer Science, AI & Data Science, Engineering" 
+                    value="{{ department or '' }}"
+                >
+            </div>
+
+            <!-- Form Actions -->
+            <div class="form-actions" style="justify-content: flex-end;">
+                <a href="{{ url_for('index') }}" class="btn btn-outline">Cancel</a>
+                <button type="submit" class="btn btn-primary">
+                    <span>💾</span> Save Person & Proceed to Face Capture
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

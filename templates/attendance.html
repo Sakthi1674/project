@@ -1,0 +1,481 @@
+{% extends "base.html" %}
+
+{% block title %}Mark Attendance | Real-Time Biometric Terminal{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Automated Real-Time Attendance Terminal</h2>
+        <p>Real-time verification: Show Student QR code &rarr; Instant live camera face cross-check &rarr; Attendance logged.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <button class="btn btn-outline" onclick="resetTerminal()">
+            <span>🔄</span> Reset Scanner
+        </button>
+        <a href="{{ url_for('departments_page') }}" class="btn btn-outline">
+            <span>🏢</span> Departments
+        </a>
+        <a href="{{ url_for('report') }}" class="btn btn-outline">
+            <span>📊</span> Attendance Logs
+        </a>
+    </div>
+</div>
+
+<!-- Step Wizard Indicator -->
+<div class="steps-nav">
+    <div id="step-1-indicator" class="step-item active">
+        <div class="step-circle">1</div>
+        <span>Scan Student QR</span>
+    </div>
+    <div class="step-line"></div>
+    <div id="step-2-indicator" class="step-item">
+        <div class="step-circle">2</div>
+        <span>Real-Time Face Match</span>
+    </div>
+    <div class="step-line"></div>
+    <div id="step-3-indicator" class="step-item">
+        <div class="step-circle">✓</div>
+        <span>Attendance Logged</span>
+    </div>
+</div>
+
+<div style="max-width: 720px; margin: 0 auto;">
+    <!-- =============================================================
+         PHASE 1: SCAN STUDENT QR CODE
+         ============================================================= -->
+    <div id="phase-qr" class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <div>
+                <h3 style="font-size: 1.25rem; font-weight: 700;">Step 1: Scan Student Attendance QR</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Hold your unique student QR code in front of the camera scanner.</p>
+            </div>
+            <span id="qr-cam-badge" class="badge badge-warning">Camera Standby</span>
+        </div>
+
+        <!-- Camera Scanner Box -->
+        <div class="camera-container" id="qr-camera-box">
+            <video id="qr-video" class="camera-video" playsinline></video>
+            <div class="camera-overlay">
+                <div class="scanner-reticle">
+                    <div class="scanner-laser"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="btn-start-qr-cam" class="btn btn-primary" onclick="startQRScanner()">
+                    <span>📷</span> Start Camera
+                </button>
+                <button id="btn-stop-qr-cam" class="btn btn-outline" onclick="stopQRScanner()" style="display: none;">
+                    <span>⏹️</span> Stop
+                </button>
+            </div>
+
+            <!-- Manual Token Fallback for testing -->
+            <button class="btn btn-outline" onclick="toggleManualToken()" style="font-size: 0.85rem;">
+                <span>⌨️</span> Enter Student ID / Token
+            </button>
+        </div>
+
+        <!-- Manual Token Drawer -->
+        <div id="manual-token-box" style="display: none; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-glass);">
+            <label for="manual-token-input" class="form-label">Or enter Student Roll No / ID or QR Token:</label>
+            <div style="display: flex; gap: 0.5rem;">
+                <input type="text" id="manual-token-input" class="form-control" placeholder="e.g. CS101 or STU_...">
+                <button class="btn btn-primary" onclick="submitManualToken()">Verify Student</button>
+            </div>
+        </div>
+
+        <div id="qr-alert-box" style="display: none; margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;"></div>
+    </div>
+
+    <!-- =============================================================
+         PHASE 2: REAL-TIME BIOMETRIC FACE CROSS-VALIDATION
+         ============================================================= -->
+    <div id="phase-face" class="glass-card" style="display: none;">
+        <!-- Identified Student Preview Banner -->
+        <div style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(139, 92, 246, 0.12)); border: 1px solid var(--border-glow); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.4rem;">👤</div>
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary); font-weight: 700; letter-spacing: 0.05em;">Scanned Student Identity</div>
+                    <div id="scanned-student-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">-</div>
+                    <div id="scanned-student-meta" style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">-</div>
+                </div>
+            </div>
+            <span class="badge badge-success"><span class="pulse-dot"></span> QR Verified</span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h3 style="font-size: 1.2rem; font-weight: 700;">Step 2: Real-Time Face Cross-Check</h3>
+                <p style="color: var(--text-muted); font-size: 0.85rem;">Look directly into the oval reticle. The camera verifies biometrics in real-time.</p>
+            </div>
+            <span id="face-cam-badge" class="badge badge-cyan"><span class="pulse-dot"></span> Live Verification Active</span>
+        </div>
+
+        <!-- Face Camera Box -->
+        <div class="camera-container" id="face-camera-box">
+            <video id="face-video" class="camera-video" playsinline></video>
+            <div class="camera-overlay">
+                <div class="face-reticle"></div>
+            </div>
+        </div>
+
+        <!-- Auto status info -->
+        <div style="text-align: center; margin-top: 1.25rem;">
+            <div id="face-stream-status" style="font-size: 0.9rem; font-weight: 600; color: var(--primary); margin-bottom: 0.75rem;">
+                <span class="spinner"></span> Scanning facial features in real-time...
+            </div>
+            <button id="btn-verify-face" class="btn btn-outline" onclick="triggerFaceVerificationAttempt()" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
+                <span>🎯</span> Manual Verify Trigger
+            </button>
+        </div>
+
+        <div id="face-alert-box" style="display: none; margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;"></div>
+    </div>
+
+    <!-- =============================================================
+         PHASE 3: CONFIRMATION SUCCESS CARD
+         ============================================================= -->
+    <div id="phase-result" class="glass-card" style="display: none; text-align: center; padding: 2.5rem 1.5rem;">
+        <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 2px solid var(--success); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1.5rem;">
+            ✓
+        </div>
+        
+        <h3 id="result-title" style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: #ffffff;">
+            Attendance Successfully Marked!
+        </h3>
+        <p id="result-subtitle" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem;">
+            Student QR and facial biometrics verified. Attendance recorded in MySQL.
+        </p>
+
+        <!-- Auto Reset Counter -->
+        <div style="margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--primary); font-weight: 600;" id="auto-reset-indicator">
+            Auto-resetting for next student in <span id="auto-reset-seconds">4</span>s...
+        </div>
+
+        <!-- Student Attendance Receipt Badge Card -->
+        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; max-width: 460px; margin: 0 auto 2rem; text-align: left;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
+                <div class="stat-icon icon-cyan" style="font-size: 1.5rem;">👤</div>
+                <div>
+                    <div id="res-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">-</div>
+                    <div id="res-code" style="font-size: 0.85rem; color: var(--primary); font-family: monospace;">-</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem;">
+                <div>
+                    <span style="color: var(--text-muted); display: block;">Department</span>
+                    <strong id="res-dept" style="color: #ffffff;">-</strong>
+                </div>
+                <div>
+                    <span style="color: var(--text-muted); display: block;">Status</span>
+                    <span id="res-status" class="badge badge-success">PRESENT</span>
+                </div>
+                <div>
+                    <span style="color: var(--text-muted); display: block;">Date</span>
+                    <strong id="res-date" style="color: #ffffff;">-</strong>
+                </div>
+                <div>
+                    <span style="color: var(--text-muted); display: block;">Marked Time</span>
+                    <strong id="res-time" style="color: #ffffff;">-</strong>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: center; gap: 1rem;">
+            <button class="btn btn-primary" onclick="resetTerminal()">
+                <span>👤</span> Mark Next Student Now
+            </button>
+            <a href="{{ url_for('report') }}" class="btn btn-outline">
+                <span>📋</span> View In Report
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentStudent = null;
+    let qrScanner = null;
+    let faceStream = null;
+    let realTimeFaceCheckInterval = null;
+    let isVerifyingFrame = false;
+    let autoResetTimer = null;
+    let resetSecondsLeft = 4;
+
+    const qrVideo = document.getElementById('qr-video');
+    const faceVideo = document.getElementById('face-video');
+    const qrAlert = document.getElementById('qr-alert-box');
+    const faceAlert = document.getElementById('face-alert-box');
+    const faceStatus = document.getElementById('face-stream-status');
+    const btnVerifyFace = document.getElementById('btn-verify-face');
+
+    // --- Phase 1: Real-Time Student QR Code Scanning ---
+    function startQRScanner() {
+        if (!qrScanner) {
+            qrScanner = new QRScanner(qrVideo, null, {
+                onScan: (decodedText) => handleStudentQRScanned(decodedText),
+                onError: (msg) => {
+                    setAlert(qrAlert, msg, 'danger');
+                    document.getElementById('qr-cam-badge').innerText = 'Camera Error';
+                    document.getElementById('qr-cam-badge').className = 'badge badge-danger';
+                }
+            });
+        }
+
+        qrScanner.start().then(() => {
+            document.getElementById('btn-start-qr-cam').style.display = 'none';
+            document.getElementById('btn-stop-qr-cam').style.display = 'inline-flex';
+            const badge = document.getElementById('qr-cam-badge');
+            badge.className = 'badge badge-success';
+            badge.innerHTML = '<span class="pulse-dot"></span> Scanning for Student QR...';
+            setAlert(qrAlert, 'Point your device camera towards your Student Attendance QR code.', 'info');
+        });
+    }
+
+    function stopQRScanner() {
+        if (qrScanner) qrScanner.stop();
+        document.getElementById('btn-start-qr-cam').style.display = 'inline-flex';
+        document.getElementById('btn-stop-qr-cam').style.display = 'none';
+        const badge = document.getElementById('qr-cam-badge');
+        badge.className = 'badge badge-warning';
+        badge.innerText = 'Camera Standby';
+    }
+
+    async function handleStudentQRScanned(qrData) {
+        if (!qrData) return;
+        qrScanner.stop();
+        setAlert(qrAlert, `Student QR Detected! Verifying credential in real-time...`, 'info');
+
+        try {
+            const res = await fetch('/validate-student-qr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ qr_data: qrData })
+            });
+            const data = await res.json();
+
+            if (data.success && data.person) {
+                currentStudent = data.person;
+                showToast(`Student Verified: ${currentStudent.name}! Starting face cross-check...`, 'success', 2500);
+                setAlert(qrAlert, `Student Verified: <strong>${currentStudent.name}</strong> (${currentStudent.person_code}). Starting real-time camera face verification...`, 'success');
+                setTimeout(() => transitionToFacePhase(), 600);
+            } else {
+                setAlert(qrAlert, data.message || 'QR code does not match any enrolled student.', 'danger');
+                showToast(data.message || 'Invalid Student QR.', 'danger');
+                setTimeout(() => startQRScanner(), 2000);
+            }
+        } catch (err) {
+            console.error(err);
+            setAlert(qrAlert, 'Server error during student QR verification.', 'danger');
+            setTimeout(() => startQRScanner(), 2000);
+        }
+    }
+
+    function toggleManualToken() {
+        const box = document.getElementById('manual-token-box');
+        box.style.display = box.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function submitManualToken() {
+        const val = document.getElementById('manual-token-input').value.trim();
+        if (!val) {
+            showToast('Please enter a student ID or token.', 'warning');
+            return;
+        }
+        handleStudentQRScanned(val);
+    }
+
+    // --- Transition to Phase 2: Live Face Validation ---
+    async function transitionToFacePhase() {
+        stopQRScanner();
+        document.getElementById('phase-qr').style.display = 'none';
+        document.getElementById('phase-face').style.display = 'block';
+
+        // Populate Identified Student Card
+        document.getElementById('scanned-student-name').innerText = currentStudent.name;
+        document.getElementById('scanned-student-meta').innerText = `ID: ${currentStudent.person_code} • Department: ${currentStudent.department || 'General'}`;
+
+        // Update step wizard
+        document.getElementById('step-1-indicator').className = 'step-item completed';
+        document.getElementById('step-2-indicator').className = 'step-item active';
+
+        // Start Face Camera
+        try {
+            faceStream = await CameraManager.startCamera(faceVideo);
+            faceStatus.innerHTML = '<span class="spinner"></span> Align face in oval guide. Analyzing in real-time...';
+            // Start automatic real-time face verification loop
+            startRealTimeFaceVerification();
+        } catch (e) {
+            setAlert(faceAlert, 'Could not start camera for face validation. Please allow camera permissions.', 'danger');
+        }
+    }
+
+    // --- Automated Real-Time Face Verification Loop ---
+    function startRealTimeFaceVerification() {
+        if (realTimeFaceCheckInterval) clearInterval(realTimeFaceCheckInterval);
+
+        // Check frame every 400ms automatically in real-time
+        realTimeFaceCheckInterval = setInterval(async () => {
+            if (!faceStream || !currentStudent || isVerifyingFrame) return;
+
+            isVerifyingFrame = true;
+            try {
+                const frameBase64 = CameraManager.captureBase64(faceVideo);
+                const res = await fetch('/verify-student-attendance', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        student_id: currentStudent.id,
+                        image: frameBase64
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok && data.success) {
+                    // Match Confirmed!
+                    clearInterval(realTimeFaceCheckInterval);
+                    realTimeFaceCheckInterval = null;
+                    showToast(`Biometric match verified for ${data.person.name}!`, 'success', 4000);
+                    transitionToResultPhase(data);
+                } else if (data.is_mismatch) {
+                    // Mismatch warning (proxy attempt)
+                    setAlert(faceAlert, data.message, 'danger');
+                    faceStatus.innerHTML = '<span style="color: var(--danger);">⚠️ Biometric Mismatch Detected! Look straight into the camera.</span>';
+                } else if (data.is_duplicate) {
+                    // Duplicate today
+                    clearInterval(realTimeFaceCheckInterval);
+                    realTimeFaceCheckInterval = null;
+                    setAlert(faceAlert, data.message, 'warning');
+                    showToast(data.message, 'warning', 5000);
+                } else {
+                    // Transient detection status (e.g. no face aligned yet)
+                    faceStatus.innerHTML = `<span class="spinner"></span> Position face in guide (${data.message || 'detecting...'})`;
+                }
+            } catch (err) {
+                console.error('Real-time frame error:', err);
+            } finally {
+                isVerifyingFrame = false;
+            }
+        }, 450);
+    }
+
+    function triggerFaceVerificationAttempt() {
+        if (realTimeFaceCheckInterval) {
+            clearInterval(realTimeFaceCheckInterval);
+            realTimeFaceCheckInterval = null;
+        }
+        startRealTimeFaceVerification();
+    }
+
+    // --- Phase 3: Success Confirmation Card ---
+    function transitionToResultPhase(data) {
+        if (realTimeFaceCheckInterval) {
+            clearInterval(realTimeFaceCheckInterval);
+            realTimeFaceCheckInterval = null;
+        }
+
+        CameraManager.stopCamera(faceVideo, faceStream);
+        faceStream = null;
+
+        document.getElementById('phase-face').style.display = 'none';
+        document.getElementById('phase-result').style.display = 'block';
+
+        // Update Wizard
+        document.getElementById('step-2-indicator').className = 'step-item completed';
+        document.getElementById('step-3-indicator').className = 'step-item active';
+
+        // Populate Receipt Card
+        document.getElementById('res-name').innerText = data.person.name;
+        document.getElementById('res-code').innerText = data.person.person_code;
+        document.getElementById('res-dept').innerText = data.person.department || 'General';
+        document.getElementById('res-status').innerText = data.status || 'PRESENT';
+        document.getElementById('res-date').innerText = data.date;
+        document.getElementById('res-time').innerText = data.time;
+
+        // Start 4-second automated reset countdown
+        startAutoResetTimer();
+    }
+
+    function startAutoResetTimer() {
+        if (autoResetTimer) clearInterval(autoResetTimer);
+        resetSecondsLeft = 4;
+        const countEl = document.getElementById('auto-reset-seconds');
+        
+        autoResetTimer = setInterval(() => {
+            resetSecondsLeft--;
+            if (countEl) countEl.innerText = resetSecondsLeft;
+            if (resetSecondsLeft <= 0) {
+                clearInterval(autoResetTimer);
+                resetTerminal();
+            }
+        }, 1000);
+    }
+
+    function resetTerminal() {
+        if (autoResetTimer) {
+            clearInterval(autoResetTimer);
+            autoResetTimer = null;
+        }
+        if (realTimeFaceCheckInterval) {
+            clearInterval(realTimeFaceCheckInterval);
+            realTimeFaceCheckInterval = null;
+        }
+        if (faceStream) {
+            CameraManager.stopCamera(faceVideo, faceStream);
+            faceStream = null;
+        }
+        if (qrScanner) qrScanner.stop();
+
+        currentStudent = null;
+        isVerifyingFrame = false;
+
+        document.getElementById('phase-result').style.display = 'none';
+        document.getElementById('phase-face').style.display = 'none';
+        document.getElementById('phase-qr').style.display = 'block';
+
+        document.getElementById('step-1-indicator').className = 'step-item active';
+        document.getElementById('step-2-indicator').className = 'step-item';
+        document.getElementById('step-3-indicator').className = 'step-item';
+
+        qrAlert.style.display = 'none';
+        faceAlert.style.display = 'none';
+
+        startQRScanner();
+    }
+
+    function setAlert(el, msg, type) {
+        el.style.display = 'block';
+        if (type === 'success') {
+            el.style.background = 'rgba(16, 185, 129, 0.15)';
+            el.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+            el.style.color = '#34d399';
+        } else if (type === 'danger') {
+            el.style.background = 'rgba(239, 68, 68, 0.15)';
+            el.style.border = '1px solid rgba(239, 68, 68, 0.3)';
+            el.style.color = '#f87171';
+        } else if (type === 'warning') {
+            el.style.background = 'rgba(245, 158, 11, 0.15)';
+            el.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+            el.style.color = '#fbbf24';
+        } else {
+            el.style.background = 'rgba(6, 182, 212, 0.15)';
+            el.style.border = '1px solid rgba(6, 182, 212, 0.3)';
+            el.style.color = '#22d3ee';
+        }
+        el.innerHTML = msg;
+    }
+
+    // Auto-start on load
+    window.addEventListener('DOMContentLoaded', () => {
+        startQRScanner();
+    });
+</script>
+{% endblock %}

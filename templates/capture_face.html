@@ -1,0 +1,346 @@
+{% extends "base.html" %}
+
+{% block title %}Capture Face Samples | {{ person.name }}{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Face Dataset Capture</h2>
+        <p>Capturing facial imagery samples for <strong>{{ person.name }}</strong> (ID: {{ person.person_code }}).</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('departments_page') }}" class="btn btn-outline">Departments</a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline">Dashboard</a>
+    </div>
+</div>
+
+<!-- Primary Direct System Camera Card (Fast) -->
+<div style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(99, 102, 241, 0.12)); border: 1px solid rgba(6, 182, 212, 0.35); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.35);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
+        <div style="max-width: 650px;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
+                <span style="font-size: 1.4rem;">⚡</span>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0;">
+                    Direct System Camera Capture <span class="badge badge-success" style="font-size: 0.75rem; vertical-align: middle; margin-left: 0.5rem;">Fastest ~2s</span>
+                </h3>
+            </div>
+            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0;">
+                Directly opens the hardware system camera via OpenCV hardware acceleration (DirectShow). Captures all 50 samples rapidly at native 30+ FPS, stores them in <code style="color: var(--primary); font-size: 0.82rem;">TrainingImage/</code>, and automatically trains the biometric model.
+            </p>
+        </div>
+
+        <div>
+            <button id="btn-fast-system-cam" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.9rem 1.6rem; font-weight: 700; background: linear-gradient(135deg, #06b6d4, #3b82f6); border: none; box-shadow: 0 4px 20px rgba(6, 182, 212, 0.45); cursor: pointer;" onclick="triggerFastSystemCameraCapture()">
+                <span>⚡</span> Capture Directly from System Camera
+            </button>
+        </div>
+    </div>
+
+    <!-- Live Fast Capture Progress Bar & Feedback -->
+    <div id="fast-progress-container" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; margin-bottom: 0.4rem;">
+            <span style="font-weight: 600; color: var(--text-muted);" id="fast-status-label">Dataset Collection Status:</span>
+            <span id="fast-progress-text" style="font-weight: 800; color: var(--primary);">
+                {{ captured_count }} / {{ required_samples }} Images
+            </span>
+        </div>
+        <div class="progress-container" style="height: 12px; background: rgba(0,0,0,0.4);">
+            <div id="fast-progress-bar" class="progress-bar" style="width: 0%; background: linear-gradient(90deg, #06b6d4, #10b981);"></div>
+        </div>
+    </div>
+</div>
+
+<div class="grid-cols-2">
+    <!-- Browser Webcam Viewfinder (Alternative) -->
+    <div class="glass-card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700;">In-Browser Camera Viewfinder</h3>
+                <p style="font-size: 0.78rem; color: var(--text-muted);">Alternative in-browser webcam capture feed</p>
+            </div>
+            <span id="cam-status-badge" class="badge badge-warning">Standby</span>
+        </div>
+
+        <!-- Camera Video Box -->
+        <div class="camera-container" id="camera-box">
+            <video id="capture-video" class="camera-video" autoplay playsinline muted></video>
+            <div class="camera-overlay">
+                <div class="face-reticle" id="face-guide"></div>
+            </div>
+        </div>
+
+        <!-- Capture Action Buttons -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem;">
+            <button id="btn-start-camera" class="btn btn-outline" onclick="initCamera()">
+                <span>📷</span> Start In-Browser Camera
+            </button>
+            
+            <button id="btn-start-capture" class="btn btn-primary" onclick="startAutomatedCapture()" disabled>
+                <span>⚡</span> Capture (Browser Feed)
+            </button>
+        </div>
+    </div>
+
+    <!-- Person Profile & Guide -->
+    <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
+                <div class="stat-icon icon-purple" style="font-size: 1.5rem;">👤</div>
+                <div>
+                    <h3 style="font-size: 1.25rem; font-weight: 700;">{{ person.name }}</h3>
+                    <p style="color: var(--primary); font-family: monospace; font-size: 0.9rem;">
+                        Code: {{ person.person_code }} &bull; DB Serial: {{ person.id }}
+                    </p>
+                    <p style="color: var(--text-muted); font-size: 0.85rem;">
+                        Department: {{ person.department or 'General' }}
+                    </p>
+                </div>
+            </div>
+
+            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
+                <h4 style="font-size: 0.95rem; font-weight: 700; color: #ffffff; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
+                    <span>💡</span> High-Speed Capture Instructions
+                </h4>
+                <ul style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; padding-left: 1.25rem;">
+                    <li>Click <strong>"Capture Directly from System Camera"</strong> above.</li>
+                    <li>The system camera window opens with a live face bounding box and real-time progress bar.</li>
+                    <li>Look straight at the camera and gently tilt your head slightly for rich multi-angle training samples.</li>
+                    <li>All 50 images are captured and stored in ~2 seconds, then the model trains automatically.</li>
+                </ul>
+            </div>
+
+            <!-- Status Box -->
+            <div id="capture-status-box" style="display: none; padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem;"></div>
+        </div>
+
+        <!-- Post-Capture Action: Train Model & Attendance -->
+        <div style="padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: gap; gap: 0.75rem;">
+                <div>
+                    <div style="font-weight: 700;" id="model-status-title">Biometric Recognizer</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="model-status-desc">
+                        Trained model generates Trainer.yml.
+                    </div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button id="btn-train-now" class="btn btn-outline" onclick="triggerModelTraining(this)">
+                        <span>🧠</span> Retrain Model
+                    </button>
+                    <a href="{{ url_for('attendance_page') }}" class="btn btn-success">
+                        <span>📋</span> Mark Attendance →
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const personId = parseInt("{{ person.id or 0 }}", 10);
+    const requiredSamples = parseInt("{{ required_samples or 50 }}", 10);
+    let currentSamples = parseInt("{{ captured_count or 0 }}", 10);
+    let videoStream = null;
+    let isCapturing = false;
+    let captureInterval = null;
+    let pollingInterval = null;
+
+    const videoEl = document.getElementById('capture-video');
+    const btnStartCam = document.getElementById('btn-start-camera');
+    const btnStartCapture = document.getElementById('btn-start-capture');
+    const btnFastSystemCam = document.getElementById('btn-fast-system-cam');
+    const fastProgressBar = document.getElementById('fast-progress-bar');
+    const fastProgressText = document.getElementById('fast-progress-text');
+    const fastStatusLabel = document.getElementById('fast-status-label');
+    const camBadge = document.getElementById('cam-status-badge');
+    const statusBox = document.getElementById('capture-status-box');
+
+    // Initialize progress bar on load
+    function updateProgress(count) {
+        currentSamples = count;
+        const pct = Math.min(100, Math.round((currentSamples / requiredSamples) * 100));
+        if (fastProgressBar) fastProgressBar.style.width = `${pct}%`;
+        if (fastProgressText) fastProgressText.innerText = `${currentSamples} / ${requiredSamples} Images (${pct}%)`;
+
+        if (currentSamples >= requiredSamples) {
+            if (fastStatusLabel) fastStatusLabel.innerText = "Collection Complete & Model Ready:";
+            if (btnFastSystemCam) {
+                btnFastSystemCam.innerHTML = `<span>✅</span> 50 Samples Captured & Model Ready`;
+                btnFastSystemCam.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            }
+        }
+    }
+
+    updateProgress(currentSamples);
+
+    // =========================================================================
+    // 1. FAST DIRECT SYSTEM CAMERA CAPTURE (OpenCV Native)
+    // =========================================================================
+    async function triggerFastSystemCameraCapture() {
+        if (!btnFastSystemCam) return;
+        const originalHtml = btnFastSystemCam.innerHTML;
+        btnFastSystemCam.disabled = true;
+        btnFastSystemCam.innerHTML = `<span class="spinner"></span> System Camera Active (Capturing Fast)...`;
+
+        fastStatusLabel.innerText = "System Camera Active - Capturing ~2s:";
+        showToast('System camera active! Look at the camera. 50 samples capturing rapidly...', 'info', 4000);
+
+        // Start real-time polling every 120ms to update progress bar smoothly
+        if (pollingInterval) clearInterval(pollingInterval);
+        pollingInterval = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/captured-count/${personId}`);
+                const data = await res.json();
+                if (data.success) {
+                    updateProgress(data.count);
+                    if (data.count >= requiredSamples) {
+                        clearInterval(pollingInterval);
+                    }
+                }
+            } catch (err) {
+                console.warn('Polling status error:', err);
+            }
+        }, 120);
+
+        try {
+            const res = await fetch('/capture-face-opencv', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    person_id: personId,
+                    auto_train: true
+                })
+            });
+
+            const result = await res.json();
+            clearInterval(pollingInterval);
+
+            if (result.success) {
+                updateProgress(result.total_captured || requiredSamples);
+                showToast(result.message || '50 face samples captured and stored rapidly! Model trained.', 'success', 6000);
+
+                statusBox.style.display = 'block';
+                statusBox.style.background = 'rgba(16, 185, 129, 0.15)';
+                statusBox.style.border = '1px solid rgba(16, 185, 129, 0.35)';
+                statusBox.style.color = '#34d399';
+                statusBox.innerHTML = `<strong>⚡ Fast Capture Complete!</strong> Stored ${result.saved_in_session || 50} face samples for <strong>{{ person.name }}</strong> in <code>TrainingImage/</code>. Recognizer model trained and ready!`;
+
+                const modelDesc = document.getElementById('model-status-desc');
+                if (modelDesc) modelDesc.innerHTML = `<span style="color: #34d399; font-weight: 600;">✓ LBPH Model Trained & Ready</span>`;
+            } else {
+                showToast(`Camera Error: ${result.message}`, 'danger');
+                statusBox.style.display = 'block';
+                statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                statusBox.style.border = '1px solid rgba(239, 68, 68, 0.35)';
+                statusBox.style.color = '#f87171';
+                statusBox.innerText = `Camera notice: ${result.message}`;
+            }
+        } catch (err) {
+            clearInterval(pollingInterval);
+            console.error('Fast capture request failed:', err);
+            showToast('Server error while launching system camera.', 'danger');
+        } finally {
+            btnFastSystemCam.disabled = false;
+            if (currentSamples < requiredSamples) {
+                btnFastSystemCam.innerHTML = originalHtml;
+            }
+        }
+    }
+
+    // =========================================================================
+    // 2. IN-BROWSER WEBCAM VIEWFINDER (High Speed Mode: 70ms)
+    // =========================================================================
+    async function initCamera() {
+        try {
+            btnStartCam.disabled = true;
+            btnStartCam.innerHTML = `<span class="spinner"></span> Starting...`;
+            videoStream = await CameraManager.startCamera(videoEl);
+            camBadge.className = 'badge badge-success';
+            camBadge.innerHTML = '<span class="pulse-dot"></span> Active';
+            btnStartCapture.disabled = false;
+            btnStartCam.innerHTML = '<span>⏹️</span> Stop Camera';
+            btnStartCam.onclick = stopCamera;
+            btnStartCam.disabled = false;
+            showToast('Browser camera active. Align face in guide.', 'info');
+        } catch (err) {
+            btnStartCam.disabled = false;
+            btnStartCam.innerHTML = '<span>📷</span> Start In-Browser Camera';
+            camBadge.className = 'badge badge-danger';
+            camBadge.innerText = 'Camera Error';
+        }
+    }
+
+    function stopCamera() {
+        if (captureInterval) clearInterval(captureInterval);
+        isCapturing = false;
+        CameraManager.stopCamera(videoEl, videoStream);
+        videoStream = null;
+        camBadge.className = 'badge badge-warning';
+        camBadge.innerText = 'Standby';
+        btnStartCapture.disabled = true;
+        btnStartCapture.innerHTML = '<span>⚡</span> Capture (Browser Feed)';
+        btnStartCam.innerHTML = '<span>📷</span> Start In-Browser Camera';
+        btnStartCam.onclick = initCamera;
+    }
+
+    function startAutomatedCapture() {
+        if (!videoStream || isCapturing) return;
+        isCapturing = true;
+        btnStartCapture.disabled = true;
+        btnStartCapture.innerHTML = `<span class="spinner"></span> Capturing Fast...`;
+
+        statusBox.style.display = 'block';
+        statusBox.style.background = 'rgba(6, 182, 212, 0.15)';
+        statusBox.style.border = '1px solid rgba(6, 182, 212, 0.3)';
+        statusBox.style.color = '#22d3ee';
+        statusBox.innerText = 'Capturing face samples rapidly... Keep looking at camera.';
+
+        // High speed 70ms interval
+        captureInterval = setInterval(async () => {
+            if (currentSamples >= requiredSamples) {
+                finishBrowserCapture();
+                return;
+            }
+
+            try {
+                const base64Data = CameraManager.captureBase64(videoEl, 0.8);
+                const response = await fetch('/capture-face', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        person_id: personId,
+                        image: base64Data
+                    })
+                });
+
+                const data = await response.json();
+                if (data.success) {
+                    updateProgress(data.current_count);
+                    if (data.is_complete || currentSamples >= requiredSamples) {
+                        finishBrowserCapture();
+                    }
+                } else {
+                    statusBox.innerText = data.message;
+                }
+            } catch (err) {
+                console.error('Frame upload error:', err);
+            }
+        }, 70);
+    }
+
+    function finishBrowserCapture() {
+        clearInterval(captureInterval);
+        isCapturing = false;
+        btnStartCapture.disabled = true;
+        btnStartCapture.innerHTML = '<span>✅</span> Samples Captured!';
+
+        statusBox.style.background = 'rgba(16, 185, 129, 0.15)';
+        statusBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
+        statusBox.style.color = '#34d399';
+        statusBox.innerHTML = `<strong>Success!</strong> All ${currentSamples} face images have been captured. Click <strong>"Retrain Model"</strong> to update the model.`;
+
+        showToast('Dataset capture completed successfully! Now train the model.', 'success', 6000);
+    }
+</script>
+{% endblock %}

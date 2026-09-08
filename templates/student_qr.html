@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+
+{% block title %}Student QR Code Generated | {{ person.name }}{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Student Registered & Unique QR Generated</h2>
+        <p>A permanent attendance QR code has been issued for <strong>{{ person.name }}</strong>. Next, collect their face dataset.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <a href="{{ url_for('index') }}" class="btn btn-outline">Dashboard</a>
+    </div>
+</div>
+
+<!-- Step Navigation Wizard -->
+<div class="steps-nav">
+    <div class="step-item completed">
+        <div class="step-circle">✓</div>
+        <span>1. Profile Saved</span>
+    </div>
+    <div class="step-line" style="background: var(--primary);"></div>
+    <div class="step-item active">
+        <div class="step-circle">2</div>
+        <span>2. Unique QR Issued</span>
+    </div>
+    <div class="step-line"></div>
+    <div class="step-item">
+        <div class="step-circle">3</div>
+        <span>3. Face Data Capture</span>
+    </div>
+</div>
+
+<div style="max-width: 580px; margin: 0 auto;">
+    <div class="glass-card" style="text-align: center; padding: 2.25rem 2rem;">
+        <span class="badge badge-success" style="margin-bottom: 1.25rem;">
+            <span class="pulse-dot"></span> Unique Student QR Code Ready
+        </span>
+
+        <!-- Student ID Card Badge Preview -->
+        <div style="background: linear-gradient(135deg, rgba(15, 23, 42, 0.9), rgba(30, 41, 59, 0.9)); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.75rem; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+            <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--primary); font-weight: 700; margin-bottom: 0.5rem;">
+                Official Attendance Credential
+            </div>
+            <h3 style="font-size: 1.5rem; font-weight: 800; color: #ffffff; margin-bottom: 0.25rem;">
+                {{ person.name }}
+            </h3>
+            <div style="font-family: monospace; color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.25rem;">
+                ID: <span style="color: var(--primary); font-weight: 700;">{{ person.person_code }}</span> &bull; {{ person.department or 'General' }}
+            </div>
+
+            <!-- QR Code Image -->
+            <div style="background: #ffffff; padding: 1rem; border-radius: var(--radius-sm); display: inline-block; box-shadow: 0 8px 25px rgba(0,0,0,0.4);">
+                <img 
+                    src="{{ person.qr_code_path }}" 
+                    alt="Student QR Code" 
+                    id="student-qr-img" 
+                    style="width: 220px; height: 220px; display: block;"
+                >
+            </div>
+            
+            <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 1rem;">
+                Token: <code style="color: var(--primary);">{{ person.qr_token or person.person_code }}</code>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <a href="{{ url_for('capture_face_page', person_id=person.id) }}" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.9rem;">
+                <span>📷</span> Proceed to Face Data Capture (50 Samples) →
+            </a>
+
+            <div style="display: flex; gap: 0.75rem; justify-content: center;">
+                <a href="{{ person.qr_code_path }}" download="{{ person.person_code }}_QR.png" class="btn btn-outline" style="flex: 1;">
+                    <span>📥</span> Download QR Code
+                </a>
+                <button onclick="window.print()" class="btn btn-outline" style="flex: 1;">
+                    <span>🖨️</span> Print QR Card
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

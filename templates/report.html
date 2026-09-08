@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block title %}Attendance Report & History | Face & QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Attendance Logs & Reports</h2>
+        <p>Comprehensive historical and real-time attendance records stored in MySQL.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <button class="btn btn-outline" onclick="exportTableToCSV('attendance_report.csv')">
+            <span>📥</span> Export CSV
+        </button>
+        <a href="{{ url_for('attendance_page') }}" class="btn btn-primary">
+            <span>📷</span> Mark Attendance
+        </a>
+    </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="glass-card" style="margin-bottom: 2rem; padding: 1.25rem 1.75rem;">
+    <form action="{{ url_for('report') }}" method="GET" style="display: flex; flex-wrap: wrap; gap: 1rem; align-items: flex-end;">
+        <!-- Date Picker -->
+        <div style="flex: 1; min-width: 200px;">
+            <label for="date-filter" class="form-label" style="margin-bottom: 0.35rem;">Filter by Date</label>
+            <input 
+                type="date" 
+                id="date-filter" 
+                name="date" 
+                class="form-control" 
+                value="{{ current_date or '' }}"
+            >
+        </div>
+
+        <!-- Search input -->
+        <div style="flex: 2; min-width: 240px;">
+            <label for="search-filter" class="form-label" style="margin-bottom: 0.35rem;">Search by Name, ID, or Dept</label>
+            <input 
+                type="text" 
+                id="search-filter" 
+                name="search" 
+                class="form-control" 
+                placeholder="Type to filter records..." 
+                value="{{ search_query or '' }}"
+            >
+        </div>
+
+        <!-- Buttons -->
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="submit" class="btn btn-primary">
+                <span>🔍</span> Filter
+            </button>
+            <a href="{{ url_for('report') }}" class="btn btn-outline" title="Reset Filters">
+                Reset
+            </a>
+            <button type="button" class="btn btn-outline" onclick="setFilterToday()">
+                Today
+            </button>
+        </div>
+    </form>
+</div>
+
+<!-- Attendance Records Table -->
+<div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <h3 style="font-size: 1.2rem; font-weight: 700;">Logged Records</h3>
+            <span class="badge badge-cyan">{{ records|length }} Total Records</span>
+        </div>
+
+        {% if current_date %}
+            <div style="font-size: 0.85rem; color: var(--text-muted);">
+                Showing entries for: <strong style="color: var(--primary);">{{ current_date }}</strong>
+            </div>
+        {% endif %}
+    </div>
+
+    {% if records %}
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Person ID</th>
+                        <th>Full Name</th>
+                        <th>Department</th>
+                        <th>Date</th>
+                        <th>Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for rec in records %}
+                        <tr>
+                            <td style="color: var(--text-muted); font-family: monospace;">{{ loop.index }}</td>
+                            <td>
+                                <span style="font-family: monospace; font-weight: 700; color: var(--primary);">
+                                    {{ rec.person_code }}
+                                </span>
+                            </td>
+                            <td>
+                                <div style="font-weight: 600;">{{ rec.name }}</div>
+                            </td>
+                            <td>
+                                <span style="color: var(--text-muted);">{{ rec.department }}</span>
+                            </td>
+                            <td>
+                                <span>{{ rec.date }}</span>
+                            </td>
+                            <td>
+                                <span style="font-family: monospace; color: var(--text-muted);">{{ rec.time }}</span>
+                            </td>
+                            <td>
+                                <span class="badge badge-success">
+                                    <span class="pulse-dot"></span> {{ rec.status }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <div style="text-align: center; padding: 3.5rem 1rem; color: var(--text-muted);">
+            <div style="font-size: 3rem; margin-bottom: 0.75rem;">📋</div>
+            <h4 style="color: var(--text-main); font-size: 1.15rem; margin-bottom: 0.5rem;">No Attendance Records Found</h4>
+            <p style="font-size: 0.9rem;">
+                {% if current_date or search_query %}
+                    No records matched the selected filters. Try resetting the filters.
+                {% else %}
+                    No attendance has been logged yet. Open the Attendance terminal to scan QR and face.
+                {% endif %}
+            </p>
+            {% if current_date or search_query %}
+                <a href="{{ url_for('report') }}" class="btn btn-outline" style="margin-top: 1rem;">Clear Filters</a>
+            {% else %}
+                <a href="{{ url_for('attendance_page') }}" class="btn btn-primary" style="margin-top: 1rem;">Mark Attendance Now</a>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function setFilterToday() {
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('date-filter').value = today;
+        document.querySelector('form').submit();
+    }
+</script>
+{% endblock %}

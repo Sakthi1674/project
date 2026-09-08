@@ -1,0 +1,174 @@
+{% extends "base.html" %}
+
+{% block title %}Generate Attendance QR | Face & QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Generate Dynamic Attendance QR</h2>
+        <p>Generate a secure, time-sensitive 5-minute QR code to display on the attendance monitor.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem;">
+        <button id="btn-gen-qr" class="btn btn-primary" onclick="generateNewQR()">
+            <span>🔄</span> Generate New QR Code
+        </button>
+        <a href="{{ url_for('attendance_page') }}" class="btn btn-outline" target="_blank">
+            <span>📷</span> Open Attendance Page ↗
+        </a>
+    </div>
+</div>
+
+<div style="max-width: 640px; margin: 0 auto;">
+    <div class="glass-card qr-display-box" id="qr-box">
+        <!-- Status Badge -->
+        <div style="margin-bottom: 1rem;">
+            <span id="qr-status-badge" class="badge badge-cyan">
+                <span class="pulse-dot"></span> Ready to Generate
+            </span>
+        </div>
+
+        <!-- QR Code Image Container -->
+        <div class="qr-image-wrapper">
+            <img id="qr-image" src="" alt="Attendance QR Code" style="display: none;">
+            <div id="qr-placeholder" style="width: 260px; height: 260px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-dim);">
+                <div style="font-size: 3.5rem; margin-bottom: 0.5rem;">📱</div>
+                <p style="font-size: 0.9rem; color: #475569;">Click button below to create QR</p>
+            </div>
+        </div>
+
+        <!-- Expiry Countdown Display -->
+        <div style="width: 100%; max-width: 380px;">
+            <div style="font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); font-weight: 600;">
+                Time Remaining Until Expiry
+            </div>
+            <div id="countdown-display" class="countdown-timer">--:--</div>
+            
+            <div class="progress-container">
+                <div id="countdown-progress" class="progress-bar" style="width: 100%;"></div>
+            </div>
+        </div>
+
+        <!-- Token Info -->
+        <div id="token-info-box" style="display: none; margin-top: 1.5rem; padding: 0.85rem 1.25rem; background: rgba(255,255,255,0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-sm); font-size: 0.8rem; width: 100%; max-width: 480px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span style="color: var(--text-muted);">Session ID:</span>
+                <span id="info-session-id" style="font-weight: 700; color: #ffffff;">-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.35rem;">
+                <span style="color: var(--text-muted);">Token UUID:</span>
+                <span id="info-token" style="font-family: monospace; color: var(--primary); word-break: break-all;">-</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+                <span style="color: var(--text-muted);">Valid Until:</span>
+                <span id="info-expires" style="color: var(--text-muted);">-</span>
+            </div>
+        </div>
+
+        <button class="btn btn-primary" onclick="generateNewQR()" style="margin-top: 1.75rem; width: 100%; max-width: 320px;">
+            <span>⚡</span> Generate Fresh QR Code
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let countdownInterval = null;
+    let totalSeconds = 300;
+    let secondsLeft = 300;
+
+    async function generateNewQR() {
+        if (countdownInterval) clearInterval(countdownInterval);
+        
+        const btn = document.getElementById('btn-gen-qr');
+        btn.disabled = true;
+
+        const badge = document.getElementById('qr-status-badge');
+        const img = document.getElementById('qr-image');
+        const placeholder = document.getElementById('qr-placeholder');
+        const tokenBox = document.getElementById('token-info-box');
+
+        try {
+            const res = await fetch('/generate-qr', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                // Display QR Image
+                img.src = data.image_url + '?t=' + new Date().getTime();
+                img.style.display = 'block';
+                placeholder.style.display = 'none';
+
+                // Display info
+                tokenBox.style.display = 'block';
+                document.getElementById('info-session-id').innerText = '#' + data.session_id;
+                document.getElementById('info-token').innerText = data.token;
+                document.getElementById('info-expires').innerText = data.expires_at;
+
+                // Status
+                badge.className = 'badge badge-success';
+                badge.innerHTML = '<span class="pulse-dot"></span> Active & Ready to Scan';
+
+                // Start 5-minute countdown
+                totalSeconds = data.valid_seconds || 300;
+                secondsLeft = totalSeconds;
+                startCountdown();
+
+                showToast('New dynamic attendance QR code generated (Valid 5 minutes).', 'success');
+            } else {
+                showToast(`Failed to generate QR: ${data.message}`, 'danger');
+            }
+        } catch (err) {
+            console.error(err);
+            showToast('Network error while generating QR code.', 'danger');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function startCountdown() {
+        const timerEl = document.getElementById('countdown-display');
+        const progEl = document.getElementById('countdown-progress');
+        const badge = document.getElementById('qr-status-badge');
+
+        updateDisplay();
+
+        countdownInterval = setInterval(() => {
+            secondsLeft--;
+            if (secondsLeft <= 0) {
+                clearInterval(countdownInterval);
+                timerEl.innerText = '00:00';
+                progEl.style.width = '0%';
+                badge.className = 'badge badge-danger';
+                badge.innerText = 'EXPIRED';
+                showToast('The current QR code has expired. Please generate a new one.', 'warning');
+                return;
+            }
+            updateDisplay();
+        }, 1000);
+
+        function updateDisplay() {
+            const m = Math.floor(secondsLeft / 60).toString().padStart(2, '0');
+            const s = (secondsLeft % 60).toString().padStart(2, '0');
+            timerEl.innerText = `${m}:${s}`;
+            const pct = (secondsLeft / totalSeconds) * 100;
+            progEl.style.width = pct + '%';
+            
+            if (secondsLeft < 60) {
+                timerEl.style.color = 'var(--danger)';
+                progEl.style.background = 'var(--danger)';
+            } else {
+                timerEl.style.color = 'var(--primary)';
+                progEl.style.background = 'linear-gradient(90deg, var(--primary), var(--accent))';
+            }
+        }
+    }
+
+    // Auto generate on initial page load
+    window.addEventListener('DOMContentLoaded', () => {
+        generateNewQR();
+    });
+</script>
+{% endblock %}

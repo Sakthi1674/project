@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Face & QR Attendance System{% endblock %}</title>
+    <meta name="description" content="Local Attendance Management System using OpenCV LBPH Face Recognition and Dynamic QR Code Validation.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <!-- Top Navigation Bar -->
+    <header class="app-header">
+        <div class="header-container">
+            <a href="{{ url_for('index') }}" class="brand">
+                <div class="brand-icon">⚡</div>
+                <div class="brand-text">
+                    <h1>Attendance System</h1>
+                    <p>Face & QR Verification</p>
+                </div>
+            </a>
+
+            <nav>
+                <ul class="nav-links">
+                    <li>
+                        <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
+                            <span>🏠</span> Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('register') }}" class="nav-link {% if request.endpoint == 'register' %}active{% endif %}">
+                            <span>👤</span> Register
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('departments_page') }}" class="nav-link {% if request.endpoint == 'departments_page' %}active{% endif %}">
+                            <span>🏢</span> Departments
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('attendance_page') }}" class="nav-link {% if request.endpoint == 'attendance_page' %}active{% endif %}">
+                            <span>📷</span> Mark Attendance
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('report') }}" class="nav-link {% if request.endpoint == 'report' %}active{% endif %}">
+                            <span>📊</span> Reports
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="main-wrapper">
+        <!-- Server Flash Alerts -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="flash-container">
+                    {% for category, message in messages %}
+                        <div class="glass-card flash-alert flash-{{ category }}">
+                            <div>
+                                <span style="font-weight: 600;">{{ message }}</span>
+                            </div>
+                            <button type="button" class="flash-close-btn" onclick="this.parentElement.remove()" aria-label="Dismiss alert">×</button>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/jsqr.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/qr-scanner.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,385 @@
+{% extends "base.html" %}
+
+{% block title %}Departments Directory | Face & QR Attendance System{% endblock %}
+
+{% block content %}
+<div class="page-hero">
+    <div>
+        <h2>Academic Departments & Student Roster</h2>
+        <p>Select any department to view enrolled students, their unique attendance QR codes, and credentials.</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="{{ url_for('register') }}" class="btn btn-primary">
+            <span>👤</span> + Add Student
+        </a>
+        <a href="{{ url_for('attendance_page') }}" class="btn btn-success">
+            <span>📷</span> Attendance Terminal
+        </a>
+        <button class="btn btn-outline" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" onclick="confirmClearAllData()">
+            <span>🗑️</span> Clear All Data
+        </button>
+    </div>
+</div>
+
+<!-- Department Overview Cards -->
+{% if not departments %}
+<div class="glass-card" style="text-align: center; padding: 3rem 1.5rem; margin-bottom: 2.5rem;">
+    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏢</div>
+    <h3 style="font-size: 1.3rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem;">No Students or Departments Enrolled</h3>
+    <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.5rem auto;">
+        All student records have been cleared. Register a new student to begin issuing attendance QR credentials and building the biometric dataset.
+    </p>
+    <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
+        <span>👤</span> Register First Student
+    </a>
+</div>
+{% else %}
+<div class="grid-cols-3" style="margin-bottom: 2.5rem;">
+    {% for dept in departments %}
+        <div 
+            class="glass-card dept-summary-card" 
+            onclick="selectDepartment('{{ dept.department_name|escape }}')"
+            id="dept-card-{{ loop.index }}"
+            style="cursor: pointer; padding: 1.5rem; border: 1px solid var(--border-glass); transition: var(--transition);"
+        >
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem;">
+                <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.3rem;">🏢</div>
+                <span class="badge badge-cyan">{{ dept.student_count }} Student{% if dept.student_count != 1 %}s{% endif %}</span>
+            </div>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.35rem;">
+                {{ dept.department_name }}
+            </h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">
+                Tap to view students &amp; unique QR codes &rarr;
+            </p>
+            <div style="font-size: 0.8rem; font-weight: 700; color: var(--primary);">
+                View Roster &rarr;
+            </div>
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Selected Department Students Section -->
+<div class="glass-card" id="roster-section" style="margin-bottom: 2rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; color: var(--primary); font-weight: 700; letter-spacing: 0.05em;">Selected Department</div>
+            <h3 id="selected-dept-title" style="font-size: 1.5rem; font-weight: 800; color: #ffffff;">
+                All Departments
+            </h3>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input 
+                type="text" 
+                id="dept-student-search" 
+                class="form-control" 
+                placeholder="🔍 Search in this department..." 
+                onkeyup="filterDeptStudents()"
+                style="min-width: 240px; padding: 0.55rem 0.9rem; font-size: 0.85rem;"
+            >
+            <a id="btn-add-to-dept" href="{{ url_for('register') }}" class="btn btn-outline" style="padding: 0.55rem 0.9rem; font-size: 0.85rem; white-space: nowrap;">
+                + Add Student
+            </a>
+        </div>
+    </div>
+
+    <!-- Department Students Roster Grid -->
+    <div id="dept-students-grid" class="grid-cols-3">
+        {% for dept_name, students in grouped_students.items() %}
+            {% for student in students %}
+                <div 
+                    class="glass-card dept-student-card" 
+                    id="student-item-{{ student.id }}"
+                    data-dept="{{ dept_name }}"
+                    data-name="{{ student.name|lower }}"
+                    data-code="{{ student.person_code|lower }}"
+                    style="padding: 1.25rem; display: flex; flex-direction: column; justify-content: space-between; border-radius: var(--radius-md);"
+                >
+                    <div>
+                        <!-- Header with QR Thumbnail -->
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;">
+                            <div>
+                                <div style="font-weight: 800; font-size: 1.1rem; color: #ffffff; line-height: 1.2; margin-bottom: 0.2rem;">
+                                    {{ student.name }}
+                                </div>
+                                <div style="font-family: monospace; font-size: 0.85rem; color: var(--primary); font-weight: 700;">
+                                    {{ student.person_code }}
+                                </div>
+                                <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
+                                    {{ dept_name }}
+                                </div>
+                            </div>
+
+                            <!-- QR Code thumbnail -->
+                            <div 
+                                style="cursor: pointer; background: #ffffff; padding: 4px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;"
+                                onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ dept_name|escape }}', '{{ student.qr_code_path }}')"
+                                title="Click to view & download QR"
+                            >
+                                {% if student.qr_code_path %}
+                                    <img src="{{ student.qr_code_path }}" alt="QR" style="width: 58px; height: 58px; display: block;">
+                                {% else %}
+                                    <div style="width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #0f172a;">
+                                        📱
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Face Status Badge -->
+                        <div style="margin-bottom: 1rem;">
+                            {% if student.sample_count >= 50 %}
+                                <span class="badge badge-success" style="font-size: 0.75rem;">
+                                    ✓ Face Enrolled ({{ student.sample_count }}/50)
+                                </span>
+                            {% elif student.sample_count > 0 %}
+                                <span class="badge badge-warning" style="font-size: 0.75rem;">
+                                    ⚠️ Incomplete ({{ student.sample_count }}/50)
+                                </span>
+                            {% else %}
+                                <span class="badge badge-danger" style="font-size: 0.75rem;">
+                                    ⚠️ Needs Face Capture
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons: View QR, Capture, Delete -->
+                    <div style="display: flex; gap: 0.4rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                        <button 
+                            class="btn btn-primary" 
+                            onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ dept_name|escape }}', '{{ student.qr_code_path }}')"
+                            style="flex: 1; padding: 0.45rem 0.4rem; font-size: 0.78rem;"
+                        >
+                            📱 QR Code
+                        </button>
+
+                        <a 
+                            href="{{ url_for('capture_face_page', person_id=student.id) }}" 
+                            class="btn btn-outline" 
+                            style="padding: 0.45rem 0.5rem; font-size: 0.78rem;"
+                            title="Capture Face"
+                        >
+                            📷 Capture
+                        </a>
+
+                        <button 
+                            class="btn btn-outline" 
+                            onclick="confirmDeleteStudent('{{ student.id }}', '{{ student.name|escape }}', '{{ student.person_code|escape }}')"
+                            style="padding: 0.45rem 0.55rem; font-size: 0.78rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);"
+                            title="Delete Student"
+                        >
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            {% endfor %}
+        {% endfor %}
+    </div>
+
+    <!-- Empty State if no students in selected department -->
+    <div id="no-students-message" style="{% if not grouped_students %}display: block;{% else %}display: none;{% endif %} text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
+        <div style="font-size: 3rem; margin-bottom: 0.5rem;">👤</div>
+        <h4 style="color: #ffffff; margin-bottom: 0.5rem;">No Students Found</h4>
+        <p style="font-size: 0.9rem;">There are no students matching this department or search criteria.</p>
+        <a href="{{ url_for('register') }}" class="btn btn-primary" style="margin-top: 1rem; display: inline-block;">
+            <span>➕</span> Enroll First Student
+        </a>
+    </div>
+</div>
+
+<!-- QR Preview Modal -->
+<div id="qr-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 440px; width: 90%; text-align: center; padding: 2rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 700; color: #ffffff;">Student Attendance QR</h4>
+            <button onclick="closeQRModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">×</button>
+        </div>
+
+        <div style="background: linear-gradient(135deg, rgba(15,23,42,0.95), rgba(30,41,59,0.95)); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div id="modal-student-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.2rem;"></div>
+            <div id="modal-student-meta" style="font-family: monospace; font-size: 0.85rem; color: var(--primary); margin-bottom: 1rem;"></div>
+            
+            <div style="background: #ffffff; padding: 0.75rem; border-radius: var(--radius-sm); display: inline-block;">
+                <img id="modal-qr-img" src="" alt="Student QR" style="width: 200px; height: 200px; display: block;">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <a id="modal-download-btn" href="" download="" class="btn btn-primary" style="flex: 1;">
+                <span>📥</span> Download QR
+            </a>
+            <button onclick="closeQRModal()" class="btn btn-outline" style="flex: 1;">Close</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div id="delete-confirm-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 420px; width: 90%; text-align: center; padding: 2rem;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--danger); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.25rem;">
+            ⚠️
+        </div>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem;">Delete Student Record?</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;" id="delete-confirm-text">
+            Are you sure you want to delete this student?
+        </p>
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="closeDeleteModal()" class="btn btn-outline" style="flex: 1;">Cancel</button>
+            <button id="btn-do-delete" onclick="executeDeleteStudent()" class="btn btn-primary" style="background: var(--danger); border-color: var(--danger); flex: 1;">
+                Delete Student
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentSelectedDept = 'ALL';
+    let studentToDeleteId = null;
+
+    function selectDepartment(deptName) {
+        currentSelectedDept = deptName;
+        document.getElementById('selected-dept-title').innerText = deptName;
+        
+        // Update URL hash without reload
+        history.replaceState(null, null, '#dept=' + encodeURIComponent(deptName));
+
+        // Highlight active dept card
+        document.querySelectorAll('.dept-summary-card').forEach(card => {
+            card.style.borderColor = 'var(--border-glass)';
+            card.style.background = 'var(--bg-card)';
+        });
+        if (event && event.currentTarget) {
+            event.currentTarget.style.borderColor = 'var(--primary)';
+            event.currentTarget.style.background = 'rgba(6, 182, 212, 0.08)';
+        }
+
+        // Scroll smoothly to roster section
+        document.getElementById('roster-section').scrollIntoView({ behavior: 'smooth' });
+
+        filterDeptStudents();
+    }
+
+    function filterDeptStudents() {
+        const query = document.getElementById('dept-student-search').value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.dept-student-card');
+        let visibleCount = 0;
+
+        cards.forEach(card => {
+            const cardDept = card.getAttribute('data-dept');
+            const name = card.getAttribute('data-name') || '';
+            const code = card.getAttribute('data-code') || '';
+
+            const matchesDept = (currentSelectedDept === 'ALL' || cardDept === currentSelectedDept);
+            const matchesQuery = (!query || name.includes(query) || code.includes(query));
+
+            if (matchesDept && matchesQuery) {
+                card.style.display = 'flex';
+                visibleCount++;
+            } else {
+                card.style.display = 'none';
+            }
+        });
+
+        const noMsg = document.getElementById('no-students-message');
+        if (visibleCount === 0) {
+            noMsg.style.display = 'block';
+        } else {
+            noMsg.style.display = 'none';
+        }
+    }
+
+    // QR Preview Modal
+    function showQRModal(name, code, dept, qrPath) {
+        document.getElementById('modal-student-name').innerText = name;
+        document.getElementById('modal-student-meta').innerText = `ID: ${code} • ${dept}`;
+        const img = document.getElementById('modal-qr-img');
+        img.src = qrPath;
+        const dlBtn = document.getElementById('modal-download-btn');
+        dlBtn.href = qrPath;
+        dlBtn.download = `${code}_${name}_QR.png`;
+        document.getElementById('qr-preview-modal').style.display = 'flex';
+    }
+
+    function closeQRModal() {
+        document.getElementById('qr-preview-modal').style.display = 'none';
+    }
+
+    // Delete Student Confirmation
+    function confirmDeleteStudent(studentId, name, code) {
+        studentToDeleteId = studentId;
+        document.getElementById('delete-confirm-text').innerHTML = 
+            `Are you sure you want to permanently delete <strong>${name}</strong> (${code})? This will remove their attendance logs, QR credential, and face training data.`;
+        document.getElementById('delete-confirm-modal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('delete-confirm-modal').style.display = 'none';
+        studentToDeleteId = null;
+    }
+
+    async function executeDeleteStudent() {
+        if (!studentToDeleteId) return;
+        const btn = document.getElementById('btn-do-delete');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Deleting...`;
+
+        try {
+            const res = await fetch(`/delete-student/${studentToDeleteId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showToast(data.message, 'success', 5000);
+                // Remove student card from DOM
+                const item = document.getElementById(`student-item-${studentToDeleteId}`);
+                if (item) item.remove();
+                closeDeleteModal();
+                filterDeptStudents();
+            } else {
+                showToast(data.message || 'Error deleting student.', 'danger');
+            }
+        } catch (err) {
+            showToast('Server connection error while deleting student.', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = 'Delete Student';
+        }
+    }
+
+    // Auto-select department if URL hash exists (e.g. #dept=Computer%20Science)
+    window.addEventListener('DOMContentLoaded', () => {
+        const hash = window.location.hash;
+        if (hash && hash.startsWith('#dept=')) {
+            const dept = decodeURIComponent(hash.replace('#dept=', ''));
+            selectDepartment(dept);
+        }
+    });
+
+    // Clear All Student Data action
+    async function confirmClearAllData() {
+        if (!confirm("⚠️ CAUTION: Are you sure you want to permanently remove ALL students, attendance logs, face images, and trained models? This action cannot be undone.")) {
+            return;
+        }
+
+        try {
+            const res = await fetch('/clear-all-data', { method: 'POST' });
+            const data = await res.json();
+            if (data.success) {
+                showToast(data.message, 'success', 5000);
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast(`Error: ${data.message}`, 'danger');
+            }
+        } catch (err) {
+            showToast('Server connection error while clearing student data.', 'danger');
+        }
+    }
+</script>
+{% endblock %}
