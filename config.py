@@ -1,5 +1,26 @@
 import os
 
+def load_env_file(filepath=".env"):
+    """Reads key-value pairs from .env into os.environ without requiring external packages."""
+    if not os.path.isabs(filepath):
+        base_dir = os.path.abspath(os.path.dirname(__file__))
+        filepath = os.path.join(base_dir, filepath)
+    if os.path.exists(filepath):
+        try:
+            with open(filepath, "r", encoding="utf-8") as f:
+                for line in f:
+                    line = line.strip()
+                    if line and not line.startswith("#") and "=" in line:
+                        k, v = line.split("=", 1)
+                        k = k.strip()
+                        v = v.strip().strip("'\"")
+                        os.environ[k] = v
+        except Exception:
+            pass
+
+# Pre-load .env into environment
+load_env_file()
+
 class Config:
     """Application Configuration Settings"""
     # Base directories
@@ -26,8 +47,43 @@ class Config:
     CONFIDENCE_THRESHOLD = 75.0
     REQUIRED_SAMPLES = 50
     
-    # QR Code Parameters
-    QR_EXPIRY_MINUTES = 5
+    # Attendance Cutoff Time (HH:MM format, e.g. '10:30')
+    # After this time, unmarked students can be marked absent and notified by email
+    ATTENDANCE_CUTOFF_TIME = os.environ.get("ATTENDANCE_CUTOFF_TIME", "10:30")
+
+    @classmethod
+    def get_cutoff_time(cls):
+        """Dynamically re-reads ATTENDANCE_CUTOFF_TIME from .env or environment."""
+        load_env_file()
+        cutoff = os.environ.get("ATTENDANCE_CUTOFF_TIME", cls.ATTENDANCE_CUTOFF_TIME)
+        return cutoff.strip() if cutoff else "10:30"
     
+    # Email / SMTP Configuration
+    SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
+    SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+    SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
+    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
+    SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "True").lower() in ("true", "1", "yes")
+
+    @classmethod
+    def get_smtp_config(cls):
+        """Dynamically re-reads SMTP settings from .env or environment."""
+        load_env_file()
+        cls.SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "").strip()
+        cls.SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "").strip()
+        cls.SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com").strip()
+        try:
+            cls.SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
+        except (ValueError, TypeError):
+            cls.SMTP_PORT = 587
+        cls.SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "True").lower() in ("true", "1", "yes")
+        return {
+            "email": cls.SMTP_EMAIL,
+            "password": cls.SMTP_PASSWORD,
+            "server": cls.SMTP_SERVER,
+            "port": cls.SMTP_PORT,
+            "use_tls": cls.SMTP_USE_TLS
+        }
+
     # Haar Cascade Model
     HAAR_CASCADE_FILE = os.path.join(BASE_DIR, "haarcascade_frontalface_default.xml")

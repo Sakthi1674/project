@@ -5,132 +5,257 @@
 {% block content %}
 <div class="page-hero">
     <div>
-        <h2>Face Dataset Capture</h2>
-        <p>Capturing facial imagery samples for <strong>{{ person.name }}</strong> (ID: {{ person.person_code }}).</p>
+        <h2>Facial Biometric Dataset Collection</h2>
+        <p>Capturing 50 high-precision facial images for <strong>{{ person.name }}</strong> (Registration No: <strong style="color: #38bdf8;">{{ person.person_code }}</strong>).</p>
     </div>
-    <div style="display: flex; gap: 0.75rem;">
-        <a href="{{ url_for('departments_page') }}" class="btn btn-outline">Departments</a>
-        <a href="{{ url_for('index') }}" class="btn btn-outline">Dashboard</a>
+    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
+        <a href="{{ url_for('department_detail_page', dept_name=person.department or 'General') }}" class="btn btn-outline">
+            <span>🏢</span> {{ person.department or 'Department' }}
+        </a>
+        <a href="{{ url_for('index') }}" class="btn btn-outline">
+            <span>🏠</span> Dashboard
+        </a>
     </div>
 </div>
 
-<!-- Primary Direct System Camera Card (Fast) -->
-<div style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(99, 102, 241, 0.12)); border: 1px solid rgba(6, 182, 212, 0.35); border-radius: var(--radius-lg); padding: 1.5rem; margin-bottom: 2rem; box-shadow: 0 8px 30px rgba(0,0,0,0.35);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1.25rem;">
-        <div style="max-width: 650px;">
-            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.35rem;">
-                <span style="font-size: 1.4rem;">⚡</span>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin: 0;">
-                    Direct System Camera Capture <span class="badge badge-success" style="font-size: 0.75rem; vertical-align: middle; margin-left: 0.5rem;">Fastest ~2s</span>
-                </h3>
-            </div>
-            <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin: 0;">
-                Directly opens the hardware system camera via OpenCV hardware acceleration (DirectShow). Captures all 50 samples rapidly at native 30+ FPS, stores them in <code style="color: var(--primary); font-size: 0.82rem;">TrainingImage/</code>, and automatically trains the biometric model.
-            </p>
-        </div>
-
+<!-- Banner if face is already registered for this student -->
+{% if captured_count >= required_samples %}
+<div class="glass-card" style="margin-bottom: 1.5rem; background: #eff6ff; border: 1.5px solid #93c5fd; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <span style="font-size: 1.6rem;">ℹ️</span>
         <div>
-            <button id="btn-fast-system-cam" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.9rem 1.6rem; font-weight: 700; background: linear-gradient(135deg, #06b6d4, #3b82f6); border: none; box-shadow: 0 4px 20px rgba(6, 182, 212, 0.45); cursor: pointer;" onclick="triggerFastSystemCameraCapture()">
-                <span>⚡</span> Capture Directly from System Camera
-            </button>
+            <div style="font-weight: 800; color: #1e40af; font-size: 0.95rem;">Face Biometrics Already Enrolled</div>
+            <div style="color: #1e40af; font-size: 0.85rem;">
+                This student already has <strong>{{ captured_count }}</strong> biometric samples enrolled. You can retrain with <strong>"Save Profile"</strong> or collect additional samples.
+            </div>
         </div>
     </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <button onclick="saveProfileAndTrain()" class="btn btn-success btn-sm">
+            <span>💾</span> Re-Save Profile
+        </button>
+        <a href="{{ url_for('attendance_page') }}" class="btn btn-primary btn-sm">
+            Mark Attendance →
+        </a>
+    </div>
+</div>
+{% endif %}
 
-    <!-- Live Fast Capture Progress Bar & Feedback -->
-    <div id="fast-progress-container" style="margin-top: 1.25rem; padding-top: 1rem; border-top: 1px solid rgba(255,255,255,0.08);">
-        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.9rem; margin-bottom: 0.4rem;">
-            <span style="font-weight: 600; color: var(--text-muted);" id="fast-status-label">Dataset Collection Status:</span>
-            <span id="fast-progress-text" style="font-weight: 800; color: var(--primary);">
-                {{ captured_count }} / {{ required_samples }} Images
+<!-- Primary Capture Progress Bar Card -->
+<div class="glass-card" style="margin-bottom: 1.5rem; border-left: 5px solid var(--primary);">
+    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.75rem;">
+        <div>
+            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--primary); letter-spacing: 0.05em;">
+                Biometric Dataset Collection Progress
+            </div>
+            <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 0.2rem;">
+                <span id="progress-count-label">{{ captured_count }}</span> / {{ required_samples }} Photos Captured
+            </h3>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <span id="collection-badge" class="badge {% if captured_count >= required_samples %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.85rem; padding: 0.45rem 0.9rem;">
+                {% if captured_count >= required_samples %}✓ Complete &amp; Camera Stopped{% else %}⏳ In Progress ({{ captured_count }}/{{ required_samples }}){% endif %}
             </span>
         </div>
-        <div class="progress-container" style="height: 12px; background: rgba(0,0,0,0.4);">
-            <div id="fast-progress-bar" class="progress-bar" style="width: 0%; background: linear-gradient(90deg, #06b6d4, #10b981);"></div>
-        </div>
+    </div>
+
+    <!-- Live Multi-Stop Gradient Progress Bar -->
+    <div class="progress-container" style="height: 12px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden;">
+        <div id="capture-progress-bar" class="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2563eb, #8b5cf6, #10b981); transition: width 0.2s ease;"></div>
+    </div>
+
+    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem;">
+        <span>Target: {{ required_samples }} facial angles (camera automatically stops at 50)</span>
+        <span id="progress-percentage-label" style="font-weight: 800; color: var(--primary);">0%</span>
     </div>
 </div>
 
-<div class="grid-cols-2">
-    <!-- Browser Webcam Viewfinder (Alternative) -->
-    <div class="glass-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+<!-- Studio Layout: Expansive Camera Viewport + Telemetry & Save Action Hub -->
+<div class="studio-layout">
+    <!-- Left Column: Expansive Camera Feed -->
+    <div class="glass-card" style="padding: 1.5rem; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-                <h3 style="font-size: 1.1rem; font-weight: 700;">In-Browser Camera Viewfinder</h3>
-                <p style="font-size: 0.78rem; color: var(--text-muted);">Alternative in-browser webcam capture feed</p>
+                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Live Camera Studio</h3>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">Expansive camera feed for high-accuracy facial biometric dataset creation</p>
             </div>
-            <span id="cam-status-badge" class="badge badge-warning">Standby</span>
+            <span id="cam-status-badge" class="badge badge-warning">Camera Standby</span>
         </div>
 
-        <!-- Camera Video Box -->
+        <!-- Camera Container: Full-Width Expansive Container -->
         <div class="camera-container" id="camera-box">
+            <!-- Floating Left HUD: Sample Counter -->
+            <div class="camera-hud-badge" id="hud-counter-badge">
+                <span class="pulse-dot"></span>
+                <span>📸 <strong id="hud-count" style="color: #38bdf8; font-size: 1.05rem;">{{ captured_count }}</strong> / {{ required_samples }} Taken</span>
+            </div>
+
+            <!-- Floating Right HUD: Percentage -->
+            <div class="camera-hud-badge" style="left: auto; right: 16px;">
+                <span style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase;">Progress:</span>
+                <strong id="hud-pct" style="color: #34d399; font-size: 0.95rem;">0%</strong>
+            </div>
+
             <video id="capture-video" class="camera-video" autoplay playsinline muted></video>
-            <div class="camera-overlay">
+            
+            <!-- Reticle Target Guide -->
+            <div class="camera-overlay" id="camera-overlay-reticle">
                 <div class="face-reticle" id="face-guide"></div>
             </div>
+
+            <!-- Camera Auto-Stop & 50 Photos Complete Overlay -->
+            <div class="camera-complete-screen" id="camera-complete-overlay" style="display: {% if captured_count >= required_samples %}flex{% else %}none{% endif %};">
+                <div class="camera-complete-icon">✓</div>
+                <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem; color: #ffffff;">
+                    50 Photos Captured Successfully!
+                </h3>
+                <p style="color: #cbd5e1; font-size: 0.95rem; max-width: 480px; margin-bottom: 1.5rem; line-height: 1.5;">
+                    The camera has been <strong>automatically stopped</strong>. Click <strong>"Save Profile &amp; Complete Registration"</strong> below to finalize student enrollment.
+                </p>
+                <button class="btn btn-save-profile pulse-ready" onclick="saveProfileAndTrain()" style="max-width: 340px; font-size: 1.05rem;">
+                    <span>💾</span> Save Profile &amp; Complete Registration
+                </button>
+            </div>
         </div>
 
-        <!-- Capture Action Buttons -->
-        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem;">
+        <!-- Camera Action Controls Row -->
+        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; align-items: center;">
             <button id="btn-start-camera" class="btn btn-outline" onclick="initCamera()">
-                <span>📷</span> Start In-Browser Camera
+                <span>📷</span> Start Camera
             </button>
             
             <button id="btn-start-capture" class="btn btn-primary" onclick="startAutomatedCapture()" disabled>
-                <span>⚡</span> Capture (Browser Feed)
+                <span>⚡</span> Start Taking Pictures (50 Samples)
             </button>
+
+            <button id="btn-stop-capture" class="btn btn-outline" onclick="stopCapture()" style="display: none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);">
+                <span>⏹️</span> Stop Taking
+            </button>
+        </div>
+
+        <!-- Live Status Feedback Message Box -->
+        <div id="capture-status-box" style="display: none; padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); margin-top: 1rem; font-size: 0.88rem; font-weight: 600;"></div>
+
+        <!-- Live Captured Images Filmstrip Strip -->
+        <div style="margin-top: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                    📸 Real-Time Captured Face Samples:
+                </div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">
+                    Showing latest snapshots
+                </div>
+            </div>
+            <div class="capture-gallery" id="thumbs-gallery" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md); padding: 0.75rem; min-height: 80px; display: flex; gap: 0.5rem; overflow-x: auto;">
+                <!-- Live captured face crops will append here -->
+            </div>
         </div>
     </div>
 
-    <!-- Person Profile & Guide -->
-    <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
-                <div class="stat-icon icon-purple" style="font-size: 1.5rem;">👤</div>
+    <!-- Right Column: Student Profile & Dedicated Save Profile Action Hub -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Card 1: Student Profile Summary -->
+        <div class="glass-card" style="padding: 1.5rem;">
+            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
+                <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.5rem;">👤</div>
                 <div>
-                    <h3 style="font-size: 1.25rem; font-weight: 700;">{{ person.name }}</h3>
-                    <p style="color: var(--primary); font-family: monospace; font-size: 0.9rem;">
-                        Code: {{ person.person_code }} &bull; DB Serial: {{ person.id }}
-                    </p>
-                    <p style="color: var(--text-muted); font-size: 0.85rem;">
-                        Department: {{ person.department or 'General' }}
-                    </p>
-                </div>
-            </div>
-
-            <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem;">
-                <h4 style="font-size: 0.95rem; font-weight: 700; color: #ffffff; margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;">
-                    <span>💡</span> High-Speed Capture Instructions
-                </h4>
-                <ul style="color: var(--text-muted); font-size: 0.875rem; line-height: 1.6; padding-left: 1.25rem;">
-                    <li>Click <strong>"Capture Directly from System Camera"</strong> above.</li>
-                    <li>The system camera window opens with a live face bounding box and real-time progress bar.</li>
-                    <li>Look straight at the camera and gently tilt your head slightly for rich multi-angle training samples.</li>
-                    <li>All 50 images are captured and stored in ~2 seconds, then the model trains automatically.</li>
-                </ul>
-            </div>
-
-            <!-- Status Box -->
-            <div id="capture-status-box" style="display: none; padding: 1rem; border-radius: var(--radius-sm); margin-bottom: 1rem; font-size: 0.9rem;"></div>
-        </div>
-
-        <!-- Post-Capture Action: Train Model & Attendance -->
-        <div style="padding-top: 1.5rem; border-top: 1px solid var(--border-glass);">
-            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: gap; gap: 0.75rem;">
-                <div>
-                    <div style="font-weight: 700;" id="model-status-title">Biometric Recognizer</div>
-                    <div style="font-size: 0.8rem; color: var(--text-muted);" id="model-status-desc">
-                        Trained model generates Trainer.yml.
+                    <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem;">
+                        {{ person.name }}
+                    </h3>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span class="badge badge-primary" style="font-family: monospace;">ID: {{ person.person_code }}</span>
+                        <span class="badge badge-purple">{{ person.department or 'General' }}</span>
                     </div>
                 </div>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button id="btn-train-now" class="btn btn-outline" onclick="triggerModelTraining(this)">
-                        <span>🧠</span> Retrain Model
-                    </button>
-                    <a href="{{ url_for('attendance_page') }}" class="btn btn-success">
-                        <span>📋</span> Mark Attendance →
-                    </a>
+            </div>
+
+            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
+                {% if person.email %}
+                <div style="margin-bottom: 0.4rem;">📧 <strong>Email:</strong> {{ person.email }}</div>
+                {% endif %}
+                <div style="margin-bottom: 0.4rem;">📁 <strong>QR Path:</strong> <code style="font-size: 0.78rem;">{{ person.qr_code_path }}</code></div>
+                <div>⏰ <strong>Attendance Cutoff:</strong> {{ cutoff_time }}</div>
+            </div>
+        </div>
+
+        <!-- Card 2: Dedicated SAVE PROFILE Submit Section -->
+        <div class="glass-card" style="padding: 1.6rem; border-top: 4px solid var(--success); background: #ffffff;">
+            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
+                <span style="font-size: 1.4rem;">💾</span>
+                <div>
+                    <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">
+                        Save Profile &amp; Finalize
+                    </h4>
+                    <span style="font-size: 0.78rem; color: var(--text-muted);">Step 4: Train Recognizer &amp; Activate</span>
                 </div>
             </div>
+
+            <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1.25rem; line-height: 1.5;">
+                After 50 photos are captured and the camera turns off automatically, click below to train the LBPH model and save the student's biometric identity.
+            </p>
+
+            <!-- Prominent Save Profile Submit Button -->
+            <button 
+                id="btn-save-profile-sidebar" 
+                class="btn-save-profile {% if captured_count >= required_samples %}pulse-ready{% endif %}" 
+                onclick="saveProfileAndTrain()" 
+                {% if captured_count < required_samples %}disabled{% endif %}
+            >
+                <span>💾</span> Save Profile &amp; Complete Registration
+            </button>
+
+            <div id="save-profile-hint" style="margin-top: 0.75rem; font-size: 0.78rem; text-align: center; color: {% if captured_count >= required_samples %}#15803d{% else %}var(--text-muted){% endif %}; font-weight: 600;">
+                {% if captured_count >= required_samples %}
+                ✓ 50 samples ready! Click to save and train profile.
+                {% else %}
+                🔒 Unlocks automatically after 50 photos are captured.
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card 3: Biometric Capture Guidance -->
+        <div class="glass-card" style="padding: 1.25rem; background: #f8fafc;">
+            <h4 style="font-size: 0.92rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
+                <span>💡</span> Biometric Capture Instructions
+            </h4>
+            <ul style="color: var(--text-secondary); font-size: 0.82rem; line-height: 1.55; padding-left: 1.2rem; margin: 0;">
+                <li>Click <strong>"Start Camera"</strong> to initialize your webcam feed.</li>
+                <li>Align your face comfortably within the green oval reticle.</li>
+                <li>Click <strong>"Start Taking Pictures"</strong>. The system will sequentially record 50 photos.</li>
+                <li>Gently tilt head left, right, up, and down for diverse angles.</li>
+                <li><strong>The camera automatically stops at 50 photos</strong> and prompts you to save the profile.</li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Celebratory Profile Saved Success Modal -->
+<div id="save-success-modal" class="modal-backdrop" style="display: none;">
+    <div class="modal-content" style="text-align: center; max-width: 500px; padding: 2.25rem 2rem;">
+        <div style="width: 68px; height: 68px; border-radius: var(--radius-full); background: linear-gradient(135deg, #10b981, #059669); color: #ffffff; font-size: 2.3rem; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.25rem; box-shadow: 0 0 25px rgba(16, 185, 129, 0.45);">
+            ✓
+        </div>
+        <h3 style="font-size: 1.45rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.4rem;">
+            Student Profile Successfully Saved!
+        </h3>
+        <p style="color: var(--text-secondary); font-size: 0.92rem; margin-bottom: 1.5rem; line-height: 1.5;">
+            Facial dataset for <strong>{{ person.name }}</strong> ({{ person.person_code }}) has been recorded and trained into the biometric recognizer. The student is ready for real-time attendance verification.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 0.75rem;">
+            <a href="{{ url_for('attendance_page') }}" class="btn btn-primary" style="justify-content: center; font-size: 1.05rem; padding: 0.9rem;">
+                <span>📋</span> Test in Attendance Terminal →
+            </a>
+            <a href="{{ url_for('department_detail_page', dept_name=person.department or 'General') }}" class="btn btn-outline" style="justify-content: center;">
+                <span>🏢</span> View {{ person.department or 'Department' }} Students
+            </a>
+            <a href="{{ url_for('register') }}" class="btn btn-outline" style="justify-content: center;">
+                <span>➕</span> Register Another Student
+            </a>
+            <a href="{{ url_for('index') }}" class="btn btn-outline" style="justify-content: center;">
+                <span>🏠</span> Return to Dashboard
+            </a>
         </div>
     </div>
 </div>
@@ -143,168 +268,131 @@
     let currentSamples = parseInt("{{ captured_count or 0 }}", 10);
     let videoStream = null;
     let isCapturing = false;
-    let captureInterval = null;
-    let pollingInterval = null;
 
     const videoEl = document.getElementById('capture-video');
     const btnStartCam = document.getElementById('btn-start-camera');
     const btnStartCapture = document.getElementById('btn-start-capture');
-    const btnFastSystemCam = document.getElementById('btn-fast-system-cam');
-    const fastProgressBar = document.getElementById('fast-progress-bar');
-    const fastProgressText = document.getElementById('fast-progress-text');
-    const fastStatusLabel = document.getElementById('fast-status-label');
+    const btnStopCapture = document.getElementById('btn-stop-capture');
+    const progressBar = document.getElementById('capture-progress-bar');
+    const progressCountLabel = document.getElementById('progress-count-label');
+    const progressPctLabel = document.getElementById('progress-percentage-label');
+    const hudCount = document.getElementById('hud-count');
+    const hudPct = document.getElementById('hud-pct');
     const camBadge = document.getElementById('cam-status-badge');
     const statusBox = document.getElementById('capture-status-box');
+    const thumbsGallery = document.getElementById('thumbs-gallery');
+    const collectionBadge = document.getElementById('collection-badge');
+    const completeOverlay = document.getElementById('camera-complete-overlay');
+    const btnSaveSidebar = document.getElementById('btn-save-profile-sidebar');
+    const saveProfileHint = document.getElementById('save-profile-hint');
+    const saveModal = document.getElementById('save-success-modal');
 
-    // Initialize progress bar on load
+    // Update Progress and Live Counters
     function updateProgress(count) {
         currentSamples = count;
         const pct = Math.min(100, Math.round((currentSamples / requiredSamples) * 100));
-        if (fastProgressBar) fastProgressBar.style.width = `${pct}%`;
-        if (fastProgressText) fastProgressText.innerText = `${currentSamples} / ${requiredSamples} Images (${pct}%)`;
+        
+        if (progressBar) progressBar.style.width = `${pct}%`;
+        if (progressCountLabel) progressCountLabel.innerText = currentSamples;
+        if (progressPctLabel) progressPctLabel.innerText = `${pct}%`;
+        if (hudCount) hudCount.innerText = currentSamples;
+        if (hudPct) hudPct.innerText = `${pct}%`;
 
         if (currentSamples >= requiredSamples) {
-            if (fastStatusLabel) fastStatusLabel.innerText = "Collection Complete & Model Ready:";
-            if (btnFastSystemCam) {
-                btnFastSystemCam.innerHTML = `<span>✅</span> 50 Samples Captured & Model Ready`;
-                btnFastSystemCam.style.background = 'linear-gradient(135deg, #10b981, #059669)';
+            if (collectionBadge) {
+                collectionBadge.className = "badge badge-success";
+                collectionBadge.innerText = "✓ 50 Samples Ready";
             }
+            enableSaveProfileButton();
+        }
+    }
+
+    function enableSaveProfileButton() {
+        if (btnSaveSidebar) {
+            btnSaveSidebar.disabled = false;
+            btnSaveSidebar.classList.add('pulse-ready');
+        }
+        if (saveProfileHint) {
+            saveProfileHint.style.color = '#15803d';
+            saveProfileHint.innerText = '✓ 50 samples ready! Click above to save profile.';
         }
     }
 
     updateProgress(currentSamples);
 
-    // =========================================================================
-    // 1. FAST DIRECT SYSTEM CAMERA CAPTURE (OpenCV Native)
-    // =========================================================================
-    async function triggerFastSystemCameraCapture() {
-        if (!btnFastSystemCam) return;
-        const originalHtml = btnFastSystemCam.innerHTML;
-        btnFastSystemCam.disabled = true;
-        btnFastSystemCam.innerHTML = `<span class="spinner"></span> System Camera Active (Capturing Fast)...`;
-
-        fastStatusLabel.innerText = "System Camera Active - Capturing ~2s:";
-        showToast('System camera active! Look at the camera. 50 samples capturing rapidly...', 'info', 4000);
-
-        // Start real-time polling every 120ms to update progress bar smoothly
-        if (pollingInterval) clearInterval(pollingInterval);
-        pollingInterval = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/captured-count/${personId}`);
-                const data = await res.json();
-                if (data.success) {
-                    updateProgress(data.count);
-                    if (data.count >= requiredSamples) {
-                        clearInterval(pollingInterval);
-                    }
-                }
-            } catch (err) {
-                console.warn('Polling status error:', err);
-            }
-        }, 120);
-
-        try {
-            const res = await fetch('/capture-face-opencv', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    person_id: personId,
-                    auto_train: true
-                })
-            });
-
-            const result = await res.json();
-            clearInterval(pollingInterval);
-
-            if (result.success) {
-                updateProgress(result.total_captured || requiredSamples);
-                showToast(result.message || '50 face samples captured and stored rapidly! Model trained.', 'success', 6000);
-
-                statusBox.style.display = 'block';
-                statusBox.style.background = 'rgba(16, 185, 129, 0.15)';
-                statusBox.style.border = '1px solid rgba(16, 185, 129, 0.35)';
-                statusBox.style.color = '#34d399';
-                statusBox.innerHTML = `<strong>⚡ Fast Capture Complete!</strong> Stored ${result.saved_in_session || 50} face samples for <strong>{{ person.name }}</strong> in <code>TrainingImage/</code>. Recognizer model trained and ready!`;
-
-                const modelDesc = document.getElementById('model-status-desc');
-                if (modelDesc) modelDesc.innerHTML = `<span style="color: #34d399; font-weight: 600;">✓ LBPH Model Trained & Ready</span>`;
-            } else {
-                showToast(`Camera Error: ${result.message}`, 'danger');
-                statusBox.style.display = 'block';
-                statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
-                statusBox.style.border = '1px solid rgba(239, 68, 68, 0.35)';
-                statusBox.style.color = '#f87171';
-                statusBox.innerText = `Camera notice: ${result.message}`;
-            }
-        } catch (err) {
-            clearInterval(pollingInterval);
-            console.error('Fast capture request failed:', err);
-            showToast('Server error while launching system camera.', 'danger');
-        } finally {
-            btnFastSystemCam.disabled = false;
-            if (currentSamples < requiredSamples) {
-                btnFastSystemCam.innerHTML = originalHtml;
-            }
-        }
-    }
-
-    // =========================================================================
-    // 2. IN-BROWSER WEBCAM VIEWFINDER (High Speed Mode: 70ms)
-    // =========================================================================
+    // Camera Start & Stop
     async function initCamera() {
         try {
+            // Hide complete overlay if re-opening camera
+            if (completeOverlay) completeOverlay.style.display = 'none';
+
             btnStartCam.disabled = true;
             btnStartCam.innerHTML = `<span class="spinner"></span> Starting...`;
             videoStream = await CameraManager.startCamera(videoEl);
             camBadge.className = 'badge badge-success';
-            camBadge.innerHTML = '<span class="pulse-dot"></span> Active';
+            camBadge.innerHTML = '<span class="pulse-dot"></span> Camera Active';
             btnStartCapture.disabled = false;
             btnStartCam.innerHTML = '<span>⏹️</span> Stop Camera';
             btnStartCam.onclick = stopCamera;
             btnStartCam.disabled = false;
-            showToast('Browser camera active. Align face in guide.', 'info');
+            showToast('Camera active! Look into the oval guide.', 'info', 3000);
         } catch (err) {
             btnStartCam.disabled = false;
-            btnStartCam.innerHTML = '<span>📷</span> Start In-Browser Camera';
+            btnStartCam.innerHTML = '<span>📷</span> Start Camera';
             camBadge.className = 'badge badge-danger';
             camBadge.innerText = 'Camera Error';
         }
     }
 
     function stopCamera() {
-        if (captureInterval) clearInterval(captureInterval);
-        isCapturing = false;
-        CameraManager.stopCamera(videoEl, videoStream);
-        videoStream = null;
+        stopCapture();
+        if (videoStream) {
+            CameraManager.stopCamera(videoEl, videoStream);
+            videoStream = null;
+        }
         camBadge.className = 'badge badge-warning';
-        camBadge.innerText = 'Standby';
+        camBadge.innerText = 'Camera Stopped';
         btnStartCapture.disabled = true;
-        btnStartCapture.innerHTML = '<span>⚡</span> Capture (Browser Feed)';
-        btnStartCam.innerHTML = '<span>📷</span> Start In-Browser Camera';
+        btnStartCam.innerHTML = '<span>📷</span> Start Camera';
         btnStartCam.onclick = initCamera;
     }
 
-    function startAutomatedCapture() {
+    // Stop Capture Loop
+    function stopCapture() {
+        isCapturing = false;
+        btnStartCapture.disabled = false;
+        btnStartCapture.innerHTML = '<span>⚡</span> Start Taking Pictures (50 Samples)';
+        btnStopCapture.style.display = 'none';
+    }
+
+    // Sequential Asynchronous Image Capture Loop
+    async function startAutomatedCapture() {
         if (!videoStream || isCapturing) return;
+        if (currentSamples >= requiredSamples) {
+            if (!confirm(`You already have ${currentSamples} samples. Capture more?`)) {
+                return;
+            }
+        }
+
         isCapturing = true;
         btnStartCapture.disabled = true;
-        btnStartCapture.innerHTML = `<span class="spinner"></span> Capturing Fast...`;
+        btnStartCapture.innerHTML = `<span class="spinner"></span> Taking Pictures...`;
+        btnStopCapture.style.display = 'inline-flex';
 
         statusBox.style.display = 'block';
-        statusBox.style.background = 'rgba(6, 182, 212, 0.15)';
-        statusBox.style.border = '1px solid rgba(6, 182, 212, 0.3)';
-        statusBox.style.color = '#22d3ee';
-        statusBox.innerText = 'Capturing face samples rapidly... Keep looking at camera.';
+        statusBox.style.background = '#eff6ff';
+        statusBox.style.border = '1px solid #bfdbfe';
+        statusBox.style.color = '#1e40af';
+        statusBox.innerText = 'Taking 50 photos sequentially... Please tilt your head slightly for varied samples.';
 
-        // High speed 70ms interval
-        captureInterval = setInterval(async () => {
-            if (currentSamples >= requiredSamples) {
-                finishBrowserCapture();
-                return;
+        while (isCapturing && currentSamples < requiredSamples) {
+            if (!videoEl.videoWidth || videoEl.videoWidth === 0) {
+                await new Promise(r => setTimeout(r, 100));
+                continue;
             }
 
             try {
-                const base64Data = CameraManager.captureBase64(videoEl, 0.8);
+                const base64Data = CameraManager.captureBase64(videoEl, 0.85);
                 const response = await fetch('/capture-face', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -317,30 +405,140 @@
                 const data = await response.json();
                 if (data.success) {
                     updateProgress(data.current_count);
+
+                    // Append thumbnail to gallery
+                    if (data.thumb && thumbsGallery) {
+                        const img = document.createElement('img');
+                        img.src = data.thumb;
+                        img.className = 'capture-thumb';
+                        img.title = `Sample #${data.sample_num || currentSamples}`;
+                        thumbsGallery.prepend(img);
+                        while (thumbsGallery.children.length > 20) {
+                            thumbsGallery.removeChild(thumbsGallery.lastChild);
+                        }
+                    }
+
+                    statusBox.innerText = `Captured photo #${data.sample_num || currentSamples} of ${requiredSamples}... Keep looking at camera.`;
+
                     if (data.is_complete || currentSamples >= requiredSamples) {
-                        finishBrowserCapture();
+                        finishCapture();
+                        break;
                     }
                 } else {
-                    statusBox.innerText = data.message;
+                    // Check if face is already registered
+                    if (data.already_registered) {
+                        stopCamera();
+                        statusBox.style.display = 'block';
+                        statusBox.style.background = '#fef2f2';
+                        statusBox.style.border = '2px solid #ef4444';
+                        statusBox.style.color = '#991b1b';
+                        statusBox.innerHTML = `
+                            <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                                <span style="font-size: 1.4rem;">⚠️</span>
+                                <div>
+                                    <div style="font-weight: 800; font-size: 0.95rem; margin-bottom: 0.25rem;">FACE ALREADY REGISTERED</div>
+                                    <div style="font-size: 0.85rem; font-weight: 500; line-height: 1.5;">${data.message}</div>
+                                </div>
+                            </div>
+                        `;
+                        showToast(data.message, 'danger', 8000);
+                        break;
+                    }
+
+                    statusBox.style.color = '#b45309';
+                    statusBox.innerText = `Notice: ${data.message}`;
                 }
             } catch (err) {
-                console.error('Frame upload error:', err);
+                console.error('Frame capture error:', err);
             }
-        }, 70);
+
+            await new Promise(r => setTimeout(r, 130));
+        }
+
+        if (isCapturing && currentSamples >= requiredSamples) {
+            finishCapture();
+        }
     }
 
-    function finishBrowserCapture() {
-        clearInterval(captureInterval);
-        isCapturing = false;
-        btnStartCapture.disabled = true;
-        btnStartCapture.innerHTML = '<span>✅</span> Samples Captured!';
+    // Finished 50 Photos: AUTOMATICALLY STOP CAMERA & PROMPT SAVE PROFILE
+    function finishCapture() {
+        // 1. Stop capturing loop
+        stopCapture();
 
-        statusBox.style.background = 'rgba(16, 185, 129, 0.15)';
-        statusBox.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-        statusBox.style.color = '#34d399';
-        statusBox.innerHTML = `<strong>Success!</strong> All ${currentSamples} face images have been captured. Click <strong>"Retrain Model"</strong> to update the model.`;
+        // 2. AUTOMATICALLY STOP CAMERA HARDWARE IMMEDIATELY
+        if (videoStream) {
+            CameraManager.stopCamera(videoEl, videoStream);
+            videoStream = null;
+        }
 
-        showToast('Dataset capture completed successfully! Now train the model.', 'success', 6000);
+        // 3. Update Camera Badges & Buttons
+        camBadge.className = 'badge badge-success';
+        camBadge.innerText = '✓ Complete & Camera Stopped';
+        btnStartCam.disabled = true;
+        btnStartCam.innerHTML = '<span>✓</span> Camera Stopped';
+
+        // 4. Show celebratory Complete Overlay on camera
+        if (completeOverlay) {
+            completeOverlay.style.display = 'flex';
+        }
+
+        // 5. Update and activate the "Save Profile" submit buttons
+        enableSaveProfileButton();
+
+        // 6. Update status box
+        statusBox.style.background = '#f0fdf4';
+        statusBox.style.border = '1px solid #bbf7d0';
+        statusBox.style.color = '#15803d';
+        statusBox.innerHTML = `<strong>🎉 All 50 Photos Captured!</strong> Camera has automatically turned off. Click <strong>"Save Profile &amp; Complete Registration"</strong> to finalize enrollment.`;
+
+        showToast('All 50 photos captured! Camera stopped. Ready to save profile.', 'success', 5000);
+    }
+
+    // Save Profile & Train LBPH Model Action
+    async function saveProfileAndTrain() {
+        const btn = btnSaveSidebar || document.querySelector('.btn-save-profile');
+        const origText = btn ? btn.innerHTML : '';
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = `<span class="spinner"></span> Saving Profile &amp; Training...`;
+        }
+
+        showToast('Saving profile and training OpenCV biometric recognizer...', 'info', 3000);
+
+        try {
+            const res = await fetch('/train-model', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast(`Success! Profile saved and trained with ${data.samples_trained || currentSamples} images.`, 'success', 5000);
+                
+                // Show Celebratory Success Modal
+                if (saveModal) {
+                    saveModal.style.display = 'flex';
+                }
+
+                statusBox.style.background = '#f0fdf4';
+                statusBox.style.border = '1px solid #86efac';
+                statusBox.style.color = '#15803d';
+                statusBox.innerHTML = `<strong>✓ Enrolled &amp; Model Trained!</strong> Student profile is saved and fully active in the system.`;
+            } else {
+                showToast(`Warning: ${data.message}`, 'warning', 5000);
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origText;
+                }
+            }
+        } catch (err) {
+            console.error('Save Profile error:', err);
+            showToast('Server connection error while saving profile.', 'danger', 4000);
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = origText;
+            }
+        }
     }
 </script>
 {% endblock %}

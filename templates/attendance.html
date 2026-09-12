@@ -3,10 +3,14 @@
 {% block title %}Mark Attendance | Real-Time Biometric Terminal{% endblock %}
 
 {% block content %}
+<!-- Page Hero Banner with Royal Blue Theme -->
 <div class="page-hero">
     <div>
+        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: #38bdf8; letter-spacing: 0.08em; margin-bottom: 0.35rem;">
+            Biometric Access &amp; Kiosk Terminal
+        </div>
         <h2>Automated Real-Time Attendance Terminal</h2>
-        <p>Real-time verification: Show Student QR code &rarr; Instant live camera face cross-check &rarr; Attendance logged.</p>
+        <p>Dual-layer verification: Show student QR credential &rarr; Instant live biometric face cross-check &rarr; Official attendance logged.</p>
     </div>
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
         <button class="btn btn-outline" onclick="resetTerminal()">
@@ -39,161 +43,353 @@
     </div>
 </div>
 
-<div style="max-width: 720px; margin: 0 auto;">
-    <!-- =============================================================
-         PHASE 1: SCAN STUDENT QR CODE
-         ============================================================= -->
-    <div id="phase-qr" class="glass-card">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-            <div>
-                <h3 style="font-size: 1.25rem; font-weight: 700;">Step 1: Scan Student Attendance QR</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Hold your unique student QR code in front of the camera scanner.</p>
+<!-- Two-Column Kiosk Layout (Active Viewfinder + Side Telemetry Panel) -->
+<div class="kiosk-layout">
+    <!-- LEFT COLUMN: The Primary Interactive Kiosk Viewfinder -->
+    <div>
+        <!-- =============================================================
+             PHASE 1: SCAN STUDENT QR CODE
+             ============================================================= -->
+        <div id="phase-qr" class="glass-card" style="padding: 1.75rem;">
+            <!-- Card Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
+                        <span style="font-size: 1.25rem;">📱</span>
+                        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                            Step 1: Scan Student Attendance QR
+                        </h3>
+                    </div>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+                        Hold your student QR pass 15&ndash;30 cm in front of the camera lens.
+                    </p>
+                </div>
+                <span id="qr-cam-badge" class="badge badge-warning">Camera Standby</span>
             </div>
-            <span id="qr-cam-badge" class="badge badge-warning">Camera Standby</span>
-        </div>
 
-        <!-- Camera Scanner Box -->
-        <div class="camera-container" id="qr-camera-box">
-            <video id="qr-video" class="camera-video" playsinline></video>
-            <div class="camera-overlay">
-                <div class="scanner-reticle">
-                    <div class="scanner-laser"></div>
+            <!-- Viewfinder Camera Box -->
+            <div class="camera-container" id="qr-camera-box" style="aspect-ratio: 16 / 10; min-height: 400px;">
+                <!-- High-Tech HUD Overlays -->
+                <div class="kiosk-hud-top">
+                    <div class="kiosk-hud-pill">
+                        <span class="pulse-dot"></span> <span>QR Optical Viewfinder</span>
+                    </div>
+                    <div class="kiosk-hud-pill" id="live-kiosk-clock">
+                        --:--:--
+                    </div>
+                </div>
+
+                <video id="qr-video" class="camera-video" playsinline></video>
+                
+                <div class="camera-overlay">
+                    <div class="scanner-reticle">
+                        <div class="scanner-laser"></div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <!-- QR Controls -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; gap: 0.5rem;">
-                <button id="btn-start-qr-cam" class="btn btn-primary" onclick="startQRScanner()">
-                    <span>📷</span> Start Camera
-                </button>
-                <button id="btn-stop-qr-cam" class="btn btn-outline" onclick="stopQRScanner()" style="display: none;">
-                    <span>⏹️</span> Stop
+            <!-- QR Controls Toolbar -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; gap: 0.6rem;">
+                    <button id="btn-start-qr-cam" class="btn btn-primary" onclick="startQRScanner()">
+                        <span>📷</span> Start Camera
+                    </button>
+                    <button id="btn-stop-qr-cam" class="btn btn-outline" onclick="stopQRScanner()" style="display: none;">
+                        <span>⏹️</span> Stop Camera
+                    </button>
+                    <button class="btn btn-outline" onclick="resetTerminal()" title="Restart scanner cycle">
+                        <span>🔄</span> Refresh
+                    </button>
+                </div>
+
+                <!-- Manual Token / ID Entry Toggle -->
+                <button class="btn btn-outline" onclick="toggleManualToken()" style="font-size: 0.85rem;">
+                    <span>⌨️</span> Enter Student ID / Token
                 </button>
             </div>
 
-            <!-- Manual Token Fallback for testing -->
-            <button class="btn btn-outline" onclick="toggleManualToken()" style="font-size: 0.85rem;">
-                <span>⌨️</span> Enter Student ID / Token
-            </button>
+            <!-- Manual Token Drawer -->
+            <div id="manual-token-box" style="display: none; margin-top: 1.25rem; padding: 1.1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md);">
+                <label for="manual-token-input" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
+                    Enter Student Roll No, ID, or QR Token:
+                </label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="manual-token-input" class="form-control" placeholder="e.g. 2026CS101, DEPT_TEST_1789196708, or STU_..." style="font-size: 0.9rem;">
+                    <button class="btn btn-primary" onclick="submitManualToken()" style="white-space: nowrap;">
+                        Verify Student
+                    </button>
+                </div>
+            </div>
+
+            <!-- Feedback Alert Box -->
+            <div id="qr-alert-box" style="display: none; margin-top: 1.25rem; padding: 0.9rem 1.15rem; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600;"></div>
         </div>
 
-        <!-- Manual Token Drawer -->
-        <div id="manual-token-box" style="display: none; margin-top: 1.25rem; padding-top: 1.25rem; border-top: 1px solid var(--border-glass);">
-            <label for="manual-token-input" class="form-label">Or enter Student Roll No / ID or QR Token:</label>
-            <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="manual-token-input" class="form-control" placeholder="e.g. CS101 or STU_...">
-                <button class="btn btn-primary" onclick="submitManualToken()">Verify Student</button>
+        <!-- =============================================================
+             PHASE 2: REAL-TIME BIOMETRIC FACE CROSS-VALIDATION
+             ============================================================= -->
+        <div id="phase-face" class="glass-card" style="display: none; padding: 1.75rem;">
+            <!-- Identified Student Preview Banner -->
+            <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div class="stat-icon icon-cyan" style="width: 52px; height: 52px; font-size: 1.6rem; border-radius: var(--radius-full);">
+                        👤
+                    </div>
+                    <div>
+                        <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--primary); font-weight: 800; letter-spacing: 0.08em;">
+                            Scanned Student Identity
+                        </div>
+                        <div id="scanned-student-name" style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); line-height: 1.2; margin: 0.15rem 0;">
+                            -
+                        </div>
+                        <div id="scanned-student-meta" style="font-size: 0.82rem; color: var(--text-muted); font-family: monospace;">
+                            -
+                        </div>
+                    </div>
+                </div>
+                <span class="badge badge-success" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+                    <span class="pulse-dot"></span> QR Verified
+                </span>
+            </div>
+
+            <!-- Step Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                        Step 2: Real-Time Face Cross-Check
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">
+                        Look directly into the oval reticle. The OpenCV biometric engine verifies facial features live.
+                    </p>
+                </div>
+                <span id="face-cam-badge" class="badge badge-cyan">
+                    <span class="pulse-dot"></span> Live Biometric Active
+                </span>
+            </div>
+
+            <!-- Face Camera Box -->
+            <div class="camera-container" id="face-camera-box" style="aspect-ratio: 16 / 10; min-height: 400px;">
+                <!-- High-Tech HUD Overlays -->
+                <div class="kiosk-hud-top">
+                    <div class="kiosk-hud-pill">
+                        <span class="pulse-dot" style="background: #00c2ff;"></span> <span>Biometric Face Recognition</span>
+                    </div>
+                    <div class="kiosk-hud-pill" style="color: #38bdf8;">
+                        Target: <strong id="hud-target-name" style="margin-left: 4px; color: #ffffff;">Student</strong>
+                    </div>
+                </div>
+
+                <video id="face-video" class="camera-video" playsinline></video>
+                <div class="camera-overlay">
+                    <div class="face-reticle"></div>
+                </div>
+            </div>
+
+            <!-- Live Status Feedback Bar -->
+            <div style="text-align: center; margin-top: 1.25rem;">
+                <div id="face-stream-status" style="font-size: 0.92rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">
+                    <span class="spinner"></span> Scanning facial features in real-time...
+                </div>
+                <div style="display: flex; justify-content: center; gap: 0.75rem;">
+                    <button id="btn-verify-face" class="btn btn-outline" onclick="triggerFaceVerificationAttempt()" style="font-size: 0.85rem; padding: 0.5rem 1.15rem;">
+                        <span>🎯</span> Manual Verify Trigger
+                    </button>
+                    <button class="btn btn-outline" onclick="resetTerminal()" style="font-size: 0.85rem; padding: 0.5rem 1.15rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);">
+                        <span>✕</span> Cancel
+                    </button>
+                </div>
+            </div>
+
+            <div id="face-alert-box" style="display: none; margin-top: 1.25rem; padding: 0.9rem 1.15rem; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600;"></div>
+        </div>
+
+        <!-- =============================================================
+             PHASE 3: CONFIRMATION SUCCESS CARD
+             ============================================================= -->
+        <div id="phase-result" class="glass-card" style="display: none; text-align: center; padding: 2.75rem 2rem;">
+            <!-- Glowing Success Check Icon -->
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 2.6rem; margin: 0 auto 1.5rem auto; box-shadow: 0 0 30px rgba(16, 185, 129, 0.45); animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+                ✓
+            </div>
+            
+            <h3 id="result-title" style="font-size: 1.95rem; font-weight: 900; margin-bottom: 0.4rem; color: var(--text-main); letter-spacing: -0.02em;">
+                Attendance Successfully Marked!
+            </h3>
+            <p id="result-subtitle" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.75rem; max-width: 520px; margin-left: auto; margin-right: auto;">
+                Student QR credential and facial biometrics verified. Attendance recorded in MySQL database.
+            </p>
+
+            <!-- Auto Reset Counter -->
+            <div style="margin-bottom: 1.75rem; display: inline-flex; align-items: center; gap: 0.6rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-full); padding: 0.45rem 1.25rem; font-size: 0.88rem; color: #1d4ed8; font-weight: 700;" id="auto-reset-indicator">
+                <span class="pulse-dot"></span> Next student scan in <span id="auto-reset-seconds" style="color: var(--primary); font-weight: 900; margin: 0 3px;">4</span> seconds...
+            </div>
+
+            <!-- Student Attendance Official Receipt Card -->
+            <div class="receipt-card" style="max-width: 480px; margin: 0 auto 2.25rem auto; text-align: left;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <div class="stat-icon icon-cyan" style="font-size: 1.5rem; width: 46px; height: 46px;">👤</div>
+                        <div>
+                            <div id="res-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">-</div>
+                            <div id="res-code" style="font-size: 0.85rem; color: var(--primary); font-family: monospace; font-weight: 700; margin-top: 0.15rem;">-</div>
+                        </div>
+                    </div>
+                    <span id="res-status" class="badge badge-success" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">PRESENT</span>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.88rem;">
+                    <div>
+                        <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Department</span>
+                        <strong id="res-dept" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Verification</span>
+                        <span style="color: #15803d; font-weight: 700; font-size: 0.9rem;">✓ Biometric Verified</span>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Attendance Date</span>
+                        <strong id="res-date" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
+                    </div>
+                    <div>
+                        <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Logged Time</span>
+                        <strong id="res-time" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Terminal Actions -->
+            <div style="display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-primary" onclick="resetTerminal()" style="padding: 0.75rem 1.6rem;">
+                    <span>👤</span> Mark Next Student Now
+                </button>
+                <a href="{{ url_for('report') }}" class="btn btn-outline" style="padding: 0.75rem 1.6rem;">
+                    <span>📋</span> View In Report &rarr;
+                </a>
             </div>
         </div>
-
-        <div id="qr-alert-box" style="display: none; margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;"></div>
     </div>
 
-    <!-- =============================================================
-         PHASE 2: REAL-TIME BIOMETRIC FACE CROSS-VALIDATION
-         ============================================================= -->
-    <div id="phase-face" class="glass-card" style="display: none;">
-        <!-- Identified Student Preview Banner -->
-        <div style="background: linear-gradient(135deg, rgba(6, 182, 212, 0.12), rgba(139, 92, 246, 0.12)); border: 1px solid var(--border-glow); border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.4rem;">👤</div>
-                <div>
-                    <div style="font-size: 0.75rem; text-transform: uppercase; color: var(--primary); font-weight: 700; letter-spacing: 0.05em;">Scanned Student Identity</div>
-                    <div id="scanned-student-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">-</div>
-                    <div id="scanned-student-meta" style="font-size: 0.85rem; color: var(--text-muted); font-family: monospace;">-</div>
+    <!-- RIGHT COLUMN: Kiosk Telemetry, Live Activity Feed & Guidelines -->
+    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <!-- Card 1: Live Terminal Status & Cutoff Telemetry -->
+        <div class="glass-card" style="padding: 1.5rem; border-top: 4px solid var(--primary);">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+                <div style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary);">
+                    Terminal Status
                 </div>
+                <span class="badge badge-success" style="font-size: 0.75rem;">
+                    <span class="pulse-dot"></span> System Live
+                </span>
             </div>
-            <span class="badge badge-success"><span class="pulse-dot"></span> QR Verified</span>
-        </div>
 
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <div>
-                <h3 style="font-size: 1.2rem; font-weight: 700;">Step 2: Real-Time Face Cross-Check</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">Look directly into the oval reticle. The camera verifies biometrics in real-time.</p>
-            </div>
-            <span id="face-cam-badge" class="badge badge-cyan"><span class="pulse-dot"></span> Live Verification Active</span>
-        </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
+                <div style="background: #f8fafc; border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 0.85rem;">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Verified Today</div>
+                    <div style="font-size: 1.6rem; font-weight: 900; color: #10b981; margin-top: 0.15rem;" id="kiosk-present-count">
+                        {{ metrics.present_today or 0 }}
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">of {{ metrics.total_persons or 0 }} enrolled</div>
+                </div>
 
-        <!-- Face Camera Box -->
-        <div class="camera-container" id="face-camera-box">
-            <video id="face-video" class="camera-video" playsinline></video>
-            <div class="camera-overlay">
-                <div class="face-reticle"></div>
-            </div>
-        </div>
-
-        <!-- Auto status info -->
-        <div style="text-align: center; margin-top: 1.25rem;">
-            <div id="face-stream-status" style="font-size: 0.9rem; font-weight: 600; color: var(--primary); margin-bottom: 0.75rem;">
-                <span class="spinner"></span> Scanning facial features in real-time...
-            </div>
-            <button id="btn-verify-face" class="btn btn-outline" onclick="triggerFaceVerificationAttempt()" style="font-size: 0.85rem; padding: 0.5rem 1rem;">
-                <span>🎯</span> Manual Verify Trigger
-            </button>
-        </div>
-
-        <div id="face-alert-box" style="display: none; margin-top: 1.25rem; padding: 1rem; border-radius: var(--radius-sm); font-size: 0.9rem;"></div>
-    </div>
-
-    <!-- =============================================================
-         PHASE 3: CONFIRMATION SUCCESS CARD
-         ============================================================= -->
-    <div id="phase-result" class="glass-card" style="display: none; text-align: center; padding: 2.5rem 1.5rem;">
-        <div style="width: 76px; height: 76px; border-radius: 50%; background: rgba(16, 185, 129, 0.15); border: 2px solid var(--success); color: var(--success); display: flex; align-items: center; justify-content: center; font-size: 2.5rem; margin: 0 auto 1.5rem;">
-            ✓
-        </div>
-        
-        <h3 id="result-title" style="font-size: 1.75rem; font-weight: 800; margin-bottom: 0.5rem; color: #ffffff;">
-            Attendance Successfully Marked!
-        </h3>
-        <p id="result-subtitle" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.5rem;">
-            Student QR and facial biometrics verified. Attendance recorded in MySQL.
-        </p>
-
-        <!-- Auto Reset Counter -->
-        <div style="margin-bottom: 1.5rem; font-size: 0.85rem; color: var(--primary); font-weight: 600;" id="auto-reset-indicator">
-            Auto-resetting for next student in <span id="auto-reset-seconds">4</span>s...
-        </div>
-
-        <!-- Student Attendance Receipt Badge Card -->
-        <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; max-width: 460px; margin: 0 auto 2rem; text-align: left;">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem;">
-                <div class="stat-icon icon-cyan" style="font-size: 1.5rem;">👤</div>
-                <div>
-                    <div id="res-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff;">-</div>
-                    <div id="res-code" style="font-size: 0.85rem; color: var(--primary); font-family: monospace;">-</div>
+                <div style="background: #f8fafc; border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 0.85rem;">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Daily Cutoff</div>
+                    <div style="font-size: 1.35rem; font-weight: 900; color: #ef4444; margin-top: 0.15rem;">
+                        {{ cutoff_time }}
+                    </div>
+                    <div style="font-size: 0.72rem; color: {% if is_past_cutoff %}#dc2626{% else %}#15803d{% endif %}; font-weight: 700; margin-top: 0.2rem;">
+                        {% if is_past_cutoff %}Cutoff Passed{% else %}Active Window{% endif %}
+                    </div>
                 </div>
             </div>
 
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.85rem;">
-                <div>
-                    <span style="color: var(--text-muted); display: block;">Department</span>
-                    <strong id="res-dept" style="color: #ffffff;">-</strong>
-                </div>
-                <div>
-                    <span style="color: var(--text-muted); display: block;">Status</span>
-                    <span id="res-status" class="badge badge-success">PRESENT</span>
-                </div>
-                <div>
-                    <span style="color: var(--text-muted); display: block;">Date</span>
-                    <strong id="res-date" style="color: #ffffff;">-</strong>
-                </div>
-                <div>
-                    <span style="color: var(--text-muted); display: block;">Marked Time</span>
-                    <strong id="res-time" style="color: #ffffff;">-</strong>
-                </div>
+            <!-- Model Status -->
+            <div style="display: flex; align-items: center; justify-content: space-between; padding-top: 0.85rem; border-top: 1px solid var(--border-glass); font-size: 0.82rem;">
+                <span style="color: var(--text-muted); font-weight: 600;">Biometric AI Model:</span>
+                {% if model_exists %}
+                    <span class="badge badge-success" style="font-size: 0.72rem;"><span class="pulse-dot"></span> Trained &amp; Ready</span>
+                {% else %}
+                    <span class="badge badge-warning" style="font-size: 0.72rem;">Needs Training</span>
+                {% endif %}
             </div>
         </div>
 
-        <div style="display: flex; justify-content: center; gap: 1rem;">
-            <button class="btn btn-primary" onclick="resetTerminal()">
-                <span>👤</span> Mark Next Student Now
-            </button>
-            <a href="{{ url_for('report') }}" class="btn btn-outline">
-                <span>📋</span> View In Report
-            </a>
+        <!-- Card 2: Live Activity Feed (Today's Recent Scans) -->
+        <div class="glass-card" style="padding: 1.5rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem;">
+                <div style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-main); display: flex; align-items: center; gap: 0.4rem;">
+                    <span>⚡</span> Live Activity Feed
+                </div>
+                <span style="font-size: 0.75rem; color: var(--text-muted);">Today's Logs</span>
+            </div>
+
+            <div id="recent-checkins-list" style="max-height: 290px; overflow-y: auto;">
+                {% if recent_logs %}
+                    {% for item in recent_logs %}
+                        <div class="kiosk-recent-item">
+                            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                                <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800;">
+                                    {{ item.name[0] if item.name else 'S' }}
+                                </div>
+                                <div>
+                                    <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.2;">
+                                        {{ item.name }}
+                                    </div>
+                                    <div style="font-size: 0.72rem; color: var(--text-muted);">
+                                        {{ item.department }} &bull; <span style="font-family: monospace;">{{ item.person_code }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="text-align: right;">
+                                <span class="badge badge-success" style="font-size: 0.68rem; padding: 0.2rem 0.55rem;">{{ item.attendance_time }}</span>
+                            </div>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <div id="no-scans-placeholder" style="text-align: center; padding: 2rem 1rem; color: var(--text-muted); font-size: 0.85rem;">
+                        <div style="font-size: 2rem; margin-bottom: 0.5rem;">🕒</div>
+                        No scans recorded yet today.<br>Present a student QR to mark attendance.
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Card 3: 3-Step Verification Guidelines -->
+        <div class="glass-card" style="padding: 1.5rem; background: #ffffff;">
+            <div style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary); margin-bottom: 0.85rem;">
+                Terminal Verification Guide
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 0.85rem; font-size: 0.82rem;">
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #eff6ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">
+                        1
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-main); display: block;">Scan QR Pass</strong>
+                        Hold the physical card or mobile QR screen 15&ndash;30 cm away from the camera.
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #eff6ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">
+                        2
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-main); display: block;">Face Biometric Match</strong>
+                        Look straight into the oval target guide. OpenCV checks facial biometrics automatically in real-time.
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: flex-start; gap: 0.75rem;">
+                    <div style="width: 24px; height: 24px; border-radius: 50%; background: #eff6ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 800; flex-shrink: 0;">
+                        3
+                    </div>
+                    <div>
+                        <strong style="color: var(--text-main); display: block;">Instant Record Logged</strong>
+                        Status logged in MySQL database with official timestamp; absentee notices averted.
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -216,6 +412,16 @@
     const faceStatus = document.getElementById('face-stream-status');
     const btnVerifyFace = document.getElementById('btn-verify-face');
 
+    // Real-Time Clock on Kiosk HUD
+    function updateKioskClock() {
+        const clockEl = document.getElementById('live-kiosk-clock');
+        if (!clockEl) return;
+        const now = new Date();
+        clockEl.innerText = now.toLocaleTimeString();
+    }
+    setInterval(updateKioskClock, 1000);
+    updateKioskClock();
+
     // --- Phase 1: Real-Time Student QR Code Scanning ---
     function startQRScanner() {
         if (!qrScanner) {
@@ -223,8 +429,11 @@
                 onScan: (decodedText) => handleStudentQRScanned(decodedText),
                 onError: (msg) => {
                     setAlert(qrAlert, msg, 'danger');
-                    document.getElementById('qr-cam-badge').innerText = 'Camera Error';
-                    document.getElementById('qr-cam-badge').className = 'badge badge-danger';
+                    const badge = document.getElementById('qr-cam-badge');
+                    if (badge) {
+                        badge.innerText = 'Camera Error';
+                        badge.className = 'badge badge-danger';
+                    }
                 }
             });
         }
@@ -233,9 +442,14 @@
             document.getElementById('btn-start-qr-cam').style.display = 'none';
             document.getElementById('btn-stop-qr-cam').style.display = 'inline-flex';
             const badge = document.getElementById('qr-cam-badge');
-            badge.className = 'badge badge-success';
-            badge.innerHTML = '<span class="pulse-dot"></span> Scanning for Student QR...';
-            setAlert(qrAlert, 'Point your device camera towards your Student Attendance QR code.', 'info');
+            if (badge) {
+                badge.className = 'badge badge-success';
+                badge.innerHTML = '<span class="pulse-dot"></span> Scanning for Student QR...';
+            }
+            setAlert(qrAlert, 'Point your device or card camera towards the Student Attendance QR code.', 'info');
+        }).catch(err => {
+            console.error('Camera start error:', err);
+            setAlert(qrAlert, 'Camera access denied or unavailable. You can enter Student ID manually below.', 'warning');
         });
     }
 
@@ -244,14 +458,16 @@
         document.getElementById('btn-start-qr-cam').style.display = 'inline-flex';
         document.getElementById('btn-stop-qr-cam').style.display = 'none';
         const badge = document.getElementById('qr-cam-badge');
-        badge.className = 'badge badge-warning';
-        badge.innerText = 'Camera Standby';
+        if (badge) {
+            badge.className = 'badge badge-warning';
+            badge.innerText = 'Camera Standby';
+        }
     }
 
     async function handleStudentQRScanned(qrData) {
         if (!qrData) return;
         qrScanner.stop();
-        setAlert(qrAlert, `Student QR Detected! Verifying credential in real-time...`, 'info');
+        setAlert(qrAlert, `Student QR Detected! Validating credential in real-time...`, 'info');
 
         try {
             const res = await fetch('/validate-student-qr', {
@@ -265,7 +481,7 @@
                 currentStudent = data.person;
                 showToast(`Student Verified: ${currentStudent.name}! Starting face cross-check...`, 'success', 2500);
                 setAlert(qrAlert, `Student Verified: <strong>${currentStudent.name}</strong> (${currentStudent.person_code}). Starting real-time camera face verification...`, 'success');
-                setTimeout(() => transitionToFacePhase(), 600);
+                setTimeout(() => transitionToFacePhase(), 500);
             } else {
                 setAlert(qrAlert, data.message || 'QR code does not match any enrolled student.', 'danger');
                 showToast(data.message || 'Invalid Student QR.', 'danger');
@@ -281,6 +497,9 @@
     function toggleManualToken() {
         const box = document.getElementById('manual-token-box');
         box.style.display = box.style.display === 'none' ? 'block' : 'none';
+        if (box.style.display === 'block') {
+            document.getElementById('manual-token-input').focus();
+        }
     }
 
     function submitManualToken() {
@@ -301,6 +520,8 @@
         // Populate Identified Student Card
         document.getElementById('scanned-student-name').innerText = currentStudent.name;
         document.getElementById('scanned-student-meta').innerText = `ID: ${currentStudent.person_code} • Department: ${currentStudent.department || 'General'}`;
+        const hudTarget = document.getElementById('hud-target-name');
+        if (hudTarget) hudTarget.innerText = currentStudent.name;
 
         // Update step wizard
         document.getElementById('step-1-indicator').className = 'step-item completed';
@@ -309,7 +530,7 @@
         // Start Face Camera
         try {
             faceStream = await CameraManager.startCamera(faceVideo);
-            faceStatus.innerHTML = '<span class="spinner"></span> Align face in oval guide. Analyzing in real-time...';
+            faceStatus.innerHTML = '<span class="spinner"></span> Align face in oval reticle. Analyzing biometrics...';
             // Start automatic real-time face verification loop
             startRealTimeFaceVerification();
         } catch (e) {
@@ -356,8 +577,8 @@
                     setAlert(faceAlert, data.message, 'warning');
                     showToast(data.message, 'warning', 5000);
                 } else {
-                    // Transient detection status (e.g. no face aligned yet)
-                    faceStatus.innerHTML = `<span class="spinner"></span> Position face in guide (${data.message || 'detecting...'})`;
+                    // Transient detection status (e.g. searching)
+                    faceStatus.innerHTML = `<span class="spinner"></span> Position face in guide (${data.message || 'analyzing...'})`;
                 }
             } catch (err) {
                 console.error('Real-time frame error:', err);
@@ -400,8 +621,48 @@
         document.getElementById('res-date').innerText = data.date;
         document.getElementById('res-time').innerText = data.time;
 
+        // Prepend to Live Activity Feed dynamically
+        prependToLiveFeed(data.person.name, data.person.person_code, data.person.department || 'General', data.time);
+
+        // Increment present count in telemetry if element exists
+        const countEl = document.getElementById('kiosk-present-count');
+        if (countEl) {
+            const current = parseInt(countEl.innerText) || 0;
+            countEl.innerText = current + 1;
+        }
+
         // Start 4-second automated reset countdown
         startAutoResetTimer();
+    }
+
+    function prependToLiveFeed(name, code, dept, time) {
+        const feedList = document.getElementById('recent-checkins-list');
+        const placeholder = document.getElementById('no-scans-placeholder');
+        if (placeholder) placeholder.remove();
+        if (!feedList) return;
+
+        const item = document.createElement('div');
+        item.className = 'kiosk-recent-item';
+        item.style.animation = 'fadeIn 0.35s ease-out';
+        item.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 0.65rem;">
+                <div style="width: 32px; height: 32px; border-radius: 50%; background: #eff6ff; color: var(--primary); display: flex; align-items: center; justify-content: center; font-size: 0.95rem; font-weight: 800;">
+                    ${name ? name[0] : 'S'}
+                </div>
+                <div>
+                    <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main); line-height: 1.2;">
+                        ${name}
+                    </div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted);">
+                        ${dept} &bull; <span style="font-family: monospace;">${code}</span>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: right;">
+                <span class="badge badge-success" style="font-size: 0.68rem; padding: 0.2rem 0.55rem;">${time}</span>
+            </div>
+        `;
+        feedList.insertBefore(item, feedList.firstChild);
     }
 
     function startAutoResetTimer() {
@@ -452,28 +713,29 @@
     }
 
     function setAlert(el, msg, type) {
+        if (!el) return;
         el.style.display = 'block';
         if (type === 'success') {
-            el.style.background = 'rgba(16, 185, 129, 0.15)';
-            el.style.border = '1px solid rgba(16, 185, 129, 0.3)';
-            el.style.color = '#34d399';
+            el.style.background = '#f0fdf4';
+            el.style.border = '1.5px solid #86efac';
+            el.style.color = '#15803d';
         } else if (type === 'danger') {
-            el.style.background = 'rgba(239, 68, 68, 0.15)';
-            el.style.border = '1px solid rgba(239, 68, 68, 0.3)';
-            el.style.color = '#f87171';
+            el.style.background = '#fef2f2';
+            el.style.border = '1.5px solid #fca5a5';
+            el.style.color = '#b91c1c';
         } else if (type === 'warning') {
-            el.style.background = 'rgba(245, 158, 11, 0.15)';
-            el.style.border = '1px solid rgba(245, 158, 11, 0.3)';
-            el.style.color = '#fbbf24';
+            el.style.background = '#fffbeb';
+            el.style.border = '1.5px solid #fde68a';
+            el.style.color = '#b45309';
         } else {
-            el.style.background = 'rgba(6, 182, 212, 0.15)';
-            el.style.border = '1px solid rgba(6, 182, 212, 0.3)';
-            el.style.color = '#22d3ee';
+            el.style.background = '#eff6ff';
+            el.style.border = '1.5px solid #bfdbfe';
+            el.style.color = '#1d4ed8';
         }
         el.innerHTML = msg;
     }
 
-    // Auto-start on load
+    // Auto-start QR scanner on initial load
     window.addEventListener('DOMContentLoaded', () => {
         startQRScanner();
     });

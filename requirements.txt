@@ -5,3 +5,5 @@ Pillow>=10.0.0
 pandas>=2.1.0
 mysql-connector-python>=8.2.0
 qrcode[pil]>=7.4.2
+gunicorn>=21.2.0
+waitress>=3.0.0

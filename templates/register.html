@@ -1,84 +1,231 @@
 {% extends "base.html" %}
 
-{% block title %}Register Person | Face & QR Attendance System{% endblock %}
+{% block title %}Register Student | Face & QR Attendance System{% endblock %}
 
 {% block content %}
-<div class="page-hero">
+<!-- Page Hero Banner with Gradient -->
+<div class="page-hero" style="padding: 1.25rem 1.75rem; margin-bottom: 1.5rem;">
     <div>
-        <h2>Register Person</h2>
-        <p>Enroll a new employee or student profile. Upon saving, you will proceed to webcam face capture.</p>
+        <h2>Register New Student</h2>
+        <p>Enroll student profile, issue unique departmental QR credential, and proceed to face biometric dataset.</p>
     </div>
     <a href="{{ url_for('index') }}" class="btn btn-outline">← Back to Dashboard</a>
 </div>
 
-<div style="max-width: 680px; margin: 0 auto;">
-    <div class="glass-card">
-        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem; padding-bottom: 1.25rem; border-bottom: 1px solid var(--border-glass);">
-            <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.4rem;">👤</div>
-            <div>
-                <h3 style="font-size: 1.2rem; font-weight: 700;">Enrollment Form</h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem;">All fields marked with an asterisk are required.</p>
+<div style="max-width: 820px; margin: 0 auto 2.5rem auto;">
+    <div class="glass-card" style="padding: 1.75rem 2rem;">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
+            <div style="display: flex; align-items: center; gap: 0.85rem;">
+                <div class="stat-icon icon-cyan" style="width: 44px; height: 44px; font-size: 1.3rem;">👤</div>
+                <div>
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main);">Student Enrollment Form</h3>
+                    <p style="color: var(--text-muted); font-size: 0.82rem;">Fill in student details below. Fields marked with (<span class="required-star">*</span>) are mandatory.</p>
+                </div>
             </div>
+            <span class="badge badge-cyan" style="font-size: 0.78rem;">Step 1 of 3</span>
         </div>
 
-        <form action="{{ url_for('register') }}" method="POST">
-            <!-- Person ID / Code -->
-            <div class="form-group">
-                <label for="person_id" class="form-label">
-                    Person ID / Roll No. / Employee Code <span style="color: var(--danger);">*</span>
-                </label>
-                <input 
-                    type="text" 
-                    id="person_id" 
-                    name="person_id" 
-                    class="form-control" 
-                    placeholder="e.g. EMP001, STU2026, 101" 
-                    value="{{ person_code or '' }}" 
-                    required 
-                    autofocus
-                >
-                <small style="color: var(--text-muted); font-size: 0.78rem; margin-top: 0.35rem; display: block;">
-                    Must be unique in the database. Used in image naming (Name.Serial.PersonID.SampleNumber.jpg).
-                </small>
+        <form action="{{ url_for('register') }}" method="POST" id="registration-form">
+            <!-- Two-Column Form Grid for Compact View (No Scrolling) -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.15rem; margin-bottom: 1.25rem;">
+                <!-- Student ID / Registration No. -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="person_id" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
+                        Registration No. / Roll No. <span class="required-star">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="person_id" 
+                        name="person_id" 
+                        class="form-control" 
+                        placeholder="e.g. 2026CS101, REG-4501" 
+                        value="{{ person_code or '' }}" 
+                        required 
+                        autofocus
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        QR code image will be saved as <code>&lt;Roll_No&gt;.png</code>.
+                    </small>
+                </div>
+
+                <!-- Full Name -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="name" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
+                        Full Name <span class="required-star">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="name" 
+                        name="name" 
+                        class="form-control" 
+                        placeholder="e.g. Mythili" 
+                        value="{{ name or '' }}" 
+                        required
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        Official name registered for academic records.
+                    </small>
+                </div>
             </div>
 
-            <!-- Full Name -->
-            <div class="form-group">
-                <label for="name" class="form-label">
-                    Full Name <span style="color: var(--danger);">*</span>
-                </label>
-                <input 
-                    type="text" 
-                    id="name" 
-                    name="name" 
-                    class="form-control" 
-                    placeholder="e.g. Sakthi Ganesh, Mythili" 
-                    value="{{ name or '' }}" 
-                    required
-                >
+            <!-- Row 2: Email and Department Selection -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.15rem; margin-bottom: 1.25rem;">
+                <!-- Email Address -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="email" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
+                        Email Address <span class="required-star">*</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        id="email" 
+                        name="email" 
+                        class="form-control" 
+                        placeholder="student@university.edu" 
+                        value="{{ email or '' }}" 
+                        required
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        QR code &amp; daily absentee notices (cutoff: <strong>{{ cutoff_time }}</strong>) are sent here.
+                    </small>
+                </div>
+
+                <!-- Department Selection with Inline New Department Trigger -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label for="department_select" class="form-label" style="margin-bottom: 0; font-size: 0.85rem;">
+                            Academic Department <span class="required-star">*</span>
+                        </label>
+                        <button 
+                            type="button" 
+                            id="toggle-dept-btn" 
+                            class="btn btn-outline btn-sm" 
+                            onclick="toggleAddDeptSection()"
+                            style="padding: 0.2rem 0.6rem; font-size: 0.75rem; color: var(--primary); border-color: rgba(37, 99, 235, 0.3); font-weight: 700;"
+                        >
+                            ➕ Add New Dept
+                        </button>
+                    </div>
+
+                    <select 
+                        id="department_select" 
+                        name="department" 
+                        class="form-control" 
+                        required
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                        <option value="" disabled {% if not department %}selected{% endif %}>-- Select Department --</option>
+                        {% for dept in departments_list %}
+                            <option value="{{ dept }}" {% if department == dept or request.args.get('department') == dept %}selected{% endif %}>{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                    <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+                        QR code is stored in <code>static/qr/&lt;department&gt;/</code>.
+                    </small>
+                </div>
             </div>
 
-            <!-- Department -->
-            <div class="form-group">
-                <label for="department" class="form-label">Department / Class / Division</label>
-                <input 
-                    type="text" 
-                    id="department" 
-                    name="department" 
-                    class="form-control" 
-                    placeholder="e.g. Computer Science, AI & Data Science, Engineering" 
-                    value="{{ department or '' }}"
-                >
+            <!-- Inline Department Adding Section (Collapsible Drawer) -->
+            <div id="new-dept-box" style="display: none; background: #eff6ff; border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem; transition: var(--transition);">
+                <div style="font-size: 0.82rem; font-weight: 700; color: #1e40af; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+                    <span>🏢</span> Add New Academic Department
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input 
+                        type="text" 
+                        id="new-dept-name-input" 
+                        class="form-control" 
+                        placeholder="e.g. Biomedical Engineering, Robotics" 
+                        style="background: #ffffff; padding: 0.45rem 0.75rem; font-size: 0.85rem;"
+                    >
+                    <button 
+                        type="button" 
+                        class="btn btn-primary btn-sm" 
+                        onclick="saveNewDepartmentInline()"
+                        style="white-space: nowrap;"
+                    >
+                        Save &amp; Select
+                    </button>
+                    <button 
+                        type="button" 
+                        class="btn btn-outline btn-sm" 
+                        onclick="toggleAddDeptSection()"
+                        title="Cancel"
+                    >
+                        ✕
+                    </button>
+                </div>
             </div>
 
             <!-- Form Actions -->
-            <div class="form-actions" style="justify-content: flex-end;">
-                <a href="{{ url_for('index') }}" class="btn btn-outline">Cancel</a>
-                <button type="submit" class="btn btn-primary">
-                    <span>💾</span> Save Person & Proceed to Face Capture
+            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); margin-top: 0.5rem;">
+                <a href="{{ url_for('index') }}" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancel</a>
+                <button type="submit" class="btn btn-primary" id="btn-submit-reg" style="padding: 0.55rem 1.35rem; font-weight: 700;">
+                    <span>💾</span> Complete Registration &amp; Issue QR Credential →
                 </button>
             </div>
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function toggleAddDeptSection() {
+        const box = document.getElementById('new-dept-box');
+        const input = document.getElementById('new-dept-name-input');
+        if (box.style.display === 'none' || !box.style.display) {
+            box.style.display = 'block';
+            input.focus();
+        } else {
+            box.style.display = 'none';
+        }
+    }
+
+    async function saveNewDepartmentInline() {
+        const input = document.getElementById('new-dept-name-input');
+        const select = document.getElementById('department_select');
+        const deptName = input.value.trim();
+
+        if (!deptName) {
+            showToast('Please type a department name to add.', 'warning');
+            input.focus();
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/department/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: deptName })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                // Check if option already exists
+                let optExists = false;
+                for (let opt of select.options) {
+                    if (opt.value.toLowerCase() === deptName.toLowerCase()) {
+                        optExists = true;
+                        opt.selected = true;
+                        break;
+                    }
+                }
+                if (!optExists) {
+                    const newOpt = new Option(deptName, deptName, true, true);
+                    select.add(newOpt);
+                }
+                input.value = '';
+                toggleAddDeptSection();
+                showToast(`Department '${deptName}' added and selected!`, 'success');
+            } else {
+                showToast(data.message || 'Could not add department.', 'danger');
+            }
+        } catch (err) {
+            showToast('Network error while creating department.', 'danger');
+        }
+    }
+</script>
 {% endblock %}

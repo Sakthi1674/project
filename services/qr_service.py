@@ -14,20 +14,26 @@ class QRService:
     """Manages student unique QR code generation, storage, and validation."""
 
     @classmethod
-    def ensure_qr_dir(cls):
-        """Ensures the static/qr and static/qr/students directories exist."""
+    def ensure_qr_dir(cls, department=None):
+        """Ensures the static/qr base and department directories exist."""
         os.makedirs(Config.QR_FOLDER, exist_ok=True)
-        os.makedirs(os.path.join(Config.QR_FOLDER, "students"), exist_ok=True)
+        if department:
+            clean_dept = re.sub(r'[^a-zA-Z0-9_-]', '_', department.strip()) or "General"
+            os.makedirs(os.path.join(Config.QR_FOLDER, clean_dept), exist_ok=True)
 
     @classmethod
     def generate_student_qr(cls, person_id, person_code, name, department):
         """
         Generates and stores a permanent unique QR code for a registered student.
-        Encodes student details into QR, saves image in static/qr/students/{person_code}.png,
+        Encodes student details into QR, saves image in static/qr/{department}/{person_code}.png,
         and updates the student's record in MySQL.
         """
-        cls.ensure_qr_dir()
-        student_qr_dir = os.path.join(Config.QR_FOLDER, "students")
+        dept_name = department.strip() if department else "General"
+        clean_dept = re.sub(r'[^a-zA-Z0-9_-]', '_', dept_name) or "General"
+        clean_reg_no = re.sub(r'[^a-zA-Z0-9_-]', '_', person_code.strip())
+        
+        dept_dir = os.path.join(Config.QR_FOLDER, clean_dept)
+        os.makedirs(dept_dir, exist_ok=True)
 
         # 1. Generate unique student token
         unique_token = f"STU_{uuid.uuid4().hex[:12].upper()}"
@@ -38,7 +44,7 @@ class QRService:
             "token": unique_token,
             "person_code": person_code,
             "name": name,
-            "department": department or "General"
+            "department": dept_name
         })
 
         # 3. Render high-resolution QR code
@@ -53,17 +59,16 @@ class QRService:
 
         qr_img = qr.make_image(fill_color="#0f172a", back_color="#ffffff")
 
-        clean_code = re.sub(r'[^a-zA-Z0-9_-]', '_', person_code)
-        filename = f"{clean_code}.png"
-        filepath = os.path.join(student_qr_dir, filename)
+        filename = f"{clean_reg_no}.png"
+        filepath = os.path.join(dept_dir, filename)
         qr_img.save(filepath)
 
-        rel_path = f"/static/qr/students/{filename}"
+        rel_path = f"/static/qr/{clean_dept}/{filename}"
 
         # 4. Save to Database
         DatabaseService.update_person_qr(person_id, unique_token, rel_path)
 
-        logger.info(f"Generated unique student QR for {name} ({person_code}) -> {rel_path}")
+        logger.info(f"Generated unique student QR for {name} ({person_code}) in {clean_dept}/ -> {rel_path}")
 
         return {
             "success": True,
@@ -72,7 +77,7 @@ class QRService:
             "person_id": person_id,
             "person_code": person_code,
             "name": name,
-            "department": department
+            "department": dept_name
         }
 
     @classmethod
@@ -132,13 +137,18 @@ class QRService:
 
     @classmethod
     def ensure_all_students_have_qr(cls):
-        """Ensures every existing student in database has a unique QR code generated."""
+        """Ensures every existing student has a unique QR code organized by department folders."""
         students = DatabaseService.get_all_persons()
         for s in students:
-            qr_file = s.get("qr_code_path")
-            full_path = os.path.join(Config.BASE_DIR, qr_file.lstrip("/")) if qr_file else None
-            if not qr_file or not full_path or not os.path.exists(full_path):
-                cls.generate_student_qr(s["id"], s["person_code"], s["name"], s["department"])
+            dept = s.get("department") or "General"
+            clean_dept = re.sub(r'[^a-zA-Z0-9_-]', '_', dept.strip()) or "General"
+            clean_reg = re.sub(r'[^a-zA-Z0-9_-]', '_', s["person_code"].strip())
+            expected_rel_path = f"/static/qr/{clean_dept}/{clean_reg}.png"
+            full_path = os.path.join(Config.BASE_DIR, expected_rel_path.lstrip("/"))
+            
+            # If path is different or file does not exist, regenerate into department folder
+            if s.get("qr_code_path") != expected_rel_path or not os.path.exists(full_path):
+                cls.generate_student_qr(s["id"], s["person_code"], s["name"], dept)
 
     # --- Legacy dynamic QR session generation for backwards compatibility ---
     @classmethod

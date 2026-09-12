@@ -12,7 +12,7 @@
     <!-- Top Navigation Bar -->
     <header class="app-header">
         <div class="header-container">
-            <a href="{{ url_for('index') }}" class="brand">
+            <a href="{{ url_for('home') }}" class="brand">
                 <div class="brand-icon">⚡</div>
                 <div class="brand-text">
                     <h1>Attendance System</h1>
@@ -21,10 +21,26 @@
             </a>
 
             <nav>
+                {% if request.endpoint == 'home' %}
+                <!-- Home page: only show the Dashboard icon/button -->
                 <ul class="nav-links">
                     <li>
-                        <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">
-                            <span>🏠</span> Dashboard
+                        <a href="{{ url_for('dashboard') }}" class="ref-btn-get-started" style="font-size: 0.92rem; padding: 0.55rem 1.4rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.35);">
+                            <span>📊</span> Dashboard →
+                        </a>
+                    </li>
+                </ul>
+                {% else %}
+                <!-- Dashboard & all other pages: full navigation like existing -->
+                <ul class="nav-links">
+                    <li>
+                        <a href="{{ url_for('home') }}" class="nav-link">
+                            <span>🏠</span> Home
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint in ('dashboard', 'index') %}active{% endif %}">
+                            <span>📊</span> Dashboard
                         </a>
                     </li>
                     <li>
@@ -47,7 +63,15 @@
                             <span>📊</span> Reports
                         </a>
                     </li>
+                    {% if cutoff_time %}
+                    <li>
+                        <span class="cutoff-badge" title="Attendance Cutoff Time from environment">
+                            <span>⏰</span> Cutoff: {{ cutoff_time }}
+                        </span>
+                    </li>
+                    {% endif %}
                 </ul>
+                {% endif %}
             </nav>
         </div>
     </header>

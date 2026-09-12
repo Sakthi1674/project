@@ -69,11 +69,12 @@ class FaceService:
         gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
         cascade = cls.get_cascade()
         
+        # Optimized for webcams with varied lighting and distance
         faces = cascade.detectMultiScale(
             gray,
-            scaleFactor=1.2,
-            minNeighbors=5,
-            minSize=(80, 80)
+            scaleFactor=1.15,
+            minNeighbors=4,
+            minSize=(60, 60)
         )
         
         return gray, faces, None
@@ -112,7 +113,7 @@ class FaceService:
         1. Detects face.
         2. Crops face ROI in grayscale.
         3. Saves image using format: Name.Serial.PersonID.SampleNumber.jpg
-        4. Returns status, current count, and total target (50).
+        4. Returns status, current count, thumbnail preview, and total target.
         """
         cls.ensure_directories()
         
@@ -127,14 +128,24 @@ class FaceService:
             return {"success": False, "message": err or "Failed to detect face from image."}
 
         if len(faces) == 0:
-            return {"success": False, "message": "No face detected. Please face the camera properly."}
+            return {"success": False, "message": "No face detected. Please face the camera directly."}
         elif len(faces) > 1:
             return {"success": False, "message": "Multiple faces detected. Ensure only one person is in frame."}
 
+        # Biometric Duplicate Verification: Verify face does not belong to another registered student
+        dup_check = cls.check_face_already_registered(frame_bgr, person_id)
+        if dup_check.get("is_duplicate"):
+            return {
+                "success": False,
+                "already_registered": True,
+                "message": dup_check["message"],
+                "matched_person": dup_check.get("matched_person")
+            }
+
         x, y, w, h = faces[0]
-        # Add slight margin around face
-        margin_x = int(w * 0.05)
-        margin_y = int(h * 0.05)
+        # Add margin around face for LBPH context
+        margin_x = int(w * 0.08)
+        margin_y = int(h * 0.08)
         x1 = max(0, x - margin_x)
         y1 = max(0, y - margin_y)
         x2 = min(gray.shape[1], x + w + margin_x)
@@ -144,26 +155,51 @@ class FaceService:
         # Standardize face size for LBPH
         face_roi = cv2.resize(face_roi, (200, 200))
 
-        # Determine next sample number
+        # Determine next sample number avoiding collisions
         clean_name = re.sub(r'[^a-zA-Z0-9]', '', str(person.get('name', ''))) or "Person"
         serial = person["id"]
         code = person["person_code"]
 
-        current_count = cls.get_captured_count(serial, code)
-        sample_num = current_count + 1
+        max_sample = 0
+        pattern = re.compile(rf"^.+\.{serial}\.{re.escape(str(code))}\.(\d+)\.jpg$", re.IGNORECASE)
+        for fname in os.listdir(Config.TRAINING_IMAGE_DIR):
+            m = pattern.match(fname)
+            if m:
+                try:
+                    num = int(m.group(1))
+                    if num > max_sample:
+                        max_sample = num
+                except ValueError:
+                    pass
 
+        sample_num = max_sample + 1
         filename = f"{clean_name}.{serial}.{code}.{sample_num}.jpg"
         filepath = os.path.join(Config.TRAINING_IMAGE_DIR, filename)
 
-        cv2.imwrite(filepath, face_roi)
+        success = cv2.imwrite(filepath, face_roi)
+        if not success or not os.path.exists(filepath):
+            return {"success": False, "message": "Failed to write image to disk. Check permissions."}
+
+        # Count total samples currently saved
+        total_count = cls.get_captured_count(serial, code)
+
+        # Generate base64 thumbnail for live UI preview
+        thumb_b64 = None
+        try:
+            _, thumb_buf = cv2.imencode(".jpg", face_roi, [cv2.IMWRITE_JPEG_QUALITY, 80])
+            thumb_b64 = "data:image/jpeg;base64," + base64.b64encode(thumb_buf).decode("utf-8")
+        except Exception:
+            pass
 
         return {
             "success": True,
-            "message": f"Sample {sample_num} captured successfully.",
-            "current_count": sample_num,
+            "message": f"Sample #{sample_num} captured successfully.",
+            "current_count": total_count,
+            "sample_num": sample_num,
             "required_samples": Config.REQUIRED_SAMPLES,
-            "is_complete": sample_num >= Config.REQUIRED_SAMPLES,
+            "is_complete": total_count >= Config.REQUIRED_SAMPLES,
             "filename": filename,
+            "thumb": thumb_b64,
             "face_box": {"x": int(x), "y": int(y), "w": int(w), "h": int(h)}
         }
 
@@ -239,6 +275,17 @@ class FaceService:
                 faces = cascade.detectMultiScale(gray, scaleFactor=1.2, minNeighbors=4, minSize=(70, 70))
 
                 for (x, y, w, h) in faces:
+                    # Check biometric duplicate on first sample before proceeding
+                    if saved_in_session == 0:
+                        dup_check = cls.check_face_already_registered(frame, serial)
+                        if dup_check.get("is_duplicate"):
+                            return {
+                                "success": False,
+                                "already_registered": True,
+                                "message": dup_check["message"],
+                                "matched_person": dup_check.get("matched_person")
+                            }
+
                     captured += 1
                     saved_in_session += 1
 
@@ -519,3 +566,46 @@ class FaceService:
         except Exception as e:
             logger.error(f"Recognition error: {e}")
             return {"success": False, "message": f"Face recognition error: {str(e)}"}
+
+    @classmethod
+    def check_face_already_registered(cls, frame_bgr, current_person_id):
+        """
+        Checks whether the face in frame_bgr matches an already-registered student
+        in the system other than current_person_id.
+        Returns a dict indicating if a biometric duplicate exists.
+        """
+        if not os.path.exists(Config.TRAINER_FILE):
+            return {"is_duplicate": False}
+
+        try:
+            rec_result = cls.recognize_face_from_frame(frame_bgr)
+            if rec_result.get("success") and rec_result.get("person"):
+                matched_person = rec_result["person"]
+                # If the recognized face belongs to a different student
+                if int(matched_person["id"]) != int(current_person_id):
+                    matched_name = matched_person.get("name") or "Student"
+                    matched_code = matched_person.get("person_code") or "N/A"
+                    matched_dept = matched_person.get("department") or "General"
+                    return {
+                        "is_duplicate": True,
+                        "already_registered_to_other": True,
+                        "matched_person": matched_person,
+                        "confidence": rec_result.get("confidence_score"),
+                        "match_percentage": rec_result.get("match_percentage"),
+                        "message": (
+                            f"Face already registered! This face matches enrolled student "
+                            f"'{matched_name}' (ID: {matched_code}) in '{matched_dept}' department. "
+                            f"Duplicate biometric registration across students is not allowed."
+                        )
+                    }
+                else:
+                    return {
+                        "is_duplicate": False,
+                        "is_same_person": True,
+                        "matched_person": matched_person,
+                        "confidence": rec_result.get("confidence_score")
+                    }
+        except Exception as e:
+            logger.warning(f"Error checking biometric duplicate: {e}")
+
+        return {"is_duplicate": False}

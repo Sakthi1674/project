@@ -1,0 +1,19 @@
+{
+  "name": "attendance-management-system",
+  "version": "1.0.0",
+  "description": "QR Code Based Attendance Management System with Live Face Recognition (Python Flask)",
+  "scripts": {
+    "build": "pip install -r requirements.txt",
+    "start": "python app.py",
+    "serve": "waitress-serve --host=0.0.0.0 --port=5000 app:app",
+    "serve:linux": "gunicorn -w 4 -b 0.0.0.0:5000 app:app"
+  },
+  "keywords": [
+    "flask",
+    "face-recognition",
+    "qr-attendance",
+    "opencv"
+  ],
+  "author": "Antigravity",
+  "license": "MIT"
+}

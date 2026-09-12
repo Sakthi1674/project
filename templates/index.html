@@ -6,19 +6,19 @@
 <!-- Page Hero & Quick Actions -->
 <div class="page-hero">
     <div>
-        <h2>Student Attendance & Biometric Directory</h2>
+        <h2>QR Code Based Attendance Management system with Live face recognition</h2>
         <p>Manage student profiles, view unique QR credentials, and oversee department enrollment.</p>
     </div>
     <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('home') }}" class="btn btn-outline">
+            <span>🏠</span> Home
+        </a>
         <a href="{{ url_for('register') }}" class="btn btn-primary">
             <span>👤</span> + Add Student
         </a>
         <a href="{{ url_for('departments_page') }}" class="btn btn-outline">
             <span>🏢</span> Departments Roster
         </a>
-        <button id="btn-train-model" class="btn btn-accent" onclick="triggerModelTraining(this)">
-            <span>🧠</span> Train Face Model
-        </button>
         <a href="{{ url_for('attendance_page') }}" class="btn btn-success">
             <span>📷</span> Attendance Terminal
         </a>
@@ -68,29 +68,29 @@
 
 <!-- Tap Department to View List & QR -->
 <h3 style="margin-bottom: 1rem; font-size: 1.25rem; font-weight: 700; display: flex; align-items: center; gap: 0.5rem;">
-    <span>🏢</span> Tap Department to View Students &amp; QR Credentials
+    <span>🏢</span> Academic Departments (Open Dedicated Department Page)
 </h3>
 
 <div class="grid-cols-3" style="margin-bottom: 2rem;">
     {% for dept in departments %}
-        <div 
+        <a 
+            href="{{ url_for('department_detail_page', dept_name=dept.department_name) }}"
             class="glass-card dept-quick-card" 
-            onclick="filterDepartment('{{ dept.department_name|escape }}')"
-            style="cursor: pointer; padding: 1.25rem; border: 1px solid var(--border-glass); transition: var(--transition);"
-            onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-2px)';"
+            style="display: block; text-decoration: none; padding: 1.35rem; border: 1px solid var(--border-glass); transition: var(--transition);"
+            onmouseover="this.style.borderColor='var(--primary)'; this.style.transform='translateY(-3px)';"
             onmouseout="this.style.borderColor='var(--border-glass)'; this.style.transform='none';"
         >
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
-                <span style="font-size: 1.5rem;">🏛️</span>
+                <span style="font-size: 1.6rem;">🏛️</span>
                 <span class="badge badge-cyan">{{ dept.student_count }} Student{% if dept.student_count != 1 %}s{% endif %}</span>
             </div>
-            <h4 style="font-size: 1.15rem; font-weight: 800; color: #ffffff; margin-bottom: 0.25rem;">
+            <h4 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.25rem;">
                 {{ dept.department_name }}
             </h4>
-            <div style="font-size: 0.8rem; color: var(--primary); font-weight: 600;">
-                Tap to View Roster &amp; QR &rarr;
+            <div style="font-size: 0.82rem; color: var(--primary); font-weight: 700; display: flex; align-items: center; gap: 0.35rem;">
+                <span>View Department Page</span> &rarr;
             </div>
-        </div>
+        </a>
     {% endfor %}
 </div>
 
@@ -102,7 +102,7 @@
             <button class="btn btn-outline dept-tab active" onclick="filterDepartment('ALL')" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: var(--radius-full);">
                 All Departments ({{ metrics.total_persons or 0 }})
             </button>
-            {% for dept_name, students in grouped_students.items() %}
+            {% for dept_name, students in (grouped_students or {}).items() %}
                 <button class="btn btn-outline dept-tab" onclick="filterDepartment('{{ dept_name|escape }}')" style="padding: 0.45rem 1rem; font-size: 0.85rem; border-radius: var(--radius-full);">
                     {{ dept_name }} ({{ students|length }})
                 </button>
@@ -132,7 +132,7 @@
                 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-glass);">
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <span style="font-size: 1.4rem;">🏛️</span>
-                        <h3 style="font-size: 1.35rem; font-weight: 800; color: #ffffff;">{{ dept_name }}</h3>
+                        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main);">{{ dept_name }}</h3>
                         <span class="badge badge-cyan">{{ students|length }} Student{% if students|length != 1 %}s{% endif %}</span>
                     </div>
                     <a href="{{ url_for('register') }}" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.75rem;">
@@ -154,20 +154,21 @@
                                 <!-- Top Row: Student Info & QR thumbnail -->
                                 <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;">
                                     <div>
-                                        <div style="font-weight: 700; font-size: 1.05rem; color: #ffffff; line-height: 1.2; margin-bottom: 0.25rem;">
+                                        <div style="font-weight: 700; font-size: 1.05rem; color: var(--text-main); line-height: 1.2; margin-bottom: 0.25rem;">
                                             {{ student.name }}
                                         </div>
-                                        <div style="font-family: monospace; font-size: 0.8rem; color: var(--primary); font-weight: 600;">
+                                        <div style="font-family: monospace; font-size: 0.8rem; color: var(--primary); font-weight: 700;">
                                             ID: {{ student.person_code }}
                                         </div>
                                         <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.2rem;">
                                             {{ student.department }}
+                                            {% if student.email %}&bull; <span title="{{ student.email }}">📧 {{ student.email|truncate(18, True, '...') }}</span>{% endif %}
                                         </div>
                                     </div>
 
                                     <!-- Student QR Code Thumbnail -->
                                     <div 
-                                        style="cursor: pointer; background: #ffffff; padding: 4px; border-radius: 6px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); flex-shrink: 0;"
+                                        style="cursor: pointer; background: #ffffff; padding: 4px; border-radius: 6px; border: 1px solid var(--border-glass); box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex-shrink: 0;"
                                         onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ student.department|escape }}', '{{ student.qr_code_path }}')"
                                         title="Click to view & download QR Code"
                                     >
@@ -200,7 +201,7 @@
                             </div>
 
                             <!-- Action Buttons -->
-                            <div style="display: flex; gap: 0.4rem; padding-top: 0.75rem; border-top: 1px solid rgba(255,255,255,0.05);">
+                            <div style="display: flex; gap: 0.4rem; padding-top: 0.75rem; border-top: 1px solid var(--border-glass);">
                                 <button 
                                     class="btn btn-primary" 
                                     onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ student.department|escape }}', '{{ student.qr_code_path }}')"
@@ -240,18 +241,18 @@
 {% endif %}
 
 <!-- QR Modal for Viewing and Downloading Student QR Code -->
-<div id="qr-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
-    <div class="glass-card" style="max-width: 440px; width: 90%; text-align: center; padding: 2rem;">
+<div id="qr-preview-modal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 440px; width: 90%; text-align: center; padding: 2rem; background: #ffffff;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-            <h4 style="font-size: 1.15rem; font-weight: 700; color: #ffffff;">Student Attendance QR</h4>
+            <h4 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Student Attendance QR</h4>
             <button onclick="closeQRModal()" style="background:none; border:none; color:var(--text-muted); font-size:1.5rem; cursor:pointer;">×</button>
         </div>
 
-        <div style="background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.9)); border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
-            <div id="modal-student-name" style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.2rem;"></div>
-            <div id="modal-student-meta" style="font-family: monospace; font-size: 0.85rem; color: var(--primary); margin-bottom: 1rem;"></div>
+        <div style="background: #f8fafc; border: 1px solid var(--border-glass); border-radius: var(--radius-md); padding: 1.5rem; margin-bottom: 1.5rem;">
+            <div id="modal-student-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem;"></div>
+            <div id="modal-student-meta" style="font-family: monospace; font-size: 0.85rem; color: var(--primary); font-weight: 700; margin-bottom: 1rem;"></div>
             
-            <div style="background: #ffffff; padding: 0.75rem; border-radius: var(--radius-sm); display: inline-block;">
+            <div style="background: #ffffff; padding: 0.75rem; border-radius: var(--radius-sm); border: 1px solid var(--border-glass); display: inline-block;">
                 <img id="modal-qr-img" src="" alt="Student QR" style="width: 200px; height: 200px; display: block;">
             </div>
         </div>
@@ -266,12 +267,12 @@
 </div>
 
 <!-- Delete Confirmation Modal -->
-<div id="dashboard-delete-modal" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
-    <div class="glass-card" style="max-width: 420px; width: 90%; text-align: center; padding: 2rem;">
-        <div style="width: 56px; height: 56px; border-radius: 50%; background: rgba(239, 68, 68, 0.15); border: 2px solid var(--danger); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.25rem;">
+<div id="dashboard-delete-modal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.6); backdrop-filter: blur(6px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 420px; width: 90%; text-align: center; padding: 2rem; background: #ffffff;">
+        <div style="width: 56px; height: 56px; border-radius: 50%; background: #fee2e2; border: 2px solid var(--danger); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 1.8rem; margin: 0 auto 1.25rem;">
             ⚠️
         </div>
-        <h3 style="font-size: 1.25rem; font-weight: 800; color: #ffffff; margin-bottom: 0.5rem;">Delete Student?</h3>
+        <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">Delete Student?</h3>
         <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;" id="dash-delete-text">
             Are you sure you want to permanently delete this student record?
         </p>

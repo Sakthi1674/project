@@ -55,7 +55,7 @@ class DatabaseService:
                 conn.commit()
                 logger.info("Database tables initialized successfully from database.sql.")
 
-            # Migration: ensure qr_token and qr_code_path columns exist on persons table
+            # Migration 1: ensure qr_token and qr_code_path columns exist on persons table
             try:
                 cursor.execute("""
                     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
@@ -67,7 +67,45 @@ class DatabaseService:
                     conn.commit()
                     logger.info("Migrated persons table: added qr_token and qr_code_path columns.")
             except Error as mig_err:
-                logger.warning(f"Migration check notice: {mig_err}")
+                logger.warning(f"Migration check notice (qr columns): {mig_err}")
+
+            # Migration 2: ensure email column exists on persons table
+            try:
+                cursor.execute("""
+                    SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'persons' AND COLUMN_NAME = 'email'
+                """, (Config.DB_NAME,))
+                if not cursor.fetchone():
+                    cursor.execute("ALTER TABLE persons ADD COLUMN email VARCHAR(150) AFTER name;")
+                    conn.commit()
+                    logger.info("Migrated persons table: added email column.")
+            except Error as mig_err:
+                logger.warning(f"Migration check notice (email column): {mig_err}")
+
+            # Migration 3: ensure departments table exists and seed defaults
+            try:
+                cursor.execute("""
+                    CREATE TABLE IF NOT EXISTS departments (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(100) NOT NULL UNIQUE,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    ) ENGINE=InnoDB;
+                """)
+                standard_depts = [
+                    "Computer Science",
+                    "Information Technology",
+                    "AI & Data Science",
+                    "Electronics & Communication",
+                    "Mechanical Engineering",
+                    "Electrical & Electronics",
+                    "Civil Engineering"
+                ]
+                for dept_name in standard_depts:
+                    cursor.execute("INSERT IGNORE INTO departments (name) VALUES (%s)", (dept_name,))
+                conn.commit()
+                logger.info("Departments table verified and standard departments seeded.")
+            except Error as mig_err:
+                logger.warning(f"Migration check notice (departments): {mig_err}")
 
             cursor.close()
             conn.close()
@@ -143,19 +181,59 @@ class DatabaseService:
 
     # --- Person / Student Management ---
     @classmethod
-    def add_person(cls, person_code, name, department, qr_token=None, qr_code_path=None):
-        """Inserts a new person/student record. Returns the new person's integer primary key ID."""
+    def add_person(cls, person_code, name, department, email=None, qr_token=None, qr_code_path=None):
+        """Inserts a new person/student record with email. Returns the new person's integer primary key ID."""
         dept = department.strip() if department else "General"
+        clean_email = email.strip() if email else None
+        
+        # Ensure department exists in departments table
+        if dept and dept != "General":
+            cls.add_department(dept)
+
         query = """
-            INSERT INTO persons (person_code, name, department, qr_token, qr_code_path)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO persons (person_code, name, email, department, qr_token, qr_code_path)
+            VALUES (%s, %s, %s, %s, %s, %s)
         """
         return cls.execute_query(
             query,
-            (person_code.strip(), name.strip(), dept, qr_token, qr_code_path),
+            (person_code.strip(), name.strip(), clean_email, dept, qr_token, qr_code_path),
             commit=True,
             last_id=True
         )
+
+    # --- Department Management ---
+    @classmethod
+    def get_departments_list(cls):
+        """Returns sorted list of unique department names from departments table and persons table."""
+        query = """
+            SELECT DISTINCT name FROM (
+                SELECT name FROM departments
+                UNION
+                SELECT COALESCE(NULLIF(department, ''), 'General') AS name FROM persons
+            ) AS combined_depts
+            WHERE name IS NOT NULL AND name != ''
+            ORDER BY name ASC
+        """
+        rows = cls.execute_query(query, fetch_all=True) or []
+        depts = [r["name"] for r in rows if r.get("name")]
+        if not depts:
+            depts = ["Computer Science", "Information Technology", "AI & Data Science", "Electronics & Communication", "Mechanical Engineering"]
+        return depts
+
+    @classmethod
+    def add_department(cls, name):
+        """Inserts a new department name into the departments table."""
+        if not name or not name.strip():
+            return False
+        dept_name = name.strip()
+        try:
+            query = "INSERT IGNORE INTO departments (name) VALUES (%s)"
+            cls.execute_query(query, (dept_name,), commit=True)
+            logger.info(f"Department added/verified: '{dept_name}'")
+            return True
+        except Exception as e:
+            logger.error(f"Error adding department '{dept_name}': {e}")
+            return False
 
     @classmethod
     def update_person_qr(cls, person_id, qr_token, qr_code_path):
@@ -178,6 +256,65 @@ class DatabaseService:
         """Fetches person by unique person_code."""
         query = "SELECT * FROM persons WHERE person_code = %s"
         return cls.execute_query(query, (person_code.strip(),), fetch_one=True)
+
+    @classmethod
+    def get_person_by_email(cls, email):
+        """Fetches person by email address."""
+        if not email or not email.strip():
+            return None
+        query = "SELECT * FROM persons WHERE LOWER(TRIM(email)) = LOWER(%s)"
+        return cls.execute_query(query, (email.strip(),), fetch_one=True)
+
+    @classmethod
+    def check_duplicate_student(cls, person_code, email=None, exclude_person_id=None):
+        """
+        Checks if person_code or email already exists in any department.
+        Returns a dict indicating whether a duplicate exists with the conflicting department.
+        """
+        if person_code and person_code.strip():
+            code_clean = person_code.strip()
+            query = "SELECT * FROM persons WHERE LOWER(TRIM(person_code)) = LOWER(%s)"
+            params = [code_clean]
+            if exclude_person_id:
+                query += " AND id != %s"
+                params.append(exclude_person_id)
+            existing_code = cls.execute_query(query, params, fetch_one=True)
+            if existing_code:
+                dept = existing_code.get("department") or "General"
+                name = existing_code.get("name") or "Unknown"
+                return {
+                    "is_duplicate": True,
+                    "field": "person_code",
+                    "message": (
+                        f"Student ID / Roll No. '{code_clean}' is already registered in '{dept}' department "
+                        f"under student '{name}'. Duplicate student registration across departments is not allowed."
+                    ),
+                    "existing_person": existing_code
+                }
+
+        if email and email.strip():
+            email_clean = email.strip()
+            query = "SELECT * FROM persons WHERE LOWER(TRIM(email)) = LOWER(%s)"
+            params = [email_clean]
+            if exclude_person_id:
+                query += " AND id != %s"
+                params.append(exclude_person_id)
+            existing_email = cls.execute_query(query, params, fetch_one=True)
+            if existing_email:
+                dept = existing_email.get("department") or "General"
+                name = existing_email.get("name") or "Unknown"
+                code = existing_email.get("person_code") or "N/A"
+                return {
+                    "is_duplicate": True,
+                    "field": "email",
+                    "message": (
+                        f"Email '{email_clean}' is already registered to student '{name}' ({code}) "
+                        f"in department '{dept}'. A student cannot be registered multiple times across departments."
+                    ),
+                    "existing_person": existing_email
+                }
+
+        return {"is_duplicate": False, "field": None, "message": None, "existing_person": None}
 
     @classmethod
     def get_person_by_qr_token(cls, qr_token):
@@ -302,7 +439,24 @@ class DatabaseService:
             JOIN persons p ON a.person_id = p.id
             WHERE a.person_id = %s AND a.attendance_date = CURDATE()
         """
-        return cls.execute_query(query, (person_id,), fetch_one=True)
+    @classmethod
+    def get_recent_today_attendance(cls, limit=6):
+        """Returns recent attendance records logged today with student details."""
+        query = """
+            SELECT 
+                a.id, 
+                a.attendance_time, 
+                a.status, 
+                p.name, 
+                p.person_code, 
+                COALESCE(NULLIF(p.department, ''), 'General') AS department
+            FROM attendance a
+            JOIN persons p ON a.person_id = p.id
+            WHERE a.attendance_date = CURDATE() AND a.status = 'PRESENT'
+            ORDER BY a.attendance_time DESC, a.id DESC
+            LIMIT %s
+        """
+        return cls.execute_query(query, (limit,), fetch_all=True) or []
 
     @classmethod
     def record_attendance(cls, person_id, qr_session_id=None, status="PRESENT"):
@@ -316,6 +470,138 @@ class DatabaseService:
             VALUES (%s, %s, %s, %s, %s)
         """
         return cls.execute_query(query, (person_id, qr_session_id, current_date, current_time, status), commit=True, last_id=True)
+
+    @classmethod
+    def update_attendance_status(cls, person_id, attendance_date=None, status="PRESENT"):
+        """
+        Updates or inserts an attendance record for a student on a specific date.
+        Allows toggling between PRESENT and ABSENT.
+        """
+        if not attendance_date:
+            attendance_date = date.today().isoformat()
+        
+        status_clean = status.upper().strip()
+        now = datetime.now()
+        current_time = now.time().strftime("%H:%M:%S")
+
+        # Check existing record
+        query_check = "SELECT id, status FROM attendance WHERE person_id = %s AND attendance_date = %s"
+        existing = cls.execute_query(query_check, (person_id, attendance_date), fetch_one=True)
+
+        if existing:
+            query_update = """
+                UPDATE attendance 
+                SET status = %s, attendance_time = %s 
+                WHERE id = %s
+            """
+            cls.execute_query(query_update, (status_clean, current_time, existing["id"]), commit=True)
+            return {"success": True, "action": "updated", "id": existing["id"], "status": status_clean}
+        else:
+            query_insert = """
+                INSERT INTO attendance (person_id, attendance_date, attendance_time, status)
+                VALUES (%s, %s, %s, %s)
+            """
+            new_id = cls.execute_query(query_insert, (person_id, attendance_date, current_time, status_clean), commit=True, last_id=True)
+            return {"success": True, "action": "created", "id": new_id, "status": status_clean}
+
+    @classmethod
+    def get_department_wise_attendance(cls, attendance_date=None):
+        """
+        Returns complete department-wise attendance breakdown for a given date:
+        Totals, Present, Absent, and student rosters with individual status.
+        """
+        if not attendance_date:
+            attendance_date = date.today().isoformat()
+
+        query = """
+            SELECT 
+                p.id AS person_id,
+                p.person_code,
+                p.name,
+                p.email,
+                COALESCE(NULLIF(p.department, ''), 'General') AS department,
+                p.qr_code_path,
+                a.id AS attendance_id,
+                a.attendance_date,
+                a.attendance_time,
+                COALESCE(a.status, 'UNMARKED') AS status
+            FROM persons p
+            LEFT JOIN attendance a 
+                ON p.id = a.person_id AND a.attendance_date = %s
+            ORDER BY department ASC, p.name ASC
+        """
+        rows = cls.execute_query(query, (attendance_date,), fetch_all=True) or []
+
+        dept_summary = {}
+        for r in rows:
+            dept = r["department"]
+            if dept not in dept_summary:
+                dept_summary[dept] = {
+                    "department_name": dept,
+                    "total_students": 0,
+                    "present_count": 0,
+                    "absent_count": 0,
+                    "attendance_rate": 0.0,
+                    "present_students": [],
+                    "absent_students": []
+                }
+
+            dept_summary[dept]["total_students"] += 1
+            student_info = {
+                "id": r["person_id"],
+                "person_code": r["person_code"],
+                "name": r["name"],
+                "email": r.get("email") or "",
+                "department": dept,
+                "qr_code_path": r.get("qr_code_path") or "",
+                "attendance_id": r["attendance_id"],
+                "date": attendance_date,
+                "time": str(r["attendance_time"]) if r.get("attendance_time") else "",
+                "status": r["status"]
+            }
+
+            if r["status"] == "PRESENT":
+                dept_summary[dept]["present_count"] += 1
+                dept_summary[dept]["present_students"].append(student_info)
+            else:
+                dept_summary[dept]["absent_count"] += 1
+                if student_info["status"] == "UNMARKED":
+                    student_info["status"] = "ABSENT"
+                dept_summary[dept]["absent_students"].append(student_info)
+
+        # Compute attendance rate
+        for dept, data in dept_summary.items():
+            tot = data["total_students"]
+            pres = data["present_count"]
+            data["attendance_rate"] = round((pres / tot * 100), 1) if tot > 0 else 0.0
+
+        return dept_summary
+
+    @classmethod
+    def get_unmarked_or_absent_students_for_date(cls, attendance_date=None):
+        """
+        Returns all registered students who have not marked PRESENT for a specific date.
+        Used for cutoff absentee notifications.
+        """
+        if not attendance_date:
+            attendance_date = date.today().isoformat()
+
+        query = """
+            SELECT 
+                p.id,
+                p.person_code,
+                p.name,
+                p.email,
+                COALESCE(NULLIF(p.department, ''), 'General') AS department,
+                a.id AS attendance_id,
+                a.status
+            FROM persons p
+            LEFT JOIN attendance a 
+                ON p.id = a.person_id AND a.attendance_date = %s
+            WHERE a.status IS NULL OR a.status != 'PRESENT'
+            ORDER BY department ASC, p.name ASC
+        """
+        return cls.execute_query(query, (attendance_date,), fetch_all=True) or []
 
     @classmethod
     def get_attendance_logs(cls, date_filter=None, search=None):

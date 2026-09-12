@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: attendance_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: attendance_system
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database:/docker-entrypoint-initdb.d
+
+  web:
+    build: .
+    container_name: attendance_web
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=root
+      - DB_NAME=attendance_system
+      - ATTENDANCE_CUTOFF_TIME=10:30
+      - SMTP_SERVER=smtp.gmail.com
+      - SMTP_PORT=587
+      - SMTP_EMAIL=Sakthin3304@gmail.com
+      - SMTP_PASSWORD=fkzjmcntfdfukquh
+      - SMTP_USE_TLS=True
+    depends_on:
+      - db
+    volumes:
+      - ./TrainingImage:/app/TrainingImage
+      - ./TrainingImageLabel:/app/TrainingImageLabel
+      - ./static/qr:/app/static/qr
+
+volumes:
+  mysql_data:

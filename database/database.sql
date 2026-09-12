@@ -7,11 +7,29 @@ COLLATE utf8mb4_unicode_ci;
 
 USE attendance_system;
 
--- 1. Persons / Students Table
+-- 1. Departments Table
+CREATE TABLE IF NOT EXISTS departments (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    name VARCHAR(100) NOT NULL UNIQUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB;
+
+-- Seed Standard Departments
+INSERT IGNORE INTO departments (name) VALUES 
+('Computer Science'),
+('Information Technology'),
+('AI & Data Science'),
+('Electronics & Communication'),
+('Mechanical Engineering'),
+('Electrical & Electronics'),
+('Civil Engineering');
+
+-- 2. Persons / Students Table
 CREATE TABLE IF NOT EXISTS persons (
     id INT AUTO_INCREMENT PRIMARY KEY,
     person_code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
+    email VARCHAR(150),
     department VARCHAR(100),
     qr_token VARCHAR(255) UNIQUE,
     qr_code_path VARCHAR(255),
