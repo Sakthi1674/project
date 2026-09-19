@@ -9,12 +9,6 @@
         <p>Select any department to view enrolled students, their unique attendance QR codes, and credentials.</p>
     </div>
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <a href="{{ url_for('register') }}" class="btn btn-primary">
-            <span>👤</span> + Add Student
-        </a>
-        <a href="{{ url_for('attendance_page') }}" class="btn btn-success">
-            <span>📷</span> Attendance Terminal
-        </a>
         <button class="btn btn-outline" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.4);" onclick="confirmClearAllData()">
             <span>🗑️</span> Clear All Data
         </button>
@@ -108,10 +102,6 @@
                                     {{ student.person_code }}
                                 </div>
                                 <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem;">
-                                    {{ dept_name }}
-                                    {% if student.email %}&bull; <span title="{{ student.email }}">📧 {{ student.email|truncate(18, True, '...') }}</span>{% endif %}
-                                </div>
-                            </div>
                                     {{ dept_name }}
                                 </div>
                             </div>
@@ -366,24 +356,104 @@
         }
     });
 
-    // Clear All Student Data action
-    async function confirmClearAllData() {
-        if (!confirm("⚠️ CAUTION: Are you sure you want to permanently remove ALL students, attendance logs, face images, and trained models? This action cannot be undone.")) {
+    // Clear All Student Data action (Password Protected)
+    function confirmClearAllData() {
+        const modal = document.getElementById('clear-data-modal');
+        const passInput = document.getElementById('clear-admin-password');
+        const errEl = document.getElementById('clear-password-error');
+        if (passInput) passInput.value = '';
+        if (errEl) {
+            errEl.style.display = 'none';
+            errEl.innerText = '';
+        }
+        if (modal) modal.style.display = 'flex';
+        setTimeout(() => passInput && passInput.focus(), 100);
+    }
+
+    function closeClearDataModal() {
+        const modal = document.getElementById('clear-data-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    async function executeClearAllData() {
+        const passInput = document.getElementById('clear-admin-password');
+        const errEl = document.getElementById('clear-password-error');
+        const btn = document.getElementById('btn-do-clear-all');
+        const password = passInput ? passInput.value.trim() : '';
+
+        if (!password) {
+            if (errEl) {
+                errEl.innerText = 'Please enter the administrator password.';
+                errEl.style.display = 'block';
+            }
+            if (passInput) passInput.focus();
             return;
         }
 
+        btn.disabled = true;
+        btn.innerHTML = `<span class="spinner"></span> Purging...`;
+
         try {
-            const res = await fetch('/clear-all-data', { method: 'POST' });
+            const res = await fetch('/clear-all-data', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ password: password })
+            });
             const data = await res.json();
-            if (data.success) {
+            if (res.ok && data.success) {
                 showToast(data.message, 'success', 5000);
+                closeClearDataModal();
                 setTimeout(() => window.location.reload(), 1000);
             } else {
-                showToast(`Error: ${data.message}`, 'danger');
+                if (errEl) {
+                    errEl.innerText = data.message || 'Incorrect password.';
+                    errEl.style.display = 'block';
+                }
+                showToast(data.message || 'Failed to clear data.', 'danger');
             }
         } catch (err) {
             showToast('Server connection error while clearing student data.', 'danger');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = `<span>🗑️</span> Purge All Data`;
         }
     }
 </script>
+
+<!-- Clear All Data Password Verification Modal -->
+<div id="clear-data-modal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
+    <div class="glass-card" style="max-width: 440px; width: 90%; text-align: center; padding: 2.25rem 2rem; background: #ffffff;">
+        <div style="width: 60px; height: 60px; border-radius: 50%; background: #fee2e2; border: 2px solid var(--danger); color: var(--danger); display: flex; align-items: center; justify-content: center; font-size: 2rem; margin: 0 auto 1.25rem;">
+            ⚠️
+        </div>
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">
+            Clear All Student Data?
+        </h3>
+        <p style="color: var(--text-muted); font-size: 0.88rem; margin-bottom: 1.5rem; line-height: 1.5;">
+            This will <strong>permanently purge</strong> all enrolled students, attendance logs, QR codes, and face training models. This action <strong>cannot be undone</strong>.
+        </p>
+
+        <div style="text-align: left; margin-bottom: 1.5rem;">
+            <label for="clear-admin-password" style="display: block; font-size: 0.82rem; font-weight: 700; color: var(--text-main); margin-bottom: 0.4rem;">
+                Administrator Password Required:
+            </label>
+            <input 
+                type="password" 
+                id="clear-admin-password" 
+                class="form-control" 
+                placeholder="Enter admin password to confirm"
+                style="padding: 0.65rem 1rem; font-size: 0.9rem;"
+                onkeydown="if(event.key==='Enter') executeClearAllData()"
+            >
+            <div id="clear-password-error" style="color: var(--danger); font-size: 0.78rem; font-weight: 600; margin-top: 0.35rem; display: none;"></div>
+        </div>
+
+        <div style="display: flex; gap: 0.75rem;">
+            <button onclick="closeClearDataModal()" class="btn btn-outline" style="flex: 1;">Cancel</button>
+            <button id="btn-do-clear-all" onclick="executeClearAllData()" class="btn btn-primary" style="background: var(--danger); border-color: var(--danger); flex: 1.3;">
+                <span>🗑️</span> Purge All Data
+            </button>
+        </div>
+    </div>
+</div>
 {% endblock %}

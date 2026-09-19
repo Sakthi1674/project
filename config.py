@@ -47,8 +47,12 @@ class Config:
     CONFIDENCE_THRESHOLD = 75.0
     REQUIRED_SAMPLES = 50
     
+    # Administrator Credentials
+    ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
+    ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
+
     # Attendance Cutoff Time (HH:MM format, e.g. '10:30')
-    # After this time, unmarked students can be marked absent and notified by email
+    # After this time, unmarked students are marked ABSENT
     ATTENDANCE_CUTOFF_TIME = os.environ.get("ATTENDANCE_CUTOFF_TIME", "10:30")
 
     @classmethod
@@ -57,13 +61,6 @@ class Config:
         load_env_file()
         cutoff = os.environ.get("ATTENDANCE_CUTOFF_TIME", cls.ATTENDANCE_CUTOFF_TIME)
         return cutoff.strip() if cutoff else "10:30"
-    
-    # Email / SMTP Configuration
-    SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com")
-    SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
-    SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "")
-    SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "")
-    SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "True").lower() in ("true", "1", "yes")
 
     @classmethod
     def get_smtp_config(cls):

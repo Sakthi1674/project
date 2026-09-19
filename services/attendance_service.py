@@ -1,4 +1,5 @@
-from datetime import datetime, date
+from datetime import datetime, date, time
+from config import Config
 from services.database_service import DatabaseService
 from services.face_service import FaceService
 from services.qr_service import QRService
@@ -165,3 +166,68 @@ class AttendanceService:
                 "status": r["status"]
             })
         return formatted
+
+    @classmethod
+    def parse_cutoff_time(cls, cutoff_str):
+        """Parses HH:MM string to datetime.time object."""
+        try:
+            parts = cutoff_str.strip().split(":")
+            return time(int(parts[0]), int(parts[1]))
+        except Exception:
+            return time(10, 30)
+
+    @classmethod
+    def is_past_cutoff(cls, cutoff_str=None):
+        """Checks if current system time is past the specified cutoff time."""
+        cutoff_str = cutoff_str or Config.ATTENDANCE_CUTOFF_TIME
+        cutoff = cls.parse_cutoff_time(cutoff_str)
+        now_time = datetime.now().time()
+        return now_time >= cutoff
+
+    @classmethod
+    def process_cutoff_absentees(cls, cutoff_time_str=None, target_date=None, force=False):
+        """
+        Evaluates attendance cutoff:
+        1. Verifies current time is past cutoff (unless force=True).
+        2. Identifies all students with no 'PRESENT' record for the date.
+        3. Marks their status as 'ABSENT' in attendance table.
+        (Email notification service removed as requested).
+        """
+        cutoff_time_str = cutoff_time_str or Config.ATTENDANCE_CUTOFF_TIME
+        if not target_date:
+            target_date = date.today().isoformat()
+
+        if not force and target_date == date.today().isoformat():
+            if not cls.is_past_cutoff(cutoff_time_str):
+                current_hhmm = datetime.now().strftime("%H:%M")
+                return {
+                    "success": False,
+                    "is_before_cutoff": True,
+                    "message": f"Current time ({current_hhmm}) is before cutoff time ({cutoff_time_str}). Absentee check runs after cutoff.",
+                    "cutoff_time": cutoff_time_str,
+                    "current_time": current_hhmm
+                }
+
+        unmarked_students = DatabaseService.get_unmarked_or_absent_students_for_date(target_date)
+        if not unmarked_students:
+            return {
+                "success": True,
+                "message": "All students have already marked attendance for this date.",
+                "total_absentees": 0,
+                "cutoff_time": cutoff_time_str,
+                "date": target_date
+            }
+
+        marked_count = 0
+        for student in unmarked_students:
+            DatabaseService.update_attendance_status(student["id"], target_date, status="ABSENT")
+            marked_count += 1
+
+        logger.info(f"Processed absentees for {target_date}: {marked_count} marked ABSENT.")
+        return {
+            "success": True,
+            "message": f"Successfully processed and marked {marked_count} unmarked students as ABSENT.",
+            "total_absentees": marked_count,
+            "cutoff_time": cutoff_time_str,
+            "date": target_date
+        }

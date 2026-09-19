@@ -9,15 +9,12 @@
         <p>Comprehensive department-level metrics, real-time Present &amp; Absent student rosters, and manual status overrides.</p>
     </div>
     <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <button class="btn btn-outline" onclick="triggerAbsenteeCheck(false)" title="Mark unmarked students as Absent and dispatch email alerts">
-            <span>⚡</span> Cutoff Absentee Check &amp; Email
+        <button class="btn btn-outline" onclick="triggerAbsenteeCheck(false)" title="Mark unmarked students as Absent">
+            <span>⚡</span> Cutoff Absentee Check
         </button>
         <button class="btn btn-outline" onclick="exportTableToCSV('attendance_report.csv')">
             <span>📥</span> Export CSV
         </button>
-        <a href="{{ url_for('attendance_page') }}" class="btn btn-primary">
-            <span>📷</span> Attendance Terminal
-        </a>
     </div>
 </div>
 
@@ -110,7 +107,7 @@
             </div>
             <div style="color: #475569; font-size: 0.82rem;">
                 {% if is_past_cutoff %}
-                    <span style="color: #b91c1c; font-weight: 700;">Cutoff Passed:</span> Unmarked students are subject to absentee recording and notification emails.
+                    <span style="color: #b91c1c; font-weight: 700;">Cutoff Passed:</span> Unmarked students are recorded as ABSENT.
                 {% else %}
                     <span style="color: #15803d; font-weight: 700;">Active Window:</span> Students have until {{ cutoff_time }} to record presence.
                 {% endif %}
@@ -119,7 +116,7 @@
     </div>
     <div>
         <button class="btn btn-outline btn-sm" onclick="triggerAbsenteeCheck(true)" style="background: #ffffff; border-color: #93c5fd; color: #1d4ed8; font-weight: 700;">
-            <span>📨</span> Force Absentee Processing &amp; Send Emails
+            <span>📋</span> Force Absentee Processing
         </button>
     </div>
 </div>
@@ -264,7 +261,6 @@
                                 <thead>
                                     <tr style="border-bottom: 1px solid #fecaca; text-align: left; color: #991b1b; font-size: 0.72rem; text-transform: uppercase;">
                                         <th style="padding: 0.5rem 0.25rem;">Student</th>
-                                        <th style="padding: 0.5rem 0.25rem;">Email Notice</th>
                                         <th style="padding: 0.5rem 0.25rem; text-align: right;">Status</th>
                                     </tr>
                                 </thead>
@@ -275,13 +271,6 @@
                                                 <td style="padding: 0.65rem 0.25rem;">
                                                     <div style="font-weight: 700; color: #0f172a;">{{ s.name }}</div>
                                                     <div style="font-family: monospace; font-size: 0.78rem; color: #b91c1c;">{{ s.person_code }}</div>
-                                                </td>
-                                                <td style="padding: 0.65rem 0.25rem; color: #64748b; font-size: 0.78rem;">
-                                                    {% if s.email %}
-                                                        <span title="{{ s.email }}">📧 {{ s.email|truncate(20, True, '...') }}</span>
-                                                    {% else %}
-                                                        <span style="color: #94a3b8; font-style: italic;">No email</span>
-                                                    {% endif %}
                                                 </td>
                                                 <td style="padding: 0.65rem 0.25rem; text-align: right;">
                                                     <span class="badge badge-danger" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" title="Unmarked presence at cutoff">
@@ -481,12 +470,12 @@
     // Trigger Cutoff Absentees check and send notifications
     async function triggerAbsenteeCheck(force = false) {
         const confirmMsg = force 
-            ? "Run absentee check NOW and send notification emails to all unmarked students?" 
-            : "Run daily cutoff absentee check? If past cutoff, unmarked students will be marked ABSENT and notified by email.";
+            ? "Run absentee check NOW and mark all unmarked students as ABSENT?" 
+            : "Run daily cutoff absentee check? If past cutoff, unmarked students will be marked ABSENT.";
 
         if (!confirm(confirmMsg)) return;
 
-        showToast('Processing absentees and preparing email dispatches...', 'info', 4000);
+        showToast('Processing absentees and recording status...', 'info', 3000);
 
         try {
             const currentDate = document.getElementById('date-filter').value || new Date().toISOString().split('T')[0];

@@ -1,12 +1,12 @@
 import os
+from functools import wraps
 from datetime import datetime, date
-from flask import Flask, render_template, request, jsonify, redirect, url_for, flash
+from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
 from config import Config
 from services.database_service import DatabaseService
 from services.face_service import FaceService
 from services.qr_service import QRService
 from services.attendance_service import AttendanceService
-from services.email_service import EmailService
 import logging
 
 # Configure Logging
@@ -34,6 +34,16 @@ with app.app_context():
     except Exception as e:
         logger.error(f"Startup database initialization error: {e}")
 
+def login_required(f):
+    """Decorator to require administrator login for protected routes."""
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get("logged_in"):
+            flash("Please sign in to access the administrator portal.", "warning")
+            return redirect(url_for("login", next=request.url))
+        return f(*args, **kwargs)
+    return decorated_function
+
 # Context processor to inject common metrics/variables into templates
 @app.context_processor
 def inject_globals():
@@ -43,21 +53,23 @@ def inject_globals():
         metrics = {"total_persons": 0, "present_today": 0, "total_departments": 0}
     
     cutoff_val = Config.get_cutoff_time()
-    is_past = EmailService.is_past_cutoff(cutoff_val)
+    is_past = AttendanceService.is_past_cutoff(cutoff_val)
     return {
         "metrics": metrics,
         "cutoff_time": cutoff_val,
         "is_past_cutoff": is_past,
-        "current_date_today": date.today().isoformat()
+        "current_date_today": date.today().isoformat(),
+        "logged_in": session.get("logged_in", False),
+        "current_username": session.get("username", "Admin")
     }
 
 # -------------------------------------------------------------------
-# 1. Welcome Homepage & Admin Dashboard
+# 1. Welcome Homepage & Authentication
 # -------------------------------------------------------------------
 @app.route("/")
 @app.route("/home")
 def home():
-    """Welcome Homepage with system details, architecture overview, and redirect to dashboard."""
+    """Welcome Homepage with system details, architecture overview, and login action."""
     try:
         metrics = DatabaseService.get_dashboard_metrics()
         departments = DatabaseService.get_all_departments()
@@ -72,90 +84,134 @@ def home():
         logger.error(f"Home page load error: {e}")
         return render_template("home.html", metrics={}, departments=[], cutoff_time=Config.get_cutoff_time())
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """Administrator Login page with session authentication."""
+    if session.get("logged_in"):
+        return redirect(url_for("dashboard"))
+
+    next_page = request.args.get("next") or url_for("dashboard")
+
+    if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "").strip()
+
+        if username == Config.ADMIN_USERNAME and password == Config.ADMIN_PASSWORD:
+            session["logged_in"] = True
+            session["username"] = username
+            flash(f"Welcome back, {username}! Signed in successfully.", "success")
+            return redirect(next_page)
+        else:
+            flash("Invalid administrator credentials. Please check your username and password.", "danger")
+
+    return render_template("login.html", next_page=next_page)
+
+@app.route("/logout")
+def logout():
+    """Signs out of the administrator portal."""
+    session.pop("logged_in", None)
+    session.pop("username", None)
+    flash("You have been signed out successfully.", "info")
+    return redirect(url_for("home"))
+
 @app.route("/dashboard", endpoint="dashboard")
 @app.route("/index", endpoint="index")
+@login_required
 def dashboard():
-    """Admin Dashboard showing enrolled students organized department-wise."""
+    """Admin Dashboard showing today's attendance performance, live activity, and biometric status."""
     try:
-        metrics = DatabaseService.get_dashboard_metrics()
-        grouped = DatabaseService.get_persons_grouped_by_department()
-        departments = DatabaseService.get_all_departments()
         model_exists = os.path.exists(Config.TRAINER_FILE)
+        students = DatabaseService.get_all_students_with_today_status()
+        recent_attendance = DatabaseService.get_recent_today_attendance(limit=8)
 
-        # Populate sample counts and ensure QR paths for each student
-        for dept_name, student_list in grouped.items():
-            for s in student_list:
-                s["sample_count"] = FaceService.get_captured_count(s["id"], s["person_code"])
-                if not s.get("qr_code_path"):
-                    qr_info = QRService.generate_student_qr(s["id"], s["person_code"], s["name"], s.get("department"))
-                    s["qr_code_path"] = qr_info["qr_code_path"]
+        total_students = len(students)
+        present_today = 0
+        absent_today = 0
+        face_enrolled_count = 0
+
+        # Enhance each student with sample counts and QR paths
+        for s in students:
+            s["sample_count"] = FaceService.get_captured_count(s["id"], s["person_code"])
+            if s["sample_count"] >= 50:
+                face_enrolled_count += 1
+
+            if s["today_status"] == "PRESENT":
+                present_today += 1
+            else:
+                absent_today += 1
+
+            if not s.get("qr_code_path"):
+                qr_info = QRService.generate_student_qr(s["id"], s["person_code"], s["name"], s.get("department"))
+                s["qr_code_path"] = qr_info["qr_code_path"]
+
+        attendance_rate = round((present_today / total_students * 100), 1) if total_students > 0 else 0.0
+        face_coverage_rate = round((face_enrolled_count / total_students * 100), 1) if total_students > 0 else 0.0
+
+        metrics = {
+            "total_students": total_students,
+            "total_persons": total_students,
+            "present_today": present_today,
+            "absent_today": absent_today,
+            "attendance_rate": attendance_rate,
+            "face_enrolled_count": face_enrolled_count,
+            "face_pending_count": total_students - face_enrolled_count,
+            "face_coverage_rate": face_coverage_rate
+        }
 
         return render_template(
             "index.html",
             metrics=metrics,
-            grouped_students=grouped,
-            departments=departments,
+            students=students,
+            recent_attendance=recent_attendance,
             model_exists=model_exists
         )
     except Exception as e:
         logger.error(f"Dashboard load error: {e}")
         flash(f"Error loading dashboard: {str(e)}", "danger")
-        return render_template("index.html", metrics={}, grouped_students={}, departments=[], model_exists=False)
+        return render_template(
+            "index.html",
+            metrics={"total_students": 0, "total_persons": 0, "present_today": 0, "absent_today": 0, "attendance_rate": 0, "face_enrolled_count": 0, "face_pending_count": 0, "face_coverage_rate": 0},
+            students=[],
+            recent_attendance=[],
+            model_exists=False
+        )
 
 # Backward-compatibility alias for url_for('index')
 index = dashboard
 
 # -------------------------------------------------------------------
-# 2. Student Registration Flow
+# 2. Student Registration Flow (Email Service Removed)
 # -------------------------------------------------------------------
 @app.route("/register", methods=["GET", "POST"])
+@login_required
 def register():
-    """Registers a student with email and department, generates unique student QR, and moves to face capture."""
+    """Registers a student with department, generates unique student QR, and moves to face capture."""
     departments_list = DatabaseService.get_departments_list()
 
     if request.method == "POST":
         person_code = request.form.get("person_id", "").strip()
         name = request.form.get("name", "").strip()
-        email = request.form.get("email", "").strip()
         department = request.form.get("department", "").strip() or "General"
 
         # Validation
         if not person_code or not name:
             flash("Student ID / Roll No. and Full Name are required.", "danger")
-            return render_template("register.html", person_code=person_code, name=name, email=email, department=department, departments_list=departments_list)
+            return render_template("register.html", person_code=person_code, name=name, department=department, departments_list=departments_list)
 
-        # Check cross-department uniqueness for person_code and email
-        dup_check = DatabaseService.check_duplicate_student(person_code, email=email)
+        # Check cross-department uniqueness for person_code
+        dup_check = DatabaseService.check_duplicate_student(person_code)
         if dup_check.get("is_duplicate"):
             flash(dup_check["message"], "danger")
-            return render_template("register.html", person_code=person_code, name=name, email=email, department=department, departments_list=departments_list)
+            return render_template("register.html", person_code=person_code, name=name, department=department, departments_list=departments_list)
 
         try:
-            # 1. Save student to MySQL with email
-            new_id = DatabaseService.add_person(person_code, name, department, email=email)
+            # 1. Save student to MySQL (without email)
+            new_id = DatabaseService.add_person(person_code, name, department, email=None)
             
             # 2. Automatically generate unique student attendance QR code in department folder
-            qr_res = QRService.generate_student_qr(new_id, person_code, name, department)
-            qr_path = qr_res.get("qr_code_path")
+            QRService.generate_student_qr(new_id, person_code, name, department)
 
-            # 3. Automatically email student registration details and QR credential
-            if email:
-                email_res = EmailService.send_student_qr_email(
-                    student_email=email,
-                    student_name=name,
-                    student_code=person_code,
-                    department=department,
-                    qr_code_rel_path=qr_path
-                )
-                if email_res.get("success"):
-                    if email_res.get("simulated"):
-                        flash(f"Student '{name}' registered successfully! QR credential generated & logged (SMTP not configured). Proceed to face capture.", "success")
-                    else:
-                        flash(f"Student '{name}' registered successfully! QR credential generated and emailed to {email}. Proceed to face capture.", "success")
-                else:
-                    flash(f"Student '{name}' registered and QR credential generated. (Note: Email delivery failed: {email_res.get('message')}).", "warning")
-            else:
-                flash(f"Student '{name}' registered successfully and unique QR credential created! Now collect face samples.", "success")
+            flash(f"Student '{name}' registered successfully and unique QR credential created! Now collect face samples.", "success")
             
             # Redirect to Student QR confirmation card before face capture
             return redirect(url_for("student_qr_page", person_id=new_id))
@@ -163,11 +219,12 @@ def register():
         except Exception as e:
             logger.error(f"Registration error: {e}")
             flash(f"Failed to register student: {str(e)}", "danger")
-            return render_template("register.html", person_code=person_code, name=name, email=email, department=department, departments_list=departments_list)
+            return render_template("register.html", person_code=person_code, name=name, department=department, departments_list=departments_list)
 
     return render_template("register.html", departments_list=departments_list)
 
 @app.route("/api/department/add", methods=["POST"])
+@login_required
 def api_add_department():
     """Dynamically adds a new department and returns the updated list for dropdowns."""
     data = request.get_json(silent=True) or {}
@@ -185,6 +242,7 @@ def api_add_department():
     })
 
 @app.route("/student-qr/<int:person_id>", methods=["GET"])
+@login_required
 def student_qr_page(person_id):
     """Displays newly registered student's QR credential with button to face capture."""
     student = DatabaseService.get_person_by_id(person_id)
@@ -198,36 +256,11 @@ def student_qr_page(person_id):
 
     return render_template("student_qr.html", person=student)
 
-@app.route("/api/student/resend-qr-email/<int:person_id>", methods=["POST"])
-def api_resend_qr_email(person_id):
-    """Resends the student's registration details and QR credential to their registered email."""
-    student = DatabaseService.get_person_by_id(person_id)
-    if not student:
-        return jsonify({"success": False, "message": "Student not found."}), 404
-    
-    email = student.get("email")
-    if not email or not email.strip():
-        return jsonify({"success": False, "message": "No email address registered for this student."}), 400
-
-    qr_path = student.get("qr_code_path")
-    if not qr_path:
-        qr_info = QRService.generate_student_qr(student["id"], student["person_code"], student["name"], student.get("department"))
-        qr_path = qr_info.get("qr_code_path")
-
-    res = EmailService.send_student_qr_email(
-        student_email=email,
-        student_name=student["name"],
-        student_code=student["person_code"],
-        department=student.get("department", "General"),
-        qr_code_rel_path=qr_path
-    )
-    status_code = 200 if res.get("success") else 500
-    return jsonify(res), status_code
-
 # -------------------------------------------------------------------
 # Department Directory & Dedicated Department Pages
 # -------------------------------------------------------------------
 @app.route("/department/<path:dept_name>", methods=["GET"])
+@login_required
 def department_detail_page(dept_name):
     """Dedicated separate page for a single department: displays enrolled students, stats, and QR cards."""
     dept_name = dept_name.strip()
@@ -256,6 +289,7 @@ def department_detail_page(dept_name):
     )
 
 @app.route("/departments", methods=["GET"])
+@login_required
 def departments_page():
     """Departments view: tap department to view its students & QR credentials."""
     try:
@@ -282,6 +316,7 @@ def departments_page():
         return render_template("departments.html", grouped_students={}, departments=[], metrics={})
 
 @app.route("/api/department/<dept_name>", methods=["GET"])
+@login_required
 def api_department_students(dept_name):
     """API endpoint returning students for a specific department."""
     students = DatabaseService.get_students_by_department(dept_name)
@@ -290,6 +325,7 @@ def api_department_students(dept_name):
     return jsonify({"success": True, "department": dept_name, "count": len(students), "students": students})
 
 @app.route("/delete-student/<int:person_id>", methods=["POST"])
+@login_required
 def delete_student(person_id):
     """Deletes a student, removes their QR code and face training samples."""
     try:
@@ -332,8 +368,18 @@ def delete_student(person_id):
         return jsonify({"success": False, "message": f"Failed to delete student: {str(e)}"}), 500
 
 @app.route("/clear-all-data", methods=["POST"])
+@login_required
 def clear_all_data_endpoint():
-    """Purges all student records, attendance logs, face datasets, and QR codes."""
+    """Purges all student records, attendance logs, face datasets, and QR codes with admin password verification."""
+    data = request.get_json(silent=True) or {}
+    password = data.get("password", "").strip()
+
+    if not password:
+        return jsonify({"success": False, "message": "Administrator password is required to clear all data."}), 400
+
+    if password != Config.ADMIN_PASSWORD:
+        return jsonify({"success": False, "message": "Incorrect administrator password. Deletion cancelled."}), 403
+
     try:
         # 1. Purge database
         DatabaseService.clear_all_student_data()
@@ -380,6 +426,7 @@ def clear_all_data_endpoint():
 # 3. Face Capture Module
 # -------------------------------------------------------------------
 @app.route("/capture-face/<int:person_id>", methods=["GET"])
+@login_required
 def capture_face_page(person_id):
     """Face Capture Page for a registered person."""
     person = DatabaseService.get_person_by_id(person_id)
@@ -396,6 +443,7 @@ def capture_face_page(person_id):
     )
 
 @app.route("/capture-face", methods=["POST"])
+@login_required
 def capture_face():
     """Receives camera snapshot frames from browser to save face sample."""
     data = request.get_json(silent=True) or {}
@@ -414,6 +462,7 @@ def capture_face():
     return jsonify(result), status_code
 
 @app.route("/capture-face-opencv", methods=["POST"])
+@login_required
 def capture_face_opencv():
     """Triggers high-speed native system camera capture for 50 samples with auto-training."""
     data = request.get_json(silent=True) or {}
@@ -430,6 +479,7 @@ def capture_face_opencv():
     return jsonify(result)
 
 @app.route("/api/captured-count/<int:person_id>", methods=["GET"])
+@login_required
 def api_captured_count(person_id):
     """Returns live sample count and capture progress for frontend polling."""
     person = DatabaseService.get_person_by_id(person_id)
@@ -452,6 +502,7 @@ def api_captured_count(person_id):
 # 4. Face Model Training Module
 # -------------------------------------------------------------------
 @app.route("/train-model", methods=["POST"])
+@login_required
 def train_model():
     """Trains OpenCV LBPH Face Recognizer and writes to Trainer.yml."""
     result = FaceService.train_lbph_model()
@@ -461,6 +512,7 @@ def train_model():
 # 5. Student QR Validation & Biometric Cross-Validation Flow
 # -------------------------------------------------------------------
 @app.route("/attendance", methods=["GET"])
+@login_required
 def attendance_page():
     """Attendance Terminal: Scan Student QR -> Validate Face -> Mark Attendance."""
     try:
@@ -560,6 +612,7 @@ def mark_attendance():
 # 6. Attendance Report & API Module
 # -------------------------------------------------------------------
 @app.route("/report", methods=["GET"])
+@login_required
 def report():
     """Attendance Report View with Department-Wise breakdown, present/absent rosters, and status editing."""
     date_filter = request.args.get("date", "").strip() or date.today().isoformat()
@@ -595,7 +648,7 @@ def report():
     # 3. Flat attendance logs for table
     records = AttendanceService.get_report(date_filter=date_filter, search=search_query)
 
-    is_past_cutoff = EmailService.is_past_cutoff(Config.ATTENDANCE_CUTOFF_TIME)
+    is_past_cutoff = AttendanceService.is_past_cutoff(Config.ATTENDANCE_CUTOFF_TIME)
 
     return render_template(
         "report.html",
@@ -613,6 +666,7 @@ def report():
     )
 
 @app.route("/api/attendance/update-status", methods=["POST"])
+@login_required
 def api_update_attendance_status():
     """
     API endpoint to edit attendance status for a student.
@@ -625,16 +679,17 @@ def api_update_attendance_status():
     }), 403
 
 @app.route("/api/process-absentees", methods=["POST"])
+@login_required
 def api_process_absentees():
     """
-    API endpoint to check attendance cutoff time, mark unmarked students as ABSENT,
-    and dispatch notification emails.
+    API endpoint to check attendance cutoff time and mark unmarked students as ABSENT.
+    (Email dispatches removed as requested).
     """
     data = request.get_json(silent=True) or {}
     target_date = data.get("date") or date.today().isoformat()
     force = bool(data.get("force", False))
 
-    result = EmailService.process_absentees_and_notify(
+    result = AttendanceService.process_cutoff_absentees(
         cutoff_time_str=Config.ATTENDANCE_CUTOFF_TIME,
         target_date=target_date,
         force=force
@@ -643,6 +698,7 @@ def api_process_absentees():
     return jsonify(result), status_code
 
 @app.route("/api/attendance", methods=["GET"])
+@login_required
 def api_attendance():
     """JSON API for attendance logs."""
     date_filter = request.args.get("date", "").strip() or None

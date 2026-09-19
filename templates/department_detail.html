@@ -16,9 +16,6 @@
         <a href="{{ url_for('departments_page') }}" class="btn btn-outline">
             ← All Departments
         </a>
-        <a href="{{ url_for('index') }}" class="btn btn-outline">
-            Dashboard
-        </a>
         <a href="{{ url_for('register') }}?department={{ dept_name|urlencode }}" class="btn btn-primary">
             <span>👤</span> + Add Student
         </a>
@@ -98,11 +95,6 @@
                                 <div style="font-family: monospace; font-size: 0.85rem; color: var(--primary); font-weight: 700;">
                                     Roll No: {{ student.person_code }}
                                 </div>
-                                {% if student.email %}
-                                    <div style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.25rem;">
-                                        📧 {{ student.email }}
-                                    </div>
-                                {% endif %}
                             </div>
 
                             <!-- QR Thumbnail -->

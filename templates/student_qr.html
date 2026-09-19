@@ -12,9 +12,6 @@
         <a href="{{ url_for('department_detail_page', dept_name=person.department or 'General') }}" class="btn btn-outline">
             <span>🏢</span> {{ person.department or 'Department' }}
         </a>
-        <a href="{{ url_for('index') }}" class="btn btn-outline">
-            <span>🏠</span> Dashboard
-        </a>
     </div>
 </div>
 
@@ -96,18 +93,7 @@
                     📁 Department Folder: <code style="color: var(--primary); font-weight: 600;">{{ person.qr_code_path }}</code>
                 </div>
 
-                <!-- Email Dispatch Status & Resend Option -->
-                {% if person.email %}
-                <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.5rem; font-size: 0.85rem; color: #15803d; display: flex; align-items: center; justify-content: space-between; gap: 0.6rem; flex-wrap: wrap; text-align: left;">
-                    <div>
-                        <div style="font-weight: 700;">✉️ QR Credential Dispatched</div>
-                        <div style="font-size: 0.78rem; color: #166534;">Delivered to: <strong>{{ person.email }}</strong></div>
-                    </div>
-                    <button id="resend-email-btn" onclick="resendQrEmail({{ person.id }})" class="btn btn-outline btn-sm" style="font-size: 0.75rem; padding: 0.3rem 0.75rem; color: #15803d; border-color: #86efac; background: #ffffff;">
-                        Resend Email
-                    </button>
-                </div>
-                {% endif %}
+
 
                 <!-- Action Buttons (Download & Print) -->
                 <div style="display: flex; gap: 0.75rem;">
@@ -190,27 +176,4 @@
     </div>
 </div>
 
-<script>
-async function resendQrEmail(personId) {
-    const btn = document.getElementById('resend-email-btn');
-    if (btn) {
-        btn.disabled = true;
-        btn.innerText = 'Sending...';
-    }
-    try {
-        const res = await fetch(`/api/student/resend-qr-email/${personId}`, { method: 'POST' });
-        const data = await res.json();
-        if (data.success) {
-            showToast(data.message || 'QR credential email sent successfully!', 'success', 4000);
-            if (btn) btn.innerText = '✓ Sent';
-        } else {
-            showToast(data.message || 'Failed to send email.', 'danger', 5000);
-            if (btn) { btn.disabled = false; btn.innerText = 'Retry'; }
-        }
-    } catch (err) {
-        showToast('Network error while resending email.', 'danger', 4000);
-        if (btn) { btn.disabled = false; btn.innerText = 'Resend Email'; }
-    }
-}
-</script>
 {% endblock %}

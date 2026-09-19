@@ -12,9 +12,6 @@
         <a href="{{ url_for('department_detail_page', dept_name=person.department or 'General') }}" class="btn btn-outline">
             <span>🏢</span> {{ person.department or 'Department' }}
         </a>
-        <a href="{{ url_for('index') }}" class="btn btn-outline">
-            <span>🏠</span> Dashboard
-        </a>
     </div>
 </div>
 
@@ -83,8 +80,8 @@
             <span id="cam-status-badge" class="badge badge-warning">Camera Standby</span>
         </div>
 
-        <!-- Camera Container: Full-Width Expansive Container -->
-        <div class="camera-container" id="camera-box">
+        <!-- Camera Container: Native 4:3 Aspect Ratio (Zero Zoom) -->
+        <div class="camera-container" id="camera-box" style="aspect-ratio: 4 / 3; width: 100%; max-height: 480px; flex: 0 0 auto;">
             <!-- Floating Left HUD: Sample Counter -->
             <div class="camera-hud-badge" id="hud-counter-badge">
                 <span class="pulse-dot"></span>
@@ -97,7 +94,7 @@
                 <strong id="hud-pct" style="color: #34d399; font-size: 0.95rem;">0%</strong>
             </div>
 
-            <video id="capture-video" class="camera-video" autoplay playsinline muted></video>
+            <video id="capture-video" class="camera-video" autoplay playsinline webkit-playsinline muted style="width: 100%; height: 100%; object-fit: contain; background: #090d16; transform: none !important;"></video>
             
             <!-- Reticle Target Guide -->
             <div class="camera-overlay" id="camera-overlay-reticle">
@@ -134,10 +131,12 @@
             </button>
         </div>
 
-        <!-- Live Status Feedback Message Box -->
-        <div id="capture-status-box" style="display: none; padding: 0.9rem 1.1rem; border-radius: var(--radius-sm); margin-top: 1rem; font-size: 0.88rem; font-weight: 600;"></div>
+        <!-- Live Status Feedback Message Box (Stable layout to prevent jumping) -->
+        <div id="capture-status-box" style="display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem; font-size: 0.86rem; font-weight: 600; min-height: 46px; background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-muted);">
+            Camera ready. Align your face inside the green oval reticle to begin.
+        </div>
 
-        <!-- Live Captured Images Filmstrip Strip -->
+        <!-- Live Captured Images Filmstrip Strip (Fixed height to prevent reflows) -->
         <div style="margin-top: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                 <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
@@ -147,7 +146,7 @@
                     Showing latest snapshots
                 </div>
             </div>
-            <div class="capture-gallery" id="thumbs-gallery" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md); padding: 0.75rem; min-height: 80px; display: flex; gap: 0.5rem; overflow-x: auto;">
+            <div class="capture-gallery" id="thumbs-gallery" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md); padding: 0.5rem; height: 72px; min-height: 72px; max-height: 72px; display: flex; gap: 0.5rem; overflow-x: auto; overflow-y: hidden; contain: strict; flex: 0 0 auto;">
                 <!-- Live captured face crops will append here -->
             </div>
         </div>
@@ -171,9 +170,6 @@
             </div>
 
             <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                {% if person.email %}
-                <div style="margin-bottom: 0.4rem;">📧 <strong>Email:</strong> {{ person.email }}</div>
-                {% endif %}
                 <div style="margin-bottom: 0.4rem;">📁 <strong>QR Path:</strong> <code style="font-size: 0.78rem;">{{ person.qr_code_path }}</code></div>
                 <div>⏰ <strong>Attendance Cutoff:</strong> {{ cutoff_time }}</div>
             </div>
@@ -319,6 +315,13 @@
     }
 
     updateProgress(currentSamples);
+
+    // Auto-start camera when redirected to capture page if samples are still needed
+    document.addEventListener('DOMContentLoaded', () => {
+        if (currentSamples < requiredSamples) {
+            initCamera();
+        }
+    });
 
     // Camera Start & Stop
     async function initCamera() {

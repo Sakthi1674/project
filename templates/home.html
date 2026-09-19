@@ -110,9 +110,9 @@
                 </div>
             </div>
 
-            <!-- Exact "GET STARTED ->" Signature Button redirecting to Dashboard -->
-            <a href="{{ url_for('dashboard') }}" class="ref-btn-get-started" id="btn-home-get-started">
-                GET STARTED &rarr;
+            <!-- Login Button redirecting to Admin Login / Dashboard -->
+            <a href="{{ url_for('dashboard') if logged_in else url_for('login') }}" class="ref-btn-get-started" id="btn-home-get-started">
+                {% if logged_in %}OPEN DASHBOARD &rarr;{% else %}LOGIN &rarr;{% endif %}
             </a>
         </div>
 
@@ -161,19 +161,19 @@
 
         <!-- 5 Circular White Icons from Reference Graphic -->
         <div style="display: flex; align-items: center; gap: 0.85rem;">
-            <a href="{{ url_for('dashboard') }}" class="ref-circle-icon" title="Student Directory / Roster">
+            <a href="{{ url_for('dashboard') if logged_in else url_for('login') }}" class="ref-circle-icon" title="Administrator Portal">
                 👤
             </a>
-            <a href="{{ url_for('attendance_page') }}" class="ref-circle-icon" title="Biometric Security Terminal">
+            <a href="{{ url_for('attendance_page') if logged_in else url_for('login') }}" class="ref-circle-icon" title="Biometric Security Terminal">
                 🛡️
             </a>
-            <a href="{{ url_for('report') }}" class="ref-circle-icon" title="Daily Cutoff Schedule">
+            <a href="{{ url_for('report') if logged_in else url_for('login') }}" class="ref-circle-icon" title="Daily Cutoff Schedule">
                 ⏰
             </a>
-            <a href="{{ url_for('report') }}" class="ref-circle-icon" title="Attendance Analytics & Reports">
+            <a href="{{ url_for('report') if logged_in else url_for('login') }}" class="ref-circle-icon" title="Attendance Analytics & Reports">
                 📊
             </a>
-            <a href="{{ url_for('departments_page') }}" class="ref-circle-icon" title="Department Settings & Management">
+            <a href="{{ url_for('departments_page') if logged_in else url_for('login') }}" class="ref-circle-icon" title="Department Settings & Management">
                 ⚙️
             </a>
         </div>
@@ -183,43 +183,6 @@
          4. SYSTEM DETAILS & LIVE ARCHITECTURE METRICS (Matching Royal Blue Theme)
          ==================================================================== -->
     <!-- Real-Time Metrics -->
-    <div class="grid-cols-4" style="margin-bottom: 2.25rem;">
-        <div class="stat-card" style="border-top: 4px solid #0052cc;">
-            <div class="stat-icon" style="background: rgba(0, 82, 204, 0.1); color: #0052cc;">👥</div>
-            <div class="stat-content">
-                <h3 style="color: #062354;">Total Students</h3>
-                <div class="stat-number" style="color: #0052cc;">{{ metrics.total_persons or 0 }}</div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">Enrolled Students</div>
-            </div>
-        </div>
-
-        <div class="stat-card" style="border-top: 4px solid #00c2ff;">
-            <div class="stat-icon" style="background: rgba(0, 194, 255, 0.1); color: #0284c7;">🏛️</div>
-            <div class="stat-content">
-                <h3 style="color: #062354;">Departments</h3>
-                <div class="stat-number" style="color: #0284c7;">{{ metrics.total_departments or (departments|length) }}</div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">Academic Divisions</div>
-            </div>
-        </div>
-
-        <div class="stat-card" style="border-top: 4px solid #10b981;">
-            <div class="stat-icon" style="background: rgba(16, 185, 129, 0.1); color: #10b981;">✅</div>
-            <div class="stat-content">
-                <h3 style="color: #062354;">Verified Today</h3>
-                <div class="stat-number" style="color: #10b981;">{{ metrics.present_today or 0 }}</div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">Kiosk Verified Scans</div>
-            </div>
-        </div>
-
-        <div class="stat-card" style="border-top: 4px solid #ef4444;">
-            <div class="stat-icon" style="background: rgba(239, 68, 68, 0.1); color: #ef4444;">⏰</div>
-            <div class="stat-content">
-                <h3 style="color: #062354;">Cutoff Time</h3>
-                <div class="stat-number" style="color: #ef4444; font-size: 1.6rem;">{{ cutoff_time }}</div>
-                <div style="font-size: 0.75rem; color: #64748b; margin-top: 0.2rem;">Daily .env Schedule</div>
-            </div>
-        </div>
-    </div>
 
     <!-- 4 Core Capabilities in Royal Blue Theme -->
     <div style="margin-bottom: 2.5rem;">
@@ -239,7 +202,7 @@
                     Departmental QR Storage
                 </h4>
                 <p style="font-size: 0.82rem; color: #475569; line-height: 1.55;">
-                    Permanent student QR codes organized into departmental folders (<code>static/qr/&lt;Dept&gt;/&lt;ID&gt;.png</code>) and dispatched to student emails.
+                    Permanent student QR codes organized into departmental folders (<code>static/qr/&lt;Dept&gt;/&lt;ID&gt;.png</code>) for physical passes and mobile terminal scanning.
                 </p>
             </div>
 
@@ -259,17 +222,17 @@
                     Duplicate Collision Shield
                 </h4>
                 <p style="font-size: 0.82rem; color: #475569; line-height: 1.55;">
-                    Prevents duplicate Roll Numbers, duplicate emails, and existing facial biometric datasets from enrolling across multiple departments.
+                    Prevents duplicate Roll Numbers and existing facial biometric datasets from enrolling across multiple departments.
                 </p>
             </div>
 
             <div class="glass-card" style="padding: 1.5rem; border-top: 3.5px solid #ef4444;">
                 <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">⏰</div>
                 <h4 style="font-size: 1.05rem; font-weight: 800; color: #062354; margin-bottom: 0.4rem;">
-                    Automated Cutoff Emails
+                    Automated Daily Cutoff
                 </h4>
                 <p style="font-size: 0.82rem; color: #475569; line-height: 1.55;">
-                    At cutoff ({{ cutoff_time }}), unmarked students are automatically logged as ABSENT and sent official email notices. Manual edits are disabled.
+                    At cutoff ({{ cutoff_time }}), unmarked students are automatically logged as ABSENT in the database. Manual edits are strictly restricted.
                 </p>
             </div>
         </div>

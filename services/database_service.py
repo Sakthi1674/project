@@ -401,6 +401,27 @@ class DatabaseService:
             grouped[dept].append(row)
         return grouped
 
+    @classmethod
+    def get_all_students_with_today_status(cls):
+        """
+        Returns all registered students with today's attendance status and check-in time.
+        """
+        query = """
+            SELECT 
+                p.id, 
+                p.person_code, 
+                p.name, 
+                COALESCE(NULLIF(p.department, ''), 'General') AS department, 
+                p.qr_code_path,
+                a.id AS attendance_id,
+                a.attendance_time,
+                COALESCE(a.status, 'UNMARKED') AS today_status
+            FROM persons p
+            LEFT JOIN attendance a ON p.id = a.person_id AND a.attendance_date = CURDATE()
+            ORDER BY p.name ASC
+        """
+        return cls.execute_query(query, fetch_all=True) or []
+
     # --- QR Session Management ---
     @classmethod
     def create_qr_session(cls, qr_token, expires_at):
@@ -439,6 +460,8 @@ class DatabaseService:
             JOIN persons p ON a.person_id = p.id
             WHERE a.person_id = %s AND a.attendance_date = CURDATE()
         """
+        return cls.execute_query(query, (person_id,), fetch_one=True)
+
     @classmethod
     def get_recent_today_attendance(cls, limit=6):
         """Returns recent attendance records logged today with student details."""

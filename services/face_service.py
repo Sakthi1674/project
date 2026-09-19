@@ -572,17 +572,44 @@ class FaceService:
         """
         Checks whether the face in frame_bgr matches an already-registered student
         in the system other than current_person_id.
-        Returns a dict indicating if a biometric duplicate exists.
+        Uses a strict duplicate threshold (< 35.0) to prevent false positives where
+        different people with distance 50-75 were mistakenly flagged as duplicates.
         """
         if not os.path.exists(Config.TRAINER_FILE):
             return {"is_duplicate": False}
 
         try:
-            rec_result = cls.recognize_face_from_frame(frame_bgr)
-            if rec_result.get("success") and rec_result.get("person"):
-                matched_person = rec_result["person"]
-                # If the recognized face belongs to a different student
-                if int(matched_person["id"]) != int(current_person_id):
+            # Check how many persons are registered in the system
+            persons = DatabaseService.get_all_persons()
+            other_persons = [p for p in persons if int(p["id"]) != int(current_person_id)]
+            if not other_persons:
+                return {"is_duplicate": False}
+
+            # 1. Detect face in frame
+            gray, faces, err = cls.detect_face(frame_bgr)
+            if err or gray is None or len(faces) != 1:
+                return {"is_duplicate": False}
+
+            x, y, w, h = faces[0]
+            face_roi = gray[y:y+h, x:x+w]
+            face_roi = cv2.resize(face_roi, (200, 200))
+
+            recognizer = cv2.face.LBPHFaceRecognizer_create()
+            recognizer.read(Config.TRAINER_FILE)
+
+            serial_id, confidence = recognizer.predict(face_roi)
+            logger.info(f"Duplicate Check: Predicted Serial={serial_id}, Distance={confidence:.2f}")
+
+            # Strict duplicate threshold:
+            # In LBPH, lower distance = higher similarity.
+            # Different people typically have distance 55-80+.
+            # A true duplicate of the same person has distance < 35.0.
+            # Any distance >= 35.0 is a DIFFERENT person and must NOT be flagged as duplicate.
+            DUPLICATE_STRICT_THRESHOLD = 35.0
+
+            if confidence < DUPLICATE_STRICT_THRESHOLD and int(serial_id) != int(current_person_id):
+                matched_person = DatabaseService.get_person_by_id(serial_id)
+                if matched_person:
                     matched_name = matched_person.get("name") or "Student"
                     matched_code = matched_person.get("person_code") or "N/A"
                     matched_dept = matched_person.get("department") or "General"
@@ -590,20 +617,12 @@ class FaceService:
                         "is_duplicate": True,
                         "already_registered_to_other": True,
                         "matched_person": matched_person,
-                        "confidence": rec_result.get("confidence_score"),
-                        "match_percentage": rec_result.get("match_percentage"),
+                        "confidence": round(confidence, 1),
                         "message": (
                             f"Face already registered! This face matches enrolled student "
                             f"'{matched_name}' (ID: {matched_code}) in '{matched_dept}' department. "
                             f"Duplicate biometric registration across students is not allowed."
                         )
-                    }
-                else:
-                    return {
-                        "is_duplicate": False,
-                        "is_same_person": True,
-                        "matched_person": matched_person,
-                        "confidence": rec_result.get("confidence_score")
                     }
         except Exception as e:
             logger.warning(f"Error checking biometric duplicate: {e}")
