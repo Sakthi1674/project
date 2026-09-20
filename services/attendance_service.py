@@ -158,6 +158,7 @@ class AttendanceService:
             time_display = str(time_obj)
             formatted.append({
                 "id": r["attendance_id"],
+                "person_id": r["person_id"],
                 "person_code": r["person_code"],
                 "name": r["name"],
                 "department": r["department"] or "General",

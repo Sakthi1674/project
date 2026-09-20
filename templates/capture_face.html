@@ -3,7 +3,7 @@
 {% block title %}Capture Face Samples | {{ person.name }}{% endblock %}
 
 {% block content %}
-<div class="page-hero">
+<!-- <div class="page-hero">
     <div>
         <h2>Facial Biometric Dataset Collection</h2>
         <p>Capturing 50 high-precision facial images for <strong>{{ person.name }}</strong> (Registration No: <strong style="color: #38bdf8;">{{ person.person_code }}</strong>).</p>
@@ -13,7 +13,7 @@
             <span>🏢</span> {{ person.department or 'Department' }}
         </a>
     </div>
-</div>
+</div> -->
 
 <!-- Banner if face is already registered for this student -->
 {% if captured_count >= required_samples %}
@@ -38,46 +38,31 @@
 </div>
 {% endif %}
 
-<!-- Primary Capture Progress Bar Card -->
-<div class="glass-card" style="margin-bottom: 1.5rem; border-left: 5px solid var(--primary);">
-    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 0.75rem;">
-        <div>
-            <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 700; color: var(--primary); letter-spacing: 0.05em;">
-                Biometric Dataset Collection Progress
-            </div>
-            <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-top: 0.2rem;">
-                <span id="progress-count-label">{{ captured_count }}</span> / {{ required_samples }} Photos Captured
-            </h3>
-        </div>
-
-        <div style="display: flex; align-items: center; gap: 0.75rem;">
-            <span id="collection-badge" class="badge {% if captured_count >= required_samples %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.85rem; padding: 0.45rem 0.9rem;">
-                {% if captured_count >= required_samples %}✓ Complete &amp; Camera Stopped{% else %}⏳ In Progress ({{ captured_count }}/{{ required_samples }}){% endif %}
-            </span>
-        </div>
-    </div>
-
-    <!-- Live Multi-Stop Gradient Progress Bar -->
-    <div class="progress-container" style="height: 12px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden;">
-        <div id="capture-progress-bar" class="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2563eb, #8b5cf6, #10b981); transition: width 0.2s ease;"></div>
-    </div>
-
-    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; color: var(--text-muted); margin-top: 0.4rem;">
-        <span>Target: {{ required_samples }} facial angles (camera automatically stops at 50)</span>
-        <span id="progress-percentage-label" style="font-weight: 800; color: var(--primary);">0%</span>
-    </div>
-</div>
-
-<!-- Studio Layout: Expansive Camera Viewport + Telemetry & Save Action Hub -->
-<div class="studio-layout">
-    <!-- Left Column: Expansive Camera Feed -->
-    <div class="glass-card" style="padding: 1.5rem; display: flex; flex-direction: column;">
+<!-- Centered Camera Studio Layout -->
+<div style="max-width: 680px; margin: 0 auto 2.5rem auto;" class="animate-fade-in">
+    <div class="glass-card" style="padding: 1.75rem; display: flex; flex-direction: column;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
                 <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Live Camera Studio</h3>
                 <p style="font-size: 0.8rem; color: var(--text-muted);">Expansive camera feed for high-accuracy facial biometric dataset creation</p>
             </div>
-            <span id="cam-status-badge" class="badge badge-warning">Camera Standby</span>
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span id="collection-badge" class="badge {% if captured_count >= required_samples %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
+                    {% if captured_count >= required_samples %}✓ Complete &amp; Camera Stopped{% else %}⏳ In Progress ({{ captured_count }}/{{ required_samples }}){% endif %}
+                </span>
+                <span id="cam-status-badge" class="badge badge-warning">Camera Standby</span>
+            </div>
+        </div>
+
+        <!-- Integrated Progress Bar -->
+        <div style="margin-bottom: 1.25rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">
+                <span style="color: var(--text-main);">Dataset Progress: <strong id="progress-count-label" style="color: var(--primary);">{{ captured_count }}</strong> / {{ required_samples }} Photos</span>
+                <span id="progress-percentage-label" style="font-weight: 800; color: var(--primary);">0%</span>
+            </div>
+            <div class="progress-container" style="height: 10px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden;">
+                <div id="capture-progress-bar" class="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2563eb, #8b5cf6, #10b981); transition: width 0.2s ease;"></div>
+            </div>
         </div>
 
         <!-- Camera Container: Native 4:3 Aspect Ratio (Zero Zoom) -->
@@ -131,14 +116,14 @@
             </button>
         </div>
 
-        <!-- Live Status Feedback Message Box (Stable layout to prevent jumping) -->
+        <!-- Live Status Feedback Message Box -->
         <div id="capture-status-box" style="display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem; font-size: 0.86rem; font-weight: 600; min-height: 46px; background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-muted);">
             Camera ready. Align your face inside the green oval reticle to begin.
         </div>
 
-        <!-- Live Captured Images Filmstrip Strip (Fixed height to prevent reflows) -->
-        <div style="margin-top: 1.5rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+        <!-- Live Captured Images Filmstrip Strip -->
+        <div style="margin-top: 1.25rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
                 <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
                     📸 Real-Time Captured Face Samples:
                 </div>
@@ -150,78 +135,25 @@
                 <!-- Live captured face crops will append here -->
             </div>
         </div>
-    </div>
 
-    <!-- Right Column: Student Profile & Dedicated Save Profile Action Hub -->
-    <div style="display: flex; flex-direction: column; gap: 1.5rem;">
-        <!-- Card 1: Student Profile Summary -->
-        <div class="glass-card" style="padding: 1.5rem;">
-            <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
-                <div class="stat-icon icon-cyan" style="width: 48px; height: 48px; font-size: 1.5rem;">👤</div>
-                <div>
-                    <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem;">
-                        {{ person.name }}
-                    </h3>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                        <span class="badge badge-primary" style="font-family: monospace;">ID: {{ person.person_code }}</span>
-                        <span class="badge badge-purple">{{ person.department or 'General' }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div style="font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;">
-                <div style="margin-bottom: 0.4rem;">📁 <strong>QR Path:</strong> <code style="font-size: 0.78rem;">{{ person.qr_code_path }}</code></div>
-                <div>⏰ <strong>Attendance Cutoff:</strong> {{ cutoff_time }}</div>
-            </div>
-        </div>
-
-        <!-- Card 2: Dedicated SAVE PROFILE Submit Section -->
-        <div class="glass-card" style="padding: 1.6rem; border-top: 4px solid var(--success); background: linear-gradient(145deg, #ffffff 0%, #dbfae5 45%, #b1f3c5 100%); border: 1.5px solid #86efac; box-shadow: 0 8px 24px -2px rgba(16, 185, 129, 0.12);">
-            <div style="display: flex; align-items: center; gap: 0.6rem; margin-bottom: 0.75rem;">
-                <span style="font-size: 1.4rem;">💾</span>
-                <div>
-                    <h4 style="font-size: 1.15rem; font-weight: 800; color: #15803d;">
-                        Save Profile &amp; Finalize
-                    </h4>
-                    <span style="font-size: 0.78rem; color: #166534; font-weight: 600;">Step 4: Train Recognizer &amp; Activate</span>
-                </div>
-            </div>
-
-            <p style="font-size: 0.85rem; color: #14532d; margin-bottom: 1.25rem; line-height: 1.5;">
-                After 50 photos are captured and the camera turns off automatically, click below to train the LBPH model and save the student's biometric identity.
-            </p>
-
-            <!-- Prominent Save Profile Submit Button -->
+        <!-- Centered Save Profile Button Section -->
+        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-glass); text-align: center;">
             <button 
                 id="btn-save-profile-sidebar" 
                 class="btn-save-profile {% if captured_count >= required_samples %}pulse-ready{% endif %}" 
                 onclick="saveProfileAndTrain()" 
                 {% if captured_count < required_samples %}disabled{% endif %}
+                style="width: 100%; justify-content: center; font-size: 1rem; padding: 0.9rem;"
             >
                 <span>💾</span> Save Profile &amp; Complete Registration
             </button>
-
-            <div id="save-profile-hint" style="margin-top: 0.75rem; font-size: 0.78rem; text-align: center; color: {% if captured_count >= required_samples %}#15803d{% else %}var(--text-muted){% endif %}; font-weight: 600;">
+            <div id="save-profile-hint" style="margin-top: 0.6rem; font-size: 0.8rem; text-align: center; color: {% if captured_count >= required_samples %}#15803d{% else %}var(--text-muted){% endif %}; font-weight: 600;">
                 {% if captured_count >= required_samples %}
                 ✓ 50 samples ready! Click to save and train profile.
                 {% else %}
                 🔒 Unlocks automatically after 50 photos are captured.
                 {% endif %}
             </div>
-        </div>
-
-        <!-- Card 3: Biometric Capture Guidance -->
-        <div class="glass-card" style="padding: 1.25rem; background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border: 1.5px solid #93c5fd; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
-            <h4 style="font-size: 0.92rem; font-weight: 800; color: #062354; margin-bottom: 0.6rem; display: flex; align-items: center; gap: 0.4rem;">
-                <span>💡</span> Biometric Capture Instructions
-            </h4>
-            <ul style="color: #1e3a8a; font-size: 0.82rem; line-height: 1.55; padding-left: 1.2rem; margin: 0;">
-                <li>Click <strong>"Start Camera"</strong> to initialize your webcam feed.</li>
-                <li>Align your face comfortably within the green oval reticle.</li>
-                <li>Click <strong>"Start Taking Pictures"</strong>. The system will sequentially record 50 photos.</li>
-                <li>Gently tilt head left, right, up, and down for diverse angles.</li>
-                <li><strong>The camera automatically stops at 50 photos</strong> and prompts you to save the profile.</li>
-            </ul>
         </div>
     </div>
 </div>

@@ -3,7 +3,7 @@
 {% block title %}Official Student QR Credential | {{ person.name }}{% endblock %}
 
 {% block content %}
-<div class="page-hero">
+<!-- <div class="page-hero">
     <div>
         <h2>Official Student Credential Issued</h2>
         <p>A permanent attendance QR code and campus pass has been generated for <strong>{{ person.name }}</strong> (Registration No: <strong style="color: #38bdf8;">{{ person.person_code }}</strong>).</p>
@@ -13,7 +13,7 @@
             <span>🏢</span> {{ person.department or 'Department' }}
         </a>
     </div>
-</div>
+</div> -->
 
 <!-- Step Navigation Wizard -->
 <div class="steps-nav" style="margin-bottom: 2rem;">
@@ -33,143 +33,78 @@
     </div>
 </div>
 
-<div class="credential-layout">
-    <!-- Left Column: Official Student Digital Attendance Credential Card -->
-    <div>
-        <div class="credential-card">
-            <!-- Header Band with Smart Card Metallic Chip -->
-            <div class="credential-header-band">
-                <div>
-                    <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.9; font-weight: 700;">
-                        CAMPUS ATTENDANCE SYSTEM
-                    </div>
-                    <div style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">
-                        Official Student Credential Pass
-                    </div>
+<div style="max-width: 480px; margin: 0 auto 2.5rem auto;" class="animate-fade-in">
+    <div class="credential-card">
+        <!-- Header Band with Smart Card Metallic Chip -->
+        <!-- <div class="credential-header-band">
+            <div>
+                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.9; font-weight: 700;">
+                    CAMPUS ATTENDANCE SYSTEM
                 </div>
-                <div class="credential-chip" title="Biometric NFC / Smart Pass Simulation"></div>
-            </div>
-
-            <div class="credential-body" style="text-align: center;">
-                <!-- Student Identity Meta -->
-                <div style="display: flex; align-items: center; justify-content: center; gap: 0.9rem; margin-bottom: 1.25rem;">
-                    <div style="width: 54px; height: 54px; border-radius: var(--radius-full); background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(6, 182, 212, 0.15)); border: 2px solid rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--primary); font-weight: 800;">
-                        {{ person.name[0] if person.name else 'S' }}
-                    </div>
-                    <div style="text-align: left;">
-                        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.15rem;">
-                            {{ person.name }}
-                        </h3>
-                        <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                            <span class="badge badge-primary" style="font-family: monospace; font-size: 0.82rem; padding: 0.25rem 0.6rem;">
-                                ID: {{ person.person_code }}
-                            </span>
-                            <span class="badge badge-purple" style="font-size: 0.78rem;">
-                                {{ person.department or 'General' }}
-                            </span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- High-Precision QR Showcase Frame with Targeting Corners -->
-                <div class="qr-showcase-box">
-                    <div class="qr-corner top-left"></div>
-                    <div class="qr-corner top-right"></div>
-                    <div class="qr-corner bottom-left"></div>
-                    <div class="qr-corner bottom-right"></div>
-                    <img 
-                        src="{{ person.qr_code_path }}" 
-                        alt="Student QR Code" 
-                        id="student-qr-img" 
-                        style="width: 210px; height: 210px; display: block; border-radius: 4px;"
-                    >
-                    <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem; font-weight: 600;">
-                        Present to terminal camera scanner
-                    </div>
-                </div>
-
-                <!-- Department Storage Path -->
-                <div style="background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-sm); padding: 0.65rem 0.95rem; font-size: 0.78rem; color: #1e40af; margin-bottom: 1.25rem; word-break: break-all; box-shadow: 0 2px 8px rgba(0, 82, 204, 0.05);">
-                    📁 Department Folder: <code style="color: var(--primary); font-weight: 700;">{{ person.qr_code_path }}</code>
-                </div>
-
-                <!-- Action Buttons (Download & Print) -->
-                <div style="display: flex; gap: 0.75rem;">
-                    <a href="{{ person.qr_code_path }}" download="{{ person.person_code }}.png" class="btn btn-outline" style="flex: 1; justify-content: center;">
-                        <span>📥</span> Download QR PNG
-                    </a>
-                    <button onclick="window.print()" class="btn btn-outline" style="flex: 1; justify-content: center;">
-                        <span>🖨️</span> Print Official Pass
-                    </button>
+                <div style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">
+                    Official Student Credential Pass
                 </div>
             </div>
-        </div>
-    </div>
+            <div class="credential-chip" title="Biometric NFC / Smart Pass Simulation"></div>
+        </div> -->
 
-    <!-- Right Column: Biometric Setup & Next Steps Hub -->
-    <div>
-        <div class="glass-card" style="border-top: 4px solid var(--primary);">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem;">
-                <div class="stat-icon icon-cyan" style="width: 44px; height: 44px; font-size: 1.3rem;">⚡</div>
-                <div>
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.15rem;">
-                        Next Step: Biometric Enrollment
+        <div class="credential-body" style="text-align: center;">
+            <!-- Student Identity Meta -->
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.9rem; margin-bottom: 1.25rem;">
+                <div style="width: 54px; height: 54px; border-radius: var(--radius-full); background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(6, 182, 212, 0.15)); border: 2px solid rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--primary); font-weight: 800;">
+                    {{ person.name[0] if person.name else 'S' }}
+                </div>
+                <div style="text-align: left;">
+                    <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.15rem;">
+                        {{ person.name }}
                     </h3>
-                    <p style="font-size: 0.82rem; color: var(--text-muted);">
-                        Step 2 complete! Finalize enrollment by capturing facial biometric data.
-                    </p>
+                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
+                        <span class="badge badge-primary" style="font-family: monospace; font-size: 0.82rem; padding: 0.25rem 0.6rem;">
+                            ID: {{ person.person_code }}
+                        </span>
+                        <span class="badge badge-purple" style="font-size: 0.78rem;">
+                            {{ person.department or 'General' }}
+                        </span>
+                    </div>
                 </div>
             </div>
 
-            <!-- Enrollment Roadmap / Checklist -->
-            <div style="margin-bottom: 1.5rem;">
-                <div class="journey-step-box">
-                    <span style="font-size: 1.2rem; color: #10b981;">✓</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">1. Profile Enrolled</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">Saved in MySQL database under {{ person.department or 'General' }} department.</div>
-                    </div>
+            <!-- High-Precision QR Showcase Frame with Targeting Corners -->
+            <div class="qr-showcase-box">
+                <div class="qr-corner top-left"></div>
+                <div class="qr-corner top-right"></div>
+                <div class="qr-corner bottom-left"></div>
+                <div class="qr-corner bottom-right"></div>
+                <img 
+                    src="{{ person.qr_code_path }}" 
+                    alt="Student QR Code" 
+                    id="student-qr-img" 
+                    style="width: 210px; height: 210px; display: block; border-radius: 4px;"
+                >
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem; font-weight: 600;">
+                    Present to terminal camera scanner
                 </div>
+            </div>
 
-                <div class="journey-step-box">
-                    <span style="font-size: 1.2rem; color: #10b981;">✓</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-main);">2. Unique QR Issued &amp; Dispatched</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">Archived in department folder with high-contrast scanner pattern.</div>
-                    </div>
-                </div>
+            <!-- Department Storage Path -->
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-sm); padding: 0.65rem 0.95rem; font-size: 0.78rem; color: #1e40af; margin-bottom: 1.25rem; word-break: break-all; box-shadow: 0 2px 8px rgba(0, 82, 204, 0.05);">
+                📁 Department Folder: <code style="color: var(--primary); font-weight: 700;">{{ person.qr_code_path }}</code>
+            </div>
 
-                <div class="journey-step-box active">
-                    <span style="font-size: 1.2rem; color: var(--primary);">⏳</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 0.88rem; color: #1d4ed8;">3. Face Data Capture (50 Samples)</div>
-                        <div style="font-size: 0.78rem; color: #1e40af;">Automated camera snapshot collection with auto-stop after 50 photos.</div>
-                    </div>
-                </div>
-
-                <div class="journey-step-box">
-                    <span style="font-size: 1.2rem; color: #94a3b8;">⚪</span>
-                    <div>
-                        <div style="font-weight: 700; font-size: 0.88rem; color: var(--text-muted);">4. Recognizer Model Training</div>
-                        <div style="font-size: 0.78rem; color: var(--text-muted);">Save profile &amp; train OpenCV LBPH recognizer for real-time validation.</div>
-                    </div>
-                </div>
+            <!-- Action Buttons (Download & Print) -->
+            <div style="display: flex; gap: 0.75rem; margin-bottom: 0.85rem;">
+                <a href="{{ person.qr_code_path }}" download="{{ person.person_code }}.png" class="btn btn-outline" style="flex: 1; justify-content: center;">
+                    <span>📥</span> Download QR PNG
+                </a>
+                <button onclick="window.print()" class="btn btn-outline" style="flex: 1; justify-content: center;">
+                    <span>🖨️</span> Print Official Pass
+                </button>
             </div>
 
             <!-- Primary Action Button: Proceed to Face Capture -->
-            <a href="{{ url_for('capture_face_page', person_id=person.id) }}" class="btn btn-primary" style="font-size: 1.05rem; padding: 0.95rem 1.5rem; width: 100%; justify-content: center; box-shadow: 0 4px 16px var(--primary-glow); margin-bottom: 1.25rem;">
-                <span>📷</span> Proceed to Face Data Capture (50 Samples) →
+            <a href="{{ url_for('capture_face_page', person_id=person.id) }}" class="btn btn-primary" style="font-size: 0.95rem; padding: 0.8rem 1.25rem; width: 100%; justify-content: center; box-shadow: 0 4px 16px var(--primary-glow);">
+                <span>📷</span> Proceed to Face Data Capture &rarr;
             </a>
-
-            <!-- Quick Guidance Card -->
-            <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 1rem; font-size: 0.82rem; color: #1e3a8a; line-height: 1.55; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
-                <strong style="color: #062354; display: block; margin-bottom: 0.4rem; font-size: 0.88rem;">💡 Biometric Capture Highlights:</strong>
-                <ul style="margin: 0; padding-left: 1.2rem;">
-                    <li>Webcam captures 50 sequential facial images inside the targeting reticle.</li>
-                    <li><strong>Camera automatically turns off</strong> once 50 samples are collected.</li>
-                    <li>Click <strong>"Save Profile"</strong> to finalize biometric registration.</li>
-                </ul>
-            </div>
         </div>
     </div>
 </div>

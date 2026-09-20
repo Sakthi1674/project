@@ -198,13 +198,14 @@
             <table class="data-table">
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th style="width: 50px;">#</th>
                         <th>Reg. No / ID</th>
                         <th>Full Name</th>
                         <th>Department</th>
                         <th>Date</th>
                         <th>Scan Time</th>
                         <th>Status</th>
+                        <th style="text-align: right; min-width: 140px;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -235,6 +236,21 @@
                                     <span class="badge badge-danger">{{ rec.status }}</span>
                                 {% endif %}
                             </td>
+                            <td style="text-align: right;">
+                                {% if rec.person_id %}
+                                    <button 
+                                        type="button" 
+                                        class="btn btn-primary btn-sm" 
+                                        onclick="openStudentDetailsModal('{{ rec.person_id }}')" 
+                                        style="font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.75rem; white-space: nowrap;"
+                                        title="View Complete Details & Attendance History"
+                                    >
+                                        <span>📊</span> View Details
+                                    </button>
+                                {% else %}
+                                    <span style="color: var(--text-muted); font-size: 0.8rem;">-</span>
+                                {% endif %}
+                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
@@ -245,6 +261,138 @@
             No individual biometric scans logged for this specific filter.
         </div>
     {% endif %}
+</div>
+
+<!-- Complete Student Details & Attendance History Modal -->
+<div id="student-complete-details-modal" style="display: none; position: fixed; inset: 0; background: rgba(6, 35, 84, 0.72); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="glass-card animate-fade-in" style="max-width: 860px; width: 100%; max-height: 90vh; overflow-y: auto; padding: 2rem; background: linear-gradient(160deg, #ffffff 0%, #e6f3fe 45%, #cde5fe 100%); border: 1.5px solid rgba(0, 194, 255, 0.65); border-radius: var(--radius-lg); box-shadow: 0 25px 65px rgba(6, 35, 84, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.95) inset;">
+        <!-- Loading State -->
+        <div id="student-modal-loading" style="text-align: center; padding: 3rem 1rem;">
+            <div class="spinner" style="width: 42px; height: 42px; border-width: 4px; margin: 0 auto 1rem;"></div>
+            <h4 style="color: var(--text-main); font-weight: 700;">Loading Complete Student Data...</h4>
+            <p style="color: var(--text-muted); font-size: 0.85rem;">Retrieving profile &amp; previous attendance history...</p>
+        </div>
+
+        <!-- Modal Content Body -->
+        <div id="student-modal-body" style="display: none;">
+            <!-- Modal Header Band -->
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <div style="width: 54px; height: 54px; border-radius: var(--radius-full); background: linear-gradient(135deg, rgba(0, 82, 204, 0.15), rgba(0, 194, 255, 0.2)); border: 2px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--primary); font-weight: 800;">
+                        👤
+                    </div>
+                    <div>
+                        <div style="display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap;">
+                            <h3 id="smodal-name" style="font-size: 1.4rem; font-weight: 900; color: var(--text-main); margin: 0;"></h3>
+                            <span id="smodal-dept-badge" class="badge badge-purple" style="font-size: 0.78rem;"></span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 0.75rem; margin-top: 0.25rem; font-size: 0.85rem; color: var(--text-muted);">
+                            <span>Roll No: <strong id="smodal-code" style="font-family: monospace; color: var(--primary);"></strong></span>
+                            <span>&bull;</span>
+                            <span>Enrolled: <span id="smodal-created"></span></span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="closeStudentDetailsModal()" style="background: none; border: none; font-size: 1.8rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px;" title="Close Modal">&times;</button>
+            </div>
+
+            <!-- Profile Meta & Biometrics Row -->
+            <div style="display: grid; grid-template-columns: 1fr auto; gap: 1.5rem; margin-bottom: 1.75rem; background: linear-gradient(145deg, #ffffff 0%, #e2effe 50%, #c9e3fe 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 1.25rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
+                <div style="display: flex; flex-direction: column; justify-content: space-between; gap: 0.75rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #1e40af; letter-spacing: 0.06em; margin-bottom: 0.35rem;">
+                            Biometric Security Profile
+                        </div>
+                        <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.6rem;">
+                            <span id="smodal-face-badge" class="badge"></span>
+                            <a id="smodal-capture-link" href="#" class="btn btn-outline btn-sm" style="font-size: 0.76rem; padding: 0.25rem 0.6rem;">
+                                📷 Update Face Samples
+                            </a>
+                        </div>
+                        <div style="font-size: 0.82rem; color: var(--text-muted);">
+                            Email: <strong id="smodal-email" style="color: var(--text-main);"></strong>
+                        </div>
+                    </div>
+
+                    <!-- Attendance Progress Bar -->
+                    <div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.35rem;">
+                            <span style="color: var(--text-main);">Overall Attendance Rate</span>
+                            <span id="smodal-rate" style="color: var(--primary); font-weight: 800;">0%</span>
+                        </div>
+                        <div style="height: 10px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden;">
+                            <div id="smodal-rate-bar" style="height: 100%; width: 0%; background: var(--gradient-primary); transition: width 0.6s ease;"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- QR Credential Thumbnail -->
+                <div style="text-align: center; background: #ffffff; padding: 0.75rem; border-radius: var(--radius-sm); border: 1.5px solid #bfdbfe; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
+                    <img id="smodal-qr-img" src="" alt="Student QR" style="width: 100px; height: 100px; display: block; margin: 0 auto 0.5rem;">
+                    <a id="smodal-qr-download" href="" download="" class="btn btn-outline btn-sm" style="font-size: 0.74rem; padding: 0.25rem 0.5rem; width: 100%; justify-content: center;">
+                        <span>📥</span> Download QR
+                    </a>
+                </div>
+            </div>
+
+            <!-- Attendance Intelligence Stats (4 Cards with Linear Gradients) -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.75rem;" class="dash-split-grid">
+                <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 1rem; text-align: center; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.1);">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: #1e40af;">Total Sessions</div>
+                    <div id="smodal-total-sessions" style="font-size: 1.5rem; font-weight: 900; color: var(--text-main); margin-top: 0.2rem;">0</div>
+                </div>
+                <div style="background: linear-gradient(145deg, #ffffff 0%, #dbfae5 45%, #b1f3c5 100%); border: 1.5px solid #86efac; border-radius: var(--radius-md); padding: 1rem; text-align: center; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.12);">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: #15803d;">Present Days</div>
+                    <div id="smodal-present-days" style="font-size: 1.5rem; font-weight: 900; color: #15803d; margin-top: 0.2rem;">0</div>
+                </div>
+                <div style="background: linear-gradient(145deg, #ffffff 0%, #ffe3e7 45%, #fdbec7 100%); border: 1.5px solid #fca5a5; border-radius: var(--radius-md); padding: 1rem; text-align: center; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.12);">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: #b91c1c;">Absent Days</div>
+                    <div id="smodal-absent-days" style="font-size: 1.5rem; font-weight: 900; color: #b91c1c; margin-top: 0.2rem;">0</div>
+                </div>
+                <div style="background: linear-gradient(145deg, #ffffff 0%, #f0e1fe 45%, #dab9ff 100%); border: 1.5px solid #c084fc; border-radius: var(--radius-md); padding: 1rem; text-align: center; box-shadow: 0 4px 14px rgba(139, 92, 246, 0.12);">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; font-weight: 800; color: #6d28d9;">Attendance %</div>
+                    <div id="smodal-rate-card" style="font-size: 1.5rem; font-weight: 900; color: #7c3aed; margin-top: 0.2rem;">0%</div>
+                </div>
+            </div>
+
+            <!-- Complete Previous Data Table Section -->
+            <div>
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem;">
+                    <h4 style="font-size: 1.05rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
+                        <span>📅</span> Complete Attendance History (All Previous Sessions)
+                    </h4>
+                </div>
+
+                <div id="smodal-history-table-container" class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                    <table class="data-table" style="width: 100%;">
+                        <thead>
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th>Date</th>
+                                <th>Check-in Time</th>
+                                <th>Status</th>
+                                <th>Verification Detail</th>
+                            </tr>
+                        </thead>
+                        <tbody id="smodal-history-tbody"></tbody>
+                    </table>
+                </div>
+
+                <div id="smodal-history-empty" style="display: none; text-align: center; padding: 2.5rem 1rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border-radius: var(--radius-md); border: 1.5px dashed #bfdbfe; color: var(--text-muted);">
+                    <div style="font-size: 2rem; margin-bottom: 0.35rem;">📋</div>
+                    <div style="font-weight: 700; color: var(--text-main);">No Previous Attendance Sessions Logged</div>
+                    <p style="font-size: 0.82rem; margin-top: 0.2rem;">This student has not yet recorded any attendance sessions in the system.</p>
+                </div>
+            </div>
+
+            <!-- Footer Close Button -->
+            <div style="margin-top: 1.5rem; text-align: right;">
+                <button onclick="closeStudentDetailsModal()" class="btn btn-outline" style="padding: 0.55rem 1.4rem;">
+                    Close Details
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
 
@@ -341,6 +489,109 @@
             console.error('Absentee processing error:', err);
             showToast('Server connection error.', 'danger');
         }
+    }
+
+    // Complete Student Details & Attendance History Modal
+    async function openStudentDetailsModal(studentId) {
+        const modal = document.getElementById('student-complete-details-modal');
+        const loading = document.getElementById('student-modal-loading');
+        const body = document.getElementById('student-modal-body');
+        
+        modal.style.display = 'flex';
+        loading.style.display = 'block';
+        body.style.display = 'none';
+        
+        try {
+            const res = await fetch(`/api/student-details/${studentId}`);
+            const data = await res.json();
+            
+            if (data.success && data.student) {
+                const s = data.student;
+                
+                document.getElementById('smodal-name').innerText = s.name;
+                document.getElementById('smodal-code').innerText = s.person_code;
+                document.getElementById('smodal-dept-badge').innerText = s.department;
+                document.getElementById('smodal-email').innerText = s.email;
+                document.getElementById('smodal-created').innerText = s.created_at ? s.created_at.split(' ')[0] : 'Enrolled';
+                
+                const qrImg = document.getElementById('smodal-qr-img');
+                const qrLink = document.getElementById('smodal-qr-download');
+                if (s.qr_code_path) {
+                    qrImg.src = s.qr_code_path;
+                    qrLink.href = s.qr_code_path;
+                    qrLink.download = `${s.person_code}_${s.name}_QR.png`;
+                    qrLink.style.display = 'inline-flex';
+                } else {
+                    qrImg.src = '';
+                    qrLink.style.display = 'none';
+                }
+                
+                const faceBadge = document.getElementById('smodal-face-badge');
+                if (s.face_enrolled) {
+                    faceBadge.className = 'badge badge-success';
+                    faceBadge.innerHTML = `✓ Face Enrolled (${s.sample_count}/50 Samples Ready)`;
+                } else if (s.sample_count > 0) {
+                    faceBadge.className = 'badge badge-warning';
+                    faceBadge.innerHTML = `⚠️ Incomplete Face Data (${s.sample_count}/50 Samples)`;
+                } else {
+                    faceBadge.className = 'badge badge-danger';
+                    faceBadge.innerHTML = `⚠️ Face Not Captured (0/50 Samples)`;
+                }
+                document.getElementById('smodal-capture-link').href = `/capture-face/${s.id}`;
+                
+                document.getElementById('smodal-total-sessions').innerText = s.total_sessions;
+                document.getElementById('smodal-present-days').innerText = s.present_count;
+                document.getElementById('smodal-absent-days').innerText = s.absent_count;
+                document.getElementById('smodal-rate').innerText = `${s.attendance_rate}%`;
+                document.getElementById('smodal-rate-card').innerText = `${s.attendance_rate}%`;
+                document.getElementById('smodal-rate-bar').style.width = `${s.attendance_rate}%`;
+                
+                const tbody = document.getElementById('smodal-history-tbody');
+                tbody.innerHTML = '';
+                
+                if (s.history && s.history.length > 0) {
+                    s.history.forEach((rec, idx) => {
+                        const tr = document.createElement('tr');
+                        tr.style.borderBottom = '1px solid var(--border-glass)';
+                        
+                        const isPresent = rec.status === 'PRESENT';
+                        const badgeClass = isPresent ? 'badge badge-success' : 'badge badge-danger';
+                        const badgeText = isPresent ? '✓ PRESENT' : '✗ ABSENT';
+                        const verifText = isPresent ? '✓ Biometric + QR Verified' : '⏰ Cutoff Auto-Absent';
+                        
+                        tr.innerHTML = `
+                            <td style="padding: 0.65rem 0.5rem; font-family: monospace; color: var(--text-muted);">${idx + 1}</td>
+                            <td style="padding: 0.65rem 0.5rem; font-weight: 700; color: var(--text-main);">${rec.date}</td>
+                            <td style="padding: 0.65rem 0.5rem; font-family: monospace; color: var(--text-muted);">${rec.time}</td>
+                            <td style="padding: 0.65rem 0.5rem;">
+                                <span class="${badgeClass}" style="font-size: 0.76rem; padding: 0.25rem 0.6rem;">${badgeText}</span>
+                            </td>
+                            <td style="padding: 0.65rem 0.5rem; font-size: 0.8rem; color: var(--text-muted);">${verifText}</td>
+                        `;
+                        tbody.appendChild(tr);
+                    });
+                    document.getElementById('smodal-history-empty').style.display = 'none';
+                    document.getElementById('smodal-history-table-container').style.display = 'block';
+                } else {
+                    document.getElementById('smodal-history-empty').style.display = 'block';
+                    document.getElementById('smodal-history-table-container').style.display = 'none';
+                }
+                
+                loading.style.display = 'none';
+                body.style.display = 'block';
+            } else {
+                showToast(data.message || 'Could not load student details.', 'danger');
+                closeStudentDetailsModal();
+            }
+        } catch (e) {
+            console.error(e);
+            showToast('Network error loading student details.', 'danger');
+            closeStudentDetailsModal();
+        }
+    }
+
+    function closeStudentDetailsModal() {
+        document.getElementById('student-complete-details-modal').style.display = 'none';
     }
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>

@@ -74,100 +74,100 @@
         </div>
     </div>
 
-    <!-- Student Cards Grid -->
+    <!-- Student List View -->
     {% if students %}
-        <div class="grid-cols-3" id="students-grid-container">
-            {% for student in students %}
-                <div 
-                    class="glass-card dept-student-card" 
-                    id="student-card-{{ student.id }}"
-                    data-name="{{ student.name|lower }}" 
-                    data-code="{{ student.person_code|lower }}"
-                    style="padding: 1.35rem; display: flex; flex-direction: column; justify-content: space-between; border-radius: var(--radius-md);"
-                >
-                    <div>
-                        <!-- Header with QR Thumbnail -->
-                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 0.75rem; margin-bottom: 1rem;">
-                            <div>
-                                <div style="font-weight: 800; font-size: 1.15rem; color: var(--text-main); line-height: 1.25; margin-bottom: 0.25rem;">
+        <div class="table-responsive" style="border-radius: var(--radius-md); overflow: hidden; border: 1px solid var(--border-glass); background: #ffffff;">
+            <table class="data-table" id="students-table" style="width: 100%;">
+                <thead>
+                    <tr>
+                        <th style="width: 50px;">#</th>
+                        <th>Student Name</th>
+                        <th>Roll No / ID</th>
+                        <th>QR Credential</th>
+                        <th>Biometric Status</th>
+                        <th style="text-align: right; min-width: 220px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="students-list-container">
+                    {% for student in students %}
+                        <tr 
+                            class="student-list-row" 
+                            id="student-row-{{ student.id }}"
+                            data-name="{{ student.name|lower }}" 
+                            data-code="{{ student.person_code|lower }}"
+                        >
+                            <td style="color: var(--text-muted); font-family: monospace;">{{ loop.index }}</td>
+                            <td>
+                                <div style="font-weight: 800; color: var(--text-main); font-size: 0.95rem;">
                                     {{ student.name }}
                                 </div>
-                                <div style="font-family: monospace; font-size: 0.85rem; color: var(--primary); font-weight: 700;">
-                                    Roll No: {{ student.person_code }}
+                            </td>
+                            <td>
+                                <span style="font-family: monospace; font-weight: 700; color: var(--primary); font-size: 0.88rem;">
+                                    {{ student.person_code }}
+                                </span>
+                            </td>
+                            <td>
+                                <div 
+                                    style="cursor: pointer; display: inline-flex; align-items: center; gap: 0.4rem; background: #ffffff; padding: 3px 8px; border-radius: 6px; border: 1px solid var(--border-glass); box-shadow: 0 1px 4px rgba(0,0,0,0.06); transition: all 0.2s ease;"
+                                    onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ dept_name|escape }}', '{{ student.qr_code_path }}')"
+                                    title="Click to view & download QR"
+                                >
+                                    {% if student.qr_code_path %}
+                                        <img src="{{ student.qr_code_path }}" alt="QR" style="width: 28px; height: 28px; display: block;">
+                                    {% else %}
+                                        <span style="font-size: 1.1rem;">📱</span>
+                                    {% endif %}
+                                    <span style="font-size: 0.76rem; font-weight: 700; color: var(--primary);">QR Pass</span>
                                 </div>
-                            </div>
-
-                            <!-- QR Thumbnail -->
-                            <div 
-                                style="cursor: pointer; background: #ffffff; padding: 4px; border-radius: 6px; border: 1px solid var(--border-glass); box-shadow: 0 2px 8px rgba(0,0,0,0.06); flex-shrink: 0;"
-                                onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ dept_name|escape }}', '{{ student.qr_code_path }}')"
-                                title="Click to view & download QR"
-                            >
-                                {% if student.qr_code_path %}
-                                    <img src="{{ student.qr_code_path }}" alt="QR" style="width: 58px; height: 58px; display: block;">
+                            </td>
+                            <td>
+                                {% if student.sample_count >= 50 %}
+                                    <span class="badge badge-success" style="font-size: 0.75rem;">
+                                        ✓ Enrolled ({{ student.sample_count }}/50)
+                                    </span>
+                                {% elif student.sample_count > 0 %}
+                                    <span class="badge badge-warning" style="font-size: 0.75rem;">
+                                        ⚠️ Incomplete ({{ student.sample_count }}/50)
+                                    </span>
                                 {% else %}
-                                    <div style="width: 58px; height: 58px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: #0f172a;">
-                                        📱
-                                    </div>
+                                    <span class="badge badge-danger" style="font-size: 0.75rem;">
+                                        ⚠️ Needs Capture
+                                    </span>
                                 {% endif %}
-                            </div>
-                        </div>
-
-                        <!-- Face Dataset Status Badge -->
-                        <div style="margin-bottom: 1.25rem;">
-                            {% if student.sample_count >= 50 %}
-                                <span class="badge badge-success" style="font-size: 0.78rem;">
-                                    ✓ Face Enrolled ({{ student.sample_count }}/50)
-                                </span>
-                            {% elif student.sample_count > 0 %}
-                                <span class="badge badge-warning" style="font-size: 0.78rem;">
-                                    ⚠️ Incomplete ({{ student.sample_count }}/50)
-                                </span>
-                            {% else %}
-                                <span class="badge badge-danger" style="font-size: 0.78rem;">
-                                    ⚠️ Needs Face Capture
-                                </span>
-                            {% endif %}
-                        </div>
-                    </div>
-
-                    <!-- Action Buttons -->
-                    <div style="display: flex; flex-direction: column; gap: 0.4rem; padding-top: 0.85rem; border-top: 1px solid var(--border-glass);">
-                        <button 
-                            class="btn btn-primary" 
-                            onclick="openStudentDetailsModal('{{ student.id }}')"
-                            style="width: 100%; justify-content: center; font-size: 0.82rem; font-weight: 800; padding: 0.55rem 0.65rem;"
-                        >
-                            <span>📊</span> Complete Details &amp; History &rarr;
-                        </button>
-                        <div style="display: flex; gap: 0.4rem;">
-                            <button 
-                                class="btn btn-outline" 
-                                onclick="showQRModal('{{ student.name|escape }}', '{{ student.person_code|escape }}', '{{ dept_name|escape }}', '{{ student.qr_code_path }}')"
-                                style="flex: 1; padding: 0.45rem 0.45rem; font-size: 0.78rem;"
-                            >
-                                📱 QR Pass
-                            </button>
-                            <a 
-                                href="{{ url_for('capture_face_page', person_id=student.id) }}" 
-                                class="btn btn-outline" 
-                                style="padding: 0.45rem 0.6rem; font-size: 0.78rem;"
-                                title="Capture Face Samples"
-                            >
-                                📷 Capture
-                            </a>
-                            <button 
-                                class="btn btn-outline" 
-                                onclick="confirmDeleteStudentDept('{{ student.id }}', '{{ student.name|escape }}', '{{ student.person_code|escape }}')"
-                                style="padding: 0.45rem 0.6rem; font-size: 0.78rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);"
-                                title="Delete Student"
-                            >
-                                🗑️
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+                            </td>
+                            <td style="text-align: right;">
+                                <div style="display: inline-flex; gap: 0.4rem; align-items: center;">
+                                    <button 
+                                        class="btn btn-primary btn-sm" 
+                                        onclick="openStudentDetailsModal('{{ student.id }}')"
+                                        style="font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.75rem; white-space: nowrap;"
+                                        title="View Complete Details & Attendance History"
+                                    >
+                                        <span>📊</span> View Details
+                                    </button>
+                                    <a 
+                                        href="{{ url_for('capture_face_page', person_id=student.id) }}" 
+                                        class="btn btn-outline btn-sm" 
+                                        style="padding: 0.35rem 0.6rem; font-size: 0.78rem;"
+                                        title="Capture Face Samples"
+                                    >
+                                        📷 Capture
+                                    </a>
+                                    <button 
+                                        class="btn btn-outline btn-sm" 
+                                        onclick="confirmDeleteStudentDept('{{ student.id }}', '{{ student.name|escape }}', '{{ student.person_code|escape }}')"
+                                        style="padding: 0.35rem 0.55rem; font-size: 0.78rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.3);"
+                                        title="Delete Student"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </div>
         
         <div id="no-search-results" style="display: none; text-align: center; padding: 3rem 1rem; color: var(--text-muted);">
@@ -542,6 +542,35 @@
         studentToDeleteId = null;
     }
 
+    // Live search filter for student list
+    function filterDeptStudentsLive() {
+        const input = document.getElementById('dept-student-search-input');
+        if (!input) return;
+        const query = input.value.toLowerCase().trim();
+        const rows = document.querySelectorAll('.student-list-row');
+        let visibleCount = 0;
+
+        rows.forEach(row => {
+            const name = row.getAttribute('data-name') || '';
+            const code = row.getAttribute('data-code') || '';
+            if (!query || name.includes(query) || code.includes(query)) {
+                row.style.display = '';
+                visibleCount++;
+            } else {
+                row.style.display = 'none';
+            }
+        });
+
+        const noRes = document.getElementById('no-search-results');
+        const table = document.getElementById('students-table');
+        if (noRes) {
+            noRes.style.display = visibleCount === 0 ? 'block' : 'none';
+        }
+        if (table) {
+            table.style.display = visibleCount === 0 ? 'none' : '';
+        }
+    }
+
     async function executeDeleteStudentDept() {
         if (!studentToDeleteId) return;
         const btn = document.getElementById('btn-do-delete');
@@ -556,8 +585,8 @@
             const data = await res.json();
             if (res.ok && data.success) {
                 showToast(data.message, 'success', 5000);
-                const el = document.getElementById(`student-card-${studentToDeleteId}`);
-                if (el) el.remove();
+                const row = document.getElementById(`student-row-${studentToDeleteId}`);
+                if (row) row.remove();
                 closeDeleteModal();
                 filterDeptStudentsLive();
             } else {
