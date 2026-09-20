@@ -28,12 +28,12 @@
          ============================================================= -->
     <div id="phase-qr" class="glass-card" style="padding: 1.25rem;">
         <!-- Card Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
                 <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.15rem;">
-                    <img src="{{ url_for('static', filename='images/phone_scan_qr.png') }}" 
-                         alt="QR Icon" 
-                         style="width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 82, 204, 0.3));">
+                    <img src="{{ url_for('static', filename='images/phone_scan_qr.png') }}" alt="QR Icon"
+                        style="width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 82, 204, 0.3));">
                     <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">
                         Step 1: Scan Student Attendance QR
                     </h3>
@@ -46,7 +46,8 @@
         </div>
 
         <!-- Viewfinder Camera Box -->
-        <div class="camera-container" id="qr-camera-box" style="aspect-ratio: 16 / 9; max-height: 310px; min-height: 250px;">
+        <div class="camera-container" id="qr-camera-box"
+            style="aspect-ratio: 16 / 9; max-height: 310px; min-height: 250px;">
             <!-- High-Tech HUD Overlays -->
             <div class="kiosk-hud-top">
                 <div class="kiosk-hud-pill">
@@ -58,7 +59,7 @@
             </div>
 
             <video id="qr-video" class="camera-video" playsinline></video>
-            
+
             <div class="camera-overlay">
                 <div class="scanner-reticle">
                     <div class="scanner-laser"></div>
@@ -67,32 +68,41 @@
         </div>
 
         <!-- QR Controls Toolbar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
             <div style="display: flex; gap: 0.5rem;">
-                <button id="btn-start-qr-cam" class="btn btn-primary btn-sm" onclick="startQRScanner()" style="padding: 0.45rem 1rem;">
+                <button id="btn-start-qr-cam" class="btn btn-primary btn-sm" onclick="startQRScanner()"
+                    style="padding: 0.45rem 1rem;">
                     <span>📷</span> Start Camera
                 </button>
-                <button id="btn-stop-qr-cam" class="btn btn-outline btn-sm" onclick="stopQRScanner()" style="display: none; padding: 0.45rem 1rem;">
+                <button id="btn-stop-qr-cam" class="btn btn-outline btn-sm" onclick="stopQRScanner()"
+                    style="display: none; padding: 0.45rem 1rem;">
                     <span>⏹️</span> Stop Camera
                 </button>
-                <button class="btn btn-outline btn-sm" onclick="resetTerminal()" title="Restart scanner cycle" style="padding: 0.45rem 0.8rem;">
+                <button class="btn btn-outline btn-sm" onclick="resetTerminal()" title="Restart scanner cycle"
+                    style="padding: 0.45rem 0.8rem;">
                     <span>🔄</span> Refresh
                 </button>
             </div>
 
             <!-- Manual Token / ID Entry Toggle -->
-            <button class="btn btn-outline btn-sm" onclick="toggleManualToken()" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
+            <button class="btn btn-outline btn-sm" onclick="toggleManualToken()"
+                style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
                 <span>⌨️</span> Enter ID / Token
             </button>
         </div>
 
         <!-- Manual Token Drawer -->
-        <div id="manual-token-box" style="display: none; margin-top: 1rem; padding: 0.85rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0, 82, 204, 0.06);">
-            <label for="manual-token-input" class="form-label" style="font-size: 0.82rem; margin-bottom: 0.3rem; color: #1e40af; font-weight: 700;">
+        <div id="manual-token-box"
+            style="display: none; margin-top: 1rem; padding: 0.85rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0, 82, 204, 0.06);">
+            <label for="manual-token-input" class="form-label"
+                style="font-size: 0.82rem; margin-bottom: 0.3rem; color: #1e40af; font-weight: 700;">
                 Enter Student Roll No, ID, or QR Token:
             </label>
             <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="manual-token-input" class="form-control" placeholder="e.g. 2026CS101, DEPT_TEST_1789196708, or STU_..." style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
+                <input type="text" id="manual-token-input" class="form-control"
+                    placeholder="e.g. 2026CS101, DEPT_TEST_1789196708, or STU_..."
+                    style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
                 <button class="btn btn-primary btn-sm" onclick="submitManualToken()" style="white-space: nowrap;">
                     Verify Student
                 </button>
@@ -100,7 +110,9 @@
         </div>
 
         <!-- Feedback Alert Box -->
-        <div id="qr-alert-box" style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;"></div>
+        <div id="qr-alert-box"
+            style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;">
+        </div>
     </div>
 
     <!-- =============================================================
@@ -108,19 +120,24 @@
          ============================================================= -->
     <div id="phase-face" class="glass-card" style="display: none; padding: 1.25rem;">
         <!-- Identified Student Preview Banner -->
-        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+        <div
+            style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
             <div style="display: flex; align-items: center; gap: 0.75rem;">
-                <div class="stat-icon icon-cyan" style="width: 42px; height: 42px; font-size: 1.35rem; border-radius: var(--radius-full);">
+                <div class="stat-icon icon-cyan"
+                    style="width: 42px; height: 42px; font-size: 1.35rem; border-radius: var(--radius-full);">
                     👤
                 </div>
                 <div>
-                    <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--primary); font-weight: 800; letter-spacing: 0.08em;">
+                    <div
+                        style="font-size: 0.7rem; text-transform: uppercase; color: var(--primary); font-weight: 800; letter-spacing: 0.08em;">
                         Scanned Student Identity
                     </div>
-                    <div id="scanned-student-name" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); line-height: 1.2; margin: 0.1rem 0;">
+                    <div id="scanned-student-name"
+                        style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); line-height: 1.2; margin: 0.1rem 0;">
                         -
                     </div>
-                    <div id="scanned-student-meta" style="font-size: 0.78rem; color: var(--text-muted); font-family: monospace;">
+                    <div id="scanned-student-meta"
+                        style="font-size: 0.78rem; color: var(--text-muted); font-family: monospace;">
                         -
                     </div>
                 </div>
@@ -131,7 +148,8 @@
         </div>
 
         <!-- Step Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
                 <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">
                     Step 2: Real-Time Face Cross-Check
@@ -146,7 +164,8 @@
         </div>
 
         <!-- Face Camera Box -->
-        <div class="camera-container" id="face-camera-box" style="aspect-ratio: 16 / 9; max-height: 310px; min-height: 250px;">
+        <div class="camera-container" id="face-camera-box"
+            style="aspect-ratio: 16 / 9; max-height: 310px; min-height: 250px;">
             <!-- High-Tech HUD Overlays -->
             <div class="kiosk-hud-top">
                 <div class="kiosk-hud-pill">
@@ -165,20 +184,25 @@
 
         <!-- Live Status Feedback Bar -->
         <div style="text-align: center; margin-top: 1.25rem;">
-            <div id="face-stream-status" style="font-size: 0.92rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">
+            <div id="face-stream-status"
+                style="font-size: 0.92rem; font-weight: 700; color: var(--primary); margin-bottom: 0.75rem;">
                 <span class="spinner"></span> Scanning facial features in real-time...
             </div>
             <div style="display: flex; justify-content: center; gap: 0.75rem;">
-                <button id="btn-verify-face" class="btn btn-outline" onclick="triggerFaceVerificationAttempt()" style="font-size: 0.85rem; padding: 0.5rem 1.15rem;">
+                <button id="btn-verify-face" class="btn btn-outline" onclick="triggerFaceVerificationAttempt()"
+                    style="font-size: 0.85rem; padding: 0.5rem 1.15rem;">
                     <span>🎯</span> Manual Verify Trigger
                 </button>
-                <button class="btn btn-outline" onclick="resetTerminal()" style="font-size: 0.85rem; padding: 0.5rem 1.15rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);">
+                <button class="btn btn-outline" onclick="resetTerminal()"
+                    style="font-size: 0.85rem; padding: 0.5rem 1.15rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);">
                     <span>✕</span> Cancel
                 </button>
             </div>
         </div>
 
-        <div id="face-alert-box" style="display: none; margin-top: 1.25rem; padding: 0.9rem 1.15rem; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600;"></div>
+        <div id="face-alert-box"
+            style="display: none; margin-top: 1.25rem; padding: 0.9rem 1.15rem; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600;">
+        </div>
     </div>
 
     <!-- =============================================================
@@ -186,50 +210,67 @@
          ============================================================= -->
     <div id="phase-result" class="glass-card" style="display: none; text-align: center; padding: 2.75rem 2rem;">
         <!-- Glowing Success Check Icon -->
-        <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 2.6rem; margin: 0 auto 1.5rem auto; box-shadow: 0 0 30px rgba(16, 185, 129, 0.45); animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
+        <div
+            style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 2.6rem; margin: 0 auto 1.5rem auto; box-shadow: 0 0 30px rgba(16, 185, 129, 0.45); animation: bounceIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);">
             ✓
         </div>
-        
-        <h3 id="result-title" style="font-size: 1.95rem; font-weight: 900; margin-bottom: 0.4rem; color: var(--text-main); letter-spacing: -0.02em;">
+
+        <h3 id="result-title"
+            style="font-size: 1.95rem; font-weight: 900; margin-bottom: 0.4rem; color: var(--text-main); letter-spacing: -0.02em;">
             Attendance Successfully Marked!
         </h3>
-        <p id="result-subtitle" style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.75rem; max-width: 520px; margin-left: auto; margin-right: auto;">
+        <p id="result-subtitle"
+            style="color: var(--text-muted); font-size: 1rem; margin-bottom: 1.75rem; max-width: 520px; margin-left: auto; margin-right: auto;">
             Student QR credential and facial biometrics verified. Attendance recorded in MySQL database.
         </p>
 
         <!-- Auto Reset Counter -->
-        <div style="margin-bottom: 1.75rem; display: inline-flex; align-items: center; gap: 0.6rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-full); padding: 0.45rem 1.25rem; font-size: 0.88rem; color: #1d4ed8; font-weight: 700;" id="auto-reset-indicator">
-            <span class="pulse-dot"></span> Next student scan in <span id="auto-reset-seconds" style="color: var(--primary); font-weight: 900; margin: 0 3px;">4</span> seconds...
+        <div style="margin-bottom: 1.75rem; display: inline-flex; align-items: center; gap: 0.6rem; background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-full); padding: 0.45rem 1.25rem; font-size: 0.88rem; color: #1d4ed8; font-weight: 700;"
+            id="auto-reset-indicator">
+            <span class="pulse-dot"></span> Next student scan in <span id="auto-reset-seconds"
+                style="color: var(--primary); font-weight: 900; margin: 0 3px;">4</span> seconds...
         </div>
 
         <!-- Student Attendance Official Receipt Card -->
         <div class="receipt-card" style="max-width: 480px; margin: 0 auto 2.25rem auto; text-align: left;">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
+            <div
+                style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid #e2e8f0;">
                 <div style="display: flex; align-items: center; gap: 1rem;">
                     <div class="stat-icon icon-cyan" style="font-size: 1.5rem; width: 46px; height: 46px;">👤</div>
                     <div>
-                        <div id="res-name" style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">-</div>
-                        <div id="res-code" style="font-size: 0.85rem; color: var(--primary); font-family: monospace; font-weight: 700; margin-top: 0.15rem;">-</div>
+                        <div id="res-name"
+                            style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); line-height: 1.2;">-
+                        </div>
+                        <div id="res-code"
+                            style="font-size: 0.85rem; color: var(--primary); font-family: monospace; font-weight: 700; margin-top: 0.15rem;">
+                            -</div>
                     </div>
                 </div>
-                <span id="res-status" class="badge badge-success" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">PRESENT</span>
+                <span id="res-status" class="badge badge-success"
+                    style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">PRESENT</span>
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; font-size: 0.88rem;">
                 <div>
-                    <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Department</span>
+                    <span
+                        style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Department</span>
                     <strong id="res-dept" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
                 </div>
                 <div>
-                    <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Verification</span>
+                    <span
+                        style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Verification</span>
                     <span style="color: #15803d; font-weight: 700; font-size: 0.9rem;">✓ Biometric Verified</span>
                 </div>
                 <div>
-                    <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Attendance Date</span>
+                    <span
+                        style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Attendance
+                        Date</span>
                     <strong id="res-date" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
                 </div>
                 <div>
-                    <span style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Logged Time</span>
+                    <span
+                        style="color: var(--text-muted); display: block; font-size: 0.75rem; text-transform: uppercase; font-weight: 700; margin-bottom: 0.2rem;">Logged
+                        Time</span>
                     <strong id="res-time" style="color: var(--text-main); font-size: 0.95rem;">-</strong>
                 </div>
             </div>
@@ -522,7 +563,7 @@
         if (autoResetTimer) clearInterval(autoResetTimer);
         resetSecondsLeft = 4;
         const countEl = document.getElementById('auto-reset-seconds');
-        
+
         autoResetTimer = setInterval(() => {
             resetSecondsLeft--;
             if (countEl) countEl.innerText = resetSecondsLeft;

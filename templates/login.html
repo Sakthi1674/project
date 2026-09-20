@@ -3,7 +3,8 @@
 {% block title %}Admin Sign In | Face & QR Attendance System{% endblock %}
 
 {% block content %}
-<div class="login-page-wrapper" style="min-height: calc(100vh - 120px); margin: 0; padding: 1rem; display: flex; align-items: center; justify-content: center;">
+<div class="login-page-wrapper"
+    style="min-height: calc(100vh - 120px); margin: 0; padding: 1rem; display: flex; align-items: center; justify-content: center;">
     <!-- Floating Sparkle Accents -->
     <span class="doodle-sparkle gold" style="top: 12%; left: 22%;">✦</span>
     <span class="doodle-sparkle cyan" style="top: 18%; right: 24%; animation-delay: 0.8s;">✨</span>
@@ -13,14 +14,18 @@
         <div class="glass-card login-card animate-fade-in" style="padding: 1.75rem 2rem;">
             <!-- Header with Biometric Shield Logo -->
             <div class="login-header" style="margin-bottom: 1.25rem;">
-                <div class="ref-shield-logo animate-pulse-glow" style="width: 50px; height: 50px; margin: 0 auto 0.75rem; box-shadow: 0 0 20px rgba(0, 194, 255, 0.65);">
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(0, 194, 255, 0.2)" stroke="#00c2ff"/>
-                        <rect x="9" y="8" width="6" height="6" rx="1" fill="#0052cc" stroke="none"/>
+                <div class="ref-shield-logo animate-pulse-glow"
+                    style="width: 50px; height: 50px; margin: 0 auto 0.75rem; box-shadow: 0 0 20px rgba(0, 194, 255, 0.65);">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" fill="rgba(0, 194, 255, 0.2)"
+                            stroke="#00c2ff" />
+                        <rect x="9" y="8" width="6" height="6" rx="1" fill="#0052cc" stroke="none" />
                     </svg>
                 </div>
                 <h2 style="font-size: 1.4rem; margin-bottom: 0.2rem;">Admin Login</h2>
-                <p style="font-size: 0.82rem; color: var(--text-muted);">Sign in to manage student profiles, biometric terminal &amp; reports</p>
+                <p style="font-size: 0.82rem; color: var(--text-muted);">Sign in to manage student profiles, biometric
+                    terminal &amp; reports</p>
             </div>
 
             <!-- Login Form -->
@@ -29,57 +34,53 @@
 
                 <!-- Username Field -->
                 <div class="form-group" style="margin-bottom: 1rem;">
-                    <label for="username" class="form-label" style="font-weight: 700; font-size: 0.84rem; margin-bottom: 0.3rem;">
+                    <label for="username" class="form-label"
+                        style="font-weight: 700; font-size: 0.84rem; margin-bottom: 0.3rem;">
                         Admin Username
                     </label>
                     <div style="position: relative;">
-                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #64748b; pointer-events: none;">👤</span>
-                        <input 
-                            type="text" 
-                            id="username" 
-                            name="username" 
-                            class="form-control" 
-                            placeholder="Enter username (e.g. admin)" 
-                            required 
-                            autofocus
-                            style="padding: 0.6rem 0.85rem 0.6rem 2.5rem; font-size: 0.9rem; border-radius: var(--radius-sm);"
-                        >
+                        <span
+                            style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #64748b; pointer-events: none;">👤</span>
+                        <input type="text" id="username" name="username" class="form-control"
+                            placeholder="Enter username (e.g. admin)" required autofocus
+                            style="padding: 0.6rem 0.85rem 0.6rem 2.5rem; font-size: 0.9rem; border-radius: var(--radius-sm);">
                     </div>
                 </div>
 
                 <!-- Password Field -->
                 <div class="form-group" style="margin-bottom: 1.25rem;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
-                        <label for="password" class="form-label" style="font-weight: 700; font-size: 0.84rem; margin-bottom: 0;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.3rem;">
+                        <label for="password" class="form-label"
+                            style="font-weight: 700; font-size: 0.84rem; margin-bottom: 0;">
                             Password
                         </label>
-                        <button type="button" onclick="togglePasswordVisibility()" style="background: none; border: none; color: var(--primary); font-size: 0.75rem; font-weight: 700; cursor: pointer;">
+                        <button type="button" onclick="togglePasswordVisibility()"
+                            style="background: none; border: none; color: var(--primary); font-size: 0.75rem; font-weight: 700; cursor: pointer;">
                             <span id="pwd-toggle-text">Show</span>
                         </button>
                     </div>
                     <div style="position: relative;">
-                        <span style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #64748b; pointer-events: none;">🔒</span>
-                        <input 
-                            type="password" 
-                            id="password" 
-                            name="password" 
-                            class="form-control" 
-                            placeholder="Enter your password" 
-                            required
-                            style="padding: 0.6rem 0.85rem 0.6rem 2.5rem; font-size: 0.9rem; border-radius: var(--radius-sm);"
-                        >
+                        <span
+                            style="position: absolute; left: 0.85rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: #64748b; pointer-events: none;">🔒</span>
+                        <input type="password" id="password" name="password" class="form-control"
+                            placeholder="Enter your password" required
+                            style="padding: 0.6rem 0.85rem 0.6rem 2.5rem; font-size: 0.9rem; border-radius: var(--radius-sm);">
                     </div>
                 </div>
 
                 <!-- Sign In Action Button -->
-                <button type="submit" class="btn btn-primary" id="btn-submit-login" style="width: 100%; padding: 0.75rem; font-size: 0.95rem; font-weight: 800; justify-content: center; border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0, 82, 204, 0.35);">
+                <button type="submit" class="btn btn-primary" id="btn-submit-login"
+                    style="width: 100%; padding: 0.75rem; font-size: 0.95rem; font-weight: 800; justify-content: center; border-radius: var(--radius-sm); box-shadow: 0 4px 16px rgba(0, 82, 204, 0.35);">
                     Sign In to Dashboard &rarr;
                 </button>
             </form>
 
             <!-- Back to Home -->
             <div style="text-align: center; margin-top: 1rem; font-size: 0.82rem;">
-                <a href="{{ url_for('home') }}" style="color: var(--text-muted); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; transition: var(--transition);" onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
+                <a href="{{ url_for('home') }}"
+                    style="color: var(--text-muted); text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 0.35rem; transition: var(--transition);"
+                    onmouseover="this.style.color='var(--primary)'" onmouseout="this.style.color='var(--text-muted)'">
                     &larr; Back to Welcome Screen
                 </a>
             </div>
