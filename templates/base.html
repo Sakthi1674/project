@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>{% block title %}Face & QR Attendance System{% endblock %}</title>
-    <meta name="description" content="Local Attendance Management System using OpenCV LBPH Face Recognition and Dynamic QR Code Validation.">
+    <meta name="description"
+        content="Local Attendance Management System using OpenCV LBPH Face Recognition and Dynamic QR Code Validation.">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
     {% block head %}{% endblock %}
 </head>
+
 <body>
     <!-- Top Navigation Bar -->
     <header class="app-header">
@@ -31,13 +34,15 @@
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('logout') }}" class="btn btn-outline nav-logout-btn" style="font-size: 0.85rem; padding: 0.4rem 0.9rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.35); border-radius: var(--radius-full); font-weight: 700;">
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline nav-logout-btn"
+                            style="font-size: 0.85rem; padding: 0.4rem 0.9rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.35); border-radius: var(--radius-full); font-weight: 700;">
                             <span>🚪</span> Sign Out
                         </a>
                     </li>
                     {% else %}
                     <li>
-                        <a href="{{ url_for('login') }}" class="ref-btn-get-started" style="font-size: 0.92rem; padding: 0.55rem 1.4rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.35);">
+                        <a href="{{ url_for('login') }}" class="ref-btn-get-started"
+                            style="font-size: 0.92rem; padding: 0.55rem 1.4rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.35);">
                             <span>🔐</span> Login &rarr;
                         </a>
                     </li>
@@ -56,27 +61,32 @@
                 <!-- Admin Portal (Dashboard & All Management Screens): Home navigation removed as requested -->
                 <ul class="nav-links">
                     <li>
-                        <a href="{{ url_for('dashboard') }}" class="nav-link {% if request.endpoint in ('dashboard', 'index') %}active{% endif %}">
+                        <a href="{{ url_for('dashboard') }}"
+                            class="nav-link {% if request.endpoint in ('dashboard', 'index') %}active{% endif %}">
                             <span>📊</span> Dashboard
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('register') }}" class="nav-link {% if request.endpoint == 'register' %}active{% endif %}">
+                        <a href="{{ url_for('register') }}"
+                            class="nav-link {% if request.endpoint == 'register' %}active{% endif %}">
                             <span>👤</span> Register
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('departments_page') }}" class="nav-link {% if request.endpoint == 'departments_page' %}active{% endif %}">
+                        <a href="{{ url_for('departments_page') }}"
+                            class="nav-link {% if request.endpoint == 'departments_page' %}active{% endif %}">
                             <span>🏢</span> Departments
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('attendance_page') }}" class="nav-link {% if request.endpoint == 'attendance_page' %}active{% endif %}">
+                        <a href="{{ url_for('attendance_page') }}"
+                            class="nav-link {% if request.endpoint == 'attendance_page' %}active{% endif %}">
                             <span>📷</span> Mark Attendance
                         </a>
                     </li>
                     <li>
-                        <a href="{{ url_for('report') }}" class="nav-link {% if request.endpoint == 'report' %}active{% endif %}">
+                        <a href="{{ url_for('report') }}"
+                            class="nav-link {% if request.endpoint == 'report' %}active{% endif %}">
                             <span>📊</span> Reports
                         </a>
                     </li>
@@ -89,7 +99,9 @@
                     {% endif %}
                     {% if logged_in %}
                     <li>
-                        <a href="{{ url_for('logout') }}" class="btn btn-outline nav-logout-btn" title="Sign out of Admin Portal" style="font-size: 0.85rem; padding: 0.4rem 0.9rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.35); border-radius: var(--radius-full); display: flex; align-items: center; gap: 0.35rem; font-weight: 700;">
+                        <a href="{{ url_for('logout') }}" class="btn btn-outline nav-logout-btn"
+                            title="Sign out of Admin Portal"
+                            style="font-size: 0.85rem; padding: 0.4rem 0.9rem; color: var(--danger); border-color: rgba(239, 68, 68, 0.35); border-radius: var(--radius-full); display: flex; align-items: center; gap: 0.35rem; font-weight: 700;">
                             <span>🚪</span> Sign Out
                         </a>
                     </li>
@@ -104,18 +116,19 @@
     <main class="main-wrapper">
         <!-- Server Flash Alerts -->
         {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                <div class="flash-container">
-                    {% for category, message in messages %}
-                        <div class="glass-card flash-alert flash-{{ category }}">
-                            <div>
-                                <span style="font-weight: 600;">{{ message }}</span>
-                            </div>
-                            <button type="button" class="flash-close-btn" onclick="this.parentElement.remove()" aria-label="Dismiss alert">×</button>
-                        </div>
-                    {% endfor %}
+        {% if messages %}
+        <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="glass-card flash-alert flash-{{ category }}">
+                <div>
+                    <span style="font-weight: 600;">{{ message }}</span>
                 </div>
-            {% endif %}
+                <button type="button" class="flash-close-btn" onclick="this.parentElement.remove()"
+                    aria-label="Dismiss alert">×</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
         {% endwith %}
 
         {% block content %}{% endblock %}
@@ -127,4 +140,5 @@
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
     {% block scripts %}{% endblock %}
 </body>
+
 </html>

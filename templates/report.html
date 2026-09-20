@@ -98,14 +98,14 @@
 </div>
 
 <!-- Cutoff Notice Alert Bar -->
-<div style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem;">
+<div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 2rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.75rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
     <div style="display: flex; align-items: center; gap: 0.75rem;">
         <span style="font-size: 1.5rem;">⏰</span>
         <div>
-            <div style="font-weight: 700; color: #1e40af; font-size: 0.95rem;">
+            <div style="font-weight: 800; color: #1e40af; font-size: 0.95rem;">
                 Daily Attendance Cutoff Time: <strong>{{ cutoff_time }}</strong>
             </div>
-            <div style="color: #475569; font-size: 0.82rem;">
+            <div style="color: #1e3a8a; font-size: 0.82rem;">
                 {% if is_past_cutoff %}
                     <span style="color: #b91c1c; font-weight: 700;">Cutoff Passed:</span> Unmarked students are recorded as ABSENT.
                 {% else %}
@@ -115,189 +115,77 @@
         </div>
     </div>
     <div>
-        <button class="btn btn-outline btn-sm" onclick="triggerAbsenteeCheck(true)" style="background: #ffffff; border-color: #93c5fd; color: #1d4ed8; font-weight: 700;">
+        <button class="btn btn-outline btn-sm" onclick="triggerAbsenteeCheck(true)" style="background: #ffffff; border-color: #93c5fd; color: #1d4ed8; font-weight: 700; box-shadow: 0 2px 8px rgba(0, 82, 204, 0.1);">
             <span>📋</span> Force Absentee Processing
         </button>
     </div>
 </div>
 
-<!-- Interactive Department-Wise Visual Chart Section -->
-<div class="glass-card" style="margin-bottom: 2.5rem; padding: 1.75rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.85rem;">
+<!-- Overall Attendance Visual Analytics Card -->
+<div class="glass-card animate-fade-in" style="margin-bottom: 2.5rem; padding: 1.75rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem; border-bottom: 1px solid var(--border-glass); padding-bottom: 0.85rem;">
         <div>
-            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--primary); letter-spacing: 0.05em;">Visual Analytics</div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: var(--primary); letter-spacing: 0.08em;">CAMPUS ATTENDANCE INTELLIGENCE</div>
             <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-top: 0.2rem;">
-                📊 Department Attendance Comparison (Present vs. Absent)
+                📊 Overall Attendance Progress &amp; Distribution
             </h3>
         </div>
         <div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap;">
-            <span class="badge badge-success" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">● Present</span>
-            <span class="badge badge-danger" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">● Absent</span>
-            <span class="badge badge-cyan" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">📈 Rate (%)</span>
+            <span class="badge badge-success" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">✓ Present: {{ overall_present }}</span>
+            <span class="badge badge-danger" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">✗ Absent: {{ overall_absent }}</span>
+            <span class="badge badge-cyan" style="font-size: 0.82rem; padding: 0.35rem 0.75rem;">📈 Rate: {{ overall_rate }}%</span>
         </div>
     </div>
 
-    <!-- Chart Container -->
-    <div style="position: relative; height: 320px; width: 100%;">
-        <canvas id="deptAttendanceChart"></canvas>
-    </div>
-</div>
-
-<!-- Department-Wise Reports Section -->
-<div style="margin-bottom: 2.5rem;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem;">
-        <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 0.5rem;">
-            <span>🏢</span> Department Breakdowns &amp; Student Rosters
-        </h3>
-        <span style="font-size: 0.85rem; color: var(--text-muted);">
-            Date: <strong style="color: var(--primary);">{{ current_date }}</strong>
-        </span>
-    </div>
-
-    {% if not dept_attendance %}
-        <div class="glass-card" style="text-align: center; padding: 3.5rem 1rem;">
-            <div style="font-size: 3rem; margin-bottom: 0.75rem;">📋</div>
-            <h4 style="font-size: 1.2rem; font-weight: 700; margin-bottom: 0.5rem;">No Department Records Found</h4>
-            <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.5rem auto;">
-                No students enrolled or no records match the filter query for <strong>{{ current_date }}</strong>.
-            </p>
-            <a href="{{ url_for('register') }}" class="btn btn-primary">+ Register Students</a>
+    <!-- Multi-Segment Visual Progress Bar -->
+    <div style="margin-bottom: 1.75rem;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.5rem;">
+            <span style="color: var(--success); display: flex; align-items: center; gap: 0.4rem;">
+                <span class="pulse-dot"></span> Present Verified: {{ overall_present }} ({{ overall_rate }}%)
+            </span>
+            <span style="color: var(--danger);">
+                Absent / Unmarked: {{ overall_absent }} ({% if overall_total > 0 %}{{ (100 - overall_rate)|round(1) }}{% else %}0{% endif %}%)
+            </span>
         </div>
-    {% else %}
-        {% for dept_name, data in dept_attendance.items() %}
-            <div class="dept-report-box" id="dept-card-{{ loop.index }}" style="margin-bottom: 2rem;">
-                <!-- Department Header Summary Bar -->
-                <div class="dept-report-header">
-                    <div>
-                        <div style="display: flex; align-items: center; gap: 0.75rem;">
-                            <span style="font-size: 1.4rem;">🏛️</span>
-                            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
-                                {{ dept_name }}
-                            </h3>
-                            <span class="badge badge-cyan" id="dept-badge-rate-{{ loop.index }}">
-                                {{ data.attendance_rate }}% Attendance
-                            </span>
-                        </div>
-                        <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.25rem;">
-                            Roster summary for {{ current_date }}
-                        </p>
-                    </div>
+        <div style="height: 16px; background: #fee2e2; border-radius: var(--radius-full); overflow: hidden; display: flex; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);">
+            <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ overall_rate }}%; transition: width 0.8s ease;" title="Present: {{ overall_present }}"></div>
+            <div style="background: linear-gradient(90deg, #ef4444, #dc2626); height: 100%; width: {% if overall_total > 0 %}{{ 100 - overall_rate }}{% else %}0{% endif %}%; transition: width 0.8s ease;" title="Absent: {{ overall_absent }}"></div>
+        </div>
+    </div>
 
-                    <!-- Department Counters -->
-                    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-                        <span class="badge" style="background: #f1f5f9; color: #334155; font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                            Total: <strong style="margin-left: 3px;" id="dept-total-{{ loop.index }}">{{ data.total_students }}</strong>
-                        </span>
-                        <span class="badge badge-success" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                            ✓ Present: <strong style="margin-left: 3px;" id="dept-pres-count-{{ loop.index }}">{{ data.present_count }}</strong>
-                        </span>
-                        <span class="badge badge-danger" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">
-                            ✗ Absent: <strong style="margin-left: 3px;" id="dept-abs-count-{{ loop.index }}">{{ data.absent_count }}</strong>
-                        </span>
-                    </div>
+    <!-- Visual Chart Container -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; align-items: center;" class="dash-split-grid">
+        <div style="position: relative; height: 260px; display: flex; justify-content: center; align-items: center;">
+            <canvas id="overallAttendanceChart"></canvas>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 0.85rem;">
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #dbfae5 45%, #b1f3c5 100%); border: 1.5px solid #86efac; border-radius: var(--radius-md); padding: 1rem 1.25rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 14px rgba(16, 185, 129, 0.08);">
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #15803d;">Verified Present</div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: #15803d; margin-top: 0.15rem;">{{ overall_present }} Students</div>
                 </div>
-
-                <!-- Two-Column Roster: Present Students vs Absent Students -->
-                <div class="grid-cols-2" style="gap: 1.25rem;">
-                    <!-- 1. Present Students Column -->
-                    <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius-md); padding: 1.25rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #15803d; display: flex; align-items: center; gap: 0.4rem;">
-                                <span>✅</span> Present Students (<span id="pres-subcount-{{ loop.index }}">{{ data.present_students|length }}</span>)
-                            </h4>
-                            <span class="badge badge-success">Attended</span>
-                        </div>
-
-                        <div style="max-height: 380px; overflow-y: auto; padding-right: 4px;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="pres-table-{{ loop.index }}">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid #bbf7d0; text-align: left; color: #166534; font-size: 0.72rem; text-transform: uppercase;">
-                                        <th style="padding: 0.5rem 0.25rem;">Student</th>
-                                        <th style="padding: 0.5rem 0.25rem;">Time</th>
-                                        <th style="padding: 0.5rem 0.25rem; text-align: right;">Verification</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if data.present_students %}
-                                        {% for s in data.present_students %}
-                                            <tr id="student-row-{{ s.id }}" style="border-bottom: 1px solid rgba(187, 247, 208, 0.5);">
-                                                <td style="padding: 0.65rem 0.25rem;">
-                                                    <div style="font-weight: 700; color: #0f172a;">{{ s.name }}</div>
-                                                    <div style="font-family: monospace; font-size: 0.78rem; color: #15803d;">{{ s.person_code }}</div>
-                                                </td>
-                                                <td style="padding: 0.65rem 0.25rem; color: #334155; font-family: monospace; font-size: 0.8rem;">
-                                                    {{ s.time or 'Checked In' }}
-                                                </td>
-                                                <td style="padding: 0.65rem 0.25rem; text-align: right;">
-                                                    <span class="badge badge-success" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" title="Logged via QR and Facial Biometric Terminal">
-                                                        ✓ Biometric Verified
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr class="empty-row">
-                                            <td colspan="3" style="padding: 1.5rem; text-align: center; color: #64748b; font-style: italic;">
-                                                No students marked present for this date.
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- 2. Absent Students Column -->
-                    <div style="background: #fef2f2; border: 1px solid #fecaca; border-radius: var(--radius-md); padding: 1.25rem;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-                            <h4 style="font-size: 0.95rem; font-weight: 700; color: #b91c1c; display: flex; align-items: center; gap: 0.4rem;">
-                                <span>❌</span> Absent Students (<span id="abs-subcount-{{ loop.index }}">{{ data.absent_students|length }}</span>)
-                            </h4>
-                            <span class="badge badge-danger">Unmarked / Absent</span>
-                        </div>
-
-                        <div style="max-height: 380px; overflow-y: auto; padding-right: 4px;">
-                            <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem;" id="abs-table-{{ loop.index }}">
-                                <thead>
-                                    <tr style="border-bottom: 1px solid #fecaca; text-align: left; color: #991b1b; font-size: 0.72rem; text-transform: uppercase;">
-                                        <th style="padding: 0.5rem 0.25rem;">Student</th>
-                                        <th style="padding: 0.5rem 0.25rem; text-align: right;">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {% if data.absent_students %}
-                                        {% for s in data.absent_students %}
-                                            <tr id="student-row-{{ s.id }}" style="border-bottom: 1px solid rgba(254, 202, 202, 0.5);">
-                                                <td style="padding: 0.65rem 0.25rem;">
-                                                    <div style="font-weight: 700; color: #0f172a;">{{ s.name }}</div>
-                                                    <div style="font-family: monospace; font-size: 0.78rem; color: #b91c1c;">{{ s.person_code }}</div>
-                                                </td>
-                                                <td style="padding: 0.65rem 0.25rem; text-align: right;">
-                                                    <span class="badge badge-danger" style="font-size: 0.72rem; padding: 0.25rem 0.55rem;" title="Unmarked presence at cutoff">
-                                                        Unmarked / Absent
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                    {% else %}
-                                        <tr class="empty-row">
-                                            <td colspan="3" style="padding: 1.5rem; text-align: center; color: #64748b; font-style: italic;">
-                                                All students in this department are present!
-                                            </td>
-                                        </tr>
-                                    {% endif %}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
+                <div style="font-size: 2rem;">✅</div>
             </div>
-        {% endfor %}
-    {% endif %}
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #ffe3e7 45%, #fdbec7 100%); border: 1.5px solid #fca5a5; border-radius: var(--radius-md); padding: 1rem 1.25rem; display: space-between; align-items: center; display: flex; box-shadow: 0 4px 14px rgba(239, 68, 68, 0.08);">
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #b91c1c;">Recorded Absent</div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: #b91c1c; margin-top: 0.15rem;">{{ overall_absent }} Students</div>
+                </div>
+                <div style="font-size: 2rem;">❌</div>
+            </div>
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border: 1.5px solid #93c5fd; border-radius: var(--radius-md); padding: 1rem 1.25rem; display: space-between; align-items: center; display: flex; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
+                <div>
+                    <div style="font-size: 0.75rem; text-transform: uppercase; font-weight: 800; color: #1e40af;">Total Enrolled</div>
+                    <div style="font-size: 1.4rem; font-weight: 900; color: #0052cc; margin-top: 0.15rem;">{{ overall_total }} Students</div>
+                </div>
+                <div style="font-size: 2rem;">👥</div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Detailed Master Attendance Logs Table (Collapsible) -->
-<div class="glass-card" style="margin-top: 2rem;">
+<!-- Detailed Master Attendance Logs Table -->
+<div class="glass-card animate-fade-in" style="margin-top: 2rem;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <div style="display: flex; align-items: center; gap: 0.75rem;">
             <h3 style="font-size: 1.15rem; font-weight: 700; color: var(--text-main);">Master Raw Attendance Log Table</h3>
@@ -368,97 +256,49 @@
         document.querySelector('form').submit();
     }
 
-    // Initialize Department-Wise Chart.js Visual Graph
+    // Initialize Overall Attendance Chart.js Visual Graph
     document.addEventListener('DOMContentLoaded', () => {
-        const ctx = document.getElementById('deptAttendanceChart');
+        const ctx = document.getElementById('overallAttendanceChart');
         if (!ctx) return;
 
-        const deptLabels = [];
-        const presentData = [];
-        const absentData = [];
-        const rateData = [];
-
-        {% for dept_name, data in dept_attendance.items() %}
-            deptLabels.push("{{ dept_name|escape }}");
-            presentData.push({{ data.present_count }});
-            absentData.push({{ data.absent_count }});
-            rateData.push({{ data.attendance_rate }});
-        {% endfor %}
-
-        if (deptLabels.length === 0) {
-            ctx.parentElement.innerHTML = '<div style="text-align:center; padding: 3rem; color: var(--text-muted);">No department data available for chart.</div>';
-            return;
-        }
+        const presentCount = {{ overall_present or 0 }};
+        const absentCount = {{ overall_absent or 0 }};
+        const totalEnrolled = {{ overall_total or 0 }};
 
         new Chart(ctx, {
-            type: 'bar',
+            type: 'doughnut',
             data: {
-                labels: deptLabels,
-                datasets: [
-                    {
-                        label: 'Present Students',
-                        data: presentData,
-                        backgroundColor: 'rgba(16, 185, 129, 0.85)',
-                        borderColor: '#10b981',
-                        borderWidth: 1.5,
-                        borderRadius: 6,
-                        hoverBackgroundColor: '#059669'
-                    },
-                    {
-                        label: 'Absent Students',
-                        data: absentData,
-                        backgroundColor: 'rgba(239, 68, 68, 0.85)',
-                        borderColor: '#ef4444',
-                        borderWidth: 1.5,
-                        borderRadius: 6,
-                        hoverBackgroundColor: '#dc2626'
-                    }
-                ]
+                labels: ['Present Students', 'Absent Students'],
+                datasets: [{
+                    data: [presentCount, absentCount],
+                    backgroundColor: [
+                        'rgba(16, 185, 129, 0.88)',
+                        'rgba(239, 68, 68, 0.88)'
+                    ],
+                    borderColor: ['#ffffff', '#ffffff'],
+                    borderWidth: 2,
+                    hoverOffset: 6
+                }]
             },
             options: {
                 responsive: true,
                 maintainAspectRatio: false,
+                cutout: '72%',
                 plugins: {
                     legend: {
-                        position: 'top',
+                        position: 'bottom',
                         labels: {
-                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600', size: 12 },
-                            color: '#334155',
+                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 12 },
+                            color: '#062354',
                             padding: 16
                         }
                     },
                     tooltip: {
-                        backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                        backgroundColor: 'rgba(6, 35, 84, 0.95)',
                         padding: 12,
                         cornerRadius: 8,
                         titleFont: { family: "'Plus Jakarta Sans', sans-serif", weight: '700', size: 13 },
-                        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 },
-                        callbacks: {
-                            afterBody: function(context) {
-                                const index = context[0].dataIndex;
-                                return `Attendance Rate: ${rateData[index]}%`;
-                            }
-                        }
-                    }
-                },
-                scales: {
-                    x: {
-                        grid: { display: false },
-                        ticks: {
-                            font: { family: "'Plus Jakarta Sans', sans-serif", weight: '600', size: 11 },
-                            color: '#475569'
-                        }
-                    },
-                    y: {
-                        beginAtZero: true,
-                        ticks: {
-                            stepSize: 1,
-                            font: { family: "'Plus Jakarta Sans', sans-serif", size: 11 },
-                            color: '#64748b'
-                        },
-                        grid: {
-                            color: 'rgba(226, 232, 240, 0.8)'
-                        }
+                        bodyFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12 }
                     }
                 }
             }

@@ -3,10 +3,10 @@
 {% block title %}Mark Attendance | Real-Time Biometric Terminal{% endblock %}
 
 {% block content %}
-<!-- Page Hero Banner with Royal Blue Theme -->
-<div class="page-hero">
+<!-- Page Hero Banner with Royal Blue Theme & Biometric BG -->
+<div class="page-hero animate-fade-in">
     <div>
-        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 700; color: #38bdf8; letter-spacing: 0.08em; margin-bottom: 0.35rem;">
+        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 0.1em; margin-bottom: 0.35rem;">
             Biometric Access &amp; Kiosk Terminal
         </div>
         <h2>Automated Real-Time Attendance Terminal</h2>
@@ -20,7 +20,7 @@
 </div>
 
 <!-- Step Wizard Indicator -->
-<div class="steps-nav">
+<div class="steps-nav animate-fade-in">
     <div id="step-1-indicator" class="step-item active">
         <div class="step-circle">1</div>
         <span>Scan Student QR</span>
@@ -48,8 +48,10 @@
             <!-- Card Header -->
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
                 <div>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.2rem;">
-                        <span style="font-size: 1.25rem;">📱</span>
+                    <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+                        <img src="{{ url_for('static', filename='images/phone_scan_qr.png') }}" 
+                             alt="QR Icon" 
+                             style="width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 82, 204, 0.3));">
                         <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
                             Step 1: Scan Student Attendance QR
                         </h3>
@@ -103,8 +105,8 @@
             </div>
 
             <!-- Manual Token Drawer -->
-            <div id="manual-token-box" style="display: none; margin-top: 1.25rem; padding: 1.1rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md);">
-                <label for="manual-token-input" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.4rem;">
+            <div id="manual-token-box" style="display: none; margin-top: 1.25rem; padding: 1.1rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0, 82, 204, 0.06);">
+                <label for="manual-token-input" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.4rem; color: #1e40af; font-weight: 700;">
                     Enter Student Roll No, ID, or QR Token:
                 </label>
                 <div style="display: flex; gap: 0.5rem;">
@@ -277,17 +279,17 @@
             </div>
 
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.25rem;">
-                <div style="background: #f8fafc; border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 0.85rem;">
-                    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Verified Today</div>
-                    <div style="font-size: 1.6rem; font-weight: 900; color: #10b981; margin-top: 0.15rem;" id="kiosk-present-count">
+                <div style="background: linear-gradient(145deg, #ffffff 0%, #dbfae5 45%, #b1f3c5 100%); border: 1.5px solid #86efac; border-radius: var(--radius-md); padding: 0.85rem; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08);">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; color: #15803d; font-weight: 700;">Verified Today</div>
+                    <div style="font-size: 1.6rem; font-weight: 900; color: #15803d; margin-top: 0.15rem;" id="kiosk-present-count">
                         {{ metrics.present_today or 0 }}
                     </div>
-                    <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.2rem;">of {{ metrics.total_persons or 0 }} enrolled</div>
+                    <div style="font-size: 0.72rem; color: #16a34a; margin-top: 0.2rem;">of {{ metrics.total_persons or 0 }} enrolled</div>
                 </div>
 
-                <div style="background: #f8fafc; border: 1px solid var(--border-card); border-radius: var(--radius-md); padding: 0.85rem;">
-                    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--text-muted); font-weight: 700;">Daily Cutoff</div>
-                    <div style="font-size: 1.35rem; font-weight: 900; color: #ef4444; margin-top: 0.15rem;">
+                <div style="background: linear-gradient(145deg, #ffffff 0%, #ffe3e7 45%, #fdbec7 100%); border: 1.5px solid #fca5a5; border-radius: var(--radius-md); padding: 0.85rem; box-shadow: 0 4px 12px rgba(239, 68, 68, 0.08);">
+                    <div style="font-size: 0.72rem; text-transform: uppercase; color: #b91c1c; font-weight: 700;">Daily Cutoff</div>
+                    <div style="font-size: 1.35rem; font-weight: 900; color: #b91c1c; margin-top: 0.15rem;">
                         {{ cutoff_time }}
                     </div>
                     <div style="font-size: 0.72rem; color: {% if is_past_cutoff %}#dc2626{% else %}#15803d{% endif %}; font-weight: 700; margin-top: 0.2rem;">
@@ -348,7 +350,7 @@
         </div>
 
         <!-- Card 3: 3-Step Verification Guidelines -->
-        <div class="glass-card" style="padding: 1.5rem; background: #ffffff;">
+        <div class="glass-card" style="padding: 1.5rem; background: linear-gradient(145deg, #ffffff 0%, #e6f3fe 45%, #cde5fe 100%); border: 1.5px solid rgba(160, 208, 255, 0.9);">
             <div style="font-size: 0.8rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--primary); margin-bottom: 0.85rem;">
                 Terminal Verification Guide
             </div>

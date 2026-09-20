@@ -324,6 +324,15 @@ def api_department_students(dept_name):
         s["sample_count"] = FaceService.get_captured_count(s["id"], s["person_code"])
     return jsonify({"success": True, "department": dept_name, "count": len(students), "students": students})
 
+@app.route("/api/student-details/<int:person_id>", methods=["GET"])
+@login_required
+def api_student_complete_details(person_id):
+    """Returns complete profile and all previous attendance data for a student."""
+    details = DatabaseService.get_student_complete_details(person_id)
+    if not details:
+        return jsonify({"success": False, "message": "Student not found."}), 404
+    return jsonify({"success": True, "student": details})
+
 @app.route("/delete-student/<int:person_id>", methods=["POST"])
 @login_required
 def delete_student(person_id):

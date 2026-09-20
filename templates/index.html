@@ -3,16 +3,31 @@
 {% block title %}Dashboard | Student Attendance & Biometric System{% endblock %}
 
 {% block content %}
-<!-- Page Hero (Clean & Minimal) -->
-<div class="page-hero">
-    <div>
-        <h2>QR Code Based Attendance Management System with Live Face Recognition</h2>
-        <p>Real-time attendance intelligence, automated daily cutoff tracking, and overall biometric counts.</p>
+<!-- Page Hero (Project Title & High-Tech Biometric BG) -->
+<div class="page-hero animate-fade-in" style="margin-bottom: 1.75rem;">
+    <div style="display: flex; align-items: center; gap: 1.25rem;">
+        <div class="ref-shield-logo animate-pulse-glow" style="width: 58px; height: 58px; font-size: 1.8rem; box-shadow: 0 0 24px rgba(0, 194, 255, 0.65); flex-shrink: 0;">⚡</div>
+        <div>
+            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 0.12em; margin-bottom: 0.25rem;">
+                CAMPUS BIOMETRIC INTELLIGENCE
+            </div>
+            <h1 style="font-size: 1.85rem; font-weight: 900; color: #ffffff; margin: 0; line-height: 1.2; letter-spacing: -0.02em;">
+                QR Code Based Attendance Management System
+            </h1>
+            <p style="color: #e0f2fe; font-size: 0.92rem; margin-top: 0.3rem;">
+                Live Face Recognition &bull; Dynamic Departmental QR &bull; Automated Daily Cutoff
+            </p>
+        </div>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <a href="{{ url_for('attendance_page') }}" class="ref-btn-get-started animate-pulse-glow" style="font-size: 0.95rem; padding: 0.65rem 1.6rem; box-shadow: 0 4px 18px rgba(0, 194, 255, 0.45);">
+            <span>📷</span> Mark Attendance &rarr;
+        </a>
     </div>
 </div>
 
 <!-- Operational Status Bar -->
-<div class="glass-card" style="margin-bottom: 2rem; padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-left: 4px solid var(--primary);">
+<div class="glass-card animate-fade-in" style="margin-bottom: 2rem; padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-left: 4px solid var(--primary);">
     <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 700; color: var(--text-main);">
             <span>📅</span>
@@ -41,7 +56,7 @@
 </div>
 
 <!-- 5 High-Value Overall Count & Metric Cards -->
-<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 2.25rem;">
+<div class="animate-fade-in" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 2.25rem;">
     <!-- Total Students -->
     <div class="glass-card stat-card">
         <div class="stat-icon icon-cyan">👥</div>
@@ -129,33 +144,33 @@
             </div>
         </div>
 
-        <!-- Detailed Statistical Count Grid -->
+        <!-- Detailed Statistical Count Grid with Rich Linear Gradients -->
         <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-            <div style="background: var(--bg-card-subtle); padding: 1rem; border-radius: var(--radius-md); border: 1px solid var(--border-glass); text-align: center;">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: var(--text-dim); letter-spacing: 0.04em;">
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); padding: 1.15rem 1rem; border-radius: var(--radius-md); border: 1.5px solid #93c5fd; text-align: center; box-shadow: 0 4px 16px rgba(0, 82, 204, 0.1);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #1e40af; letter-spacing: 0.05em;">
                     Total Enrolled
                 </div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: var(--text-main); margin-top: 0.25rem;">
+                <div style="font-size: 1.6rem; font-weight: 900; color: #062354; margin-top: 0.25rem;">
                     {{ metrics.total_students or 0 }}
                 </div>
-                <div style="font-size: 0.72rem; color: var(--text-dim); margin-top: 0.2rem;">100% of campus</div>
+                <div style="font-size: 0.72rem; color: #1e40af; margin-top: 0.2rem;">100% of campus</div>
             </div>
 
-            <div style="background: #f0fdf4; padding: 1rem; border-radius: var(--radius-md); border: 1px solid #bbf7d0; text-align: center;">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: #15803d; letter-spacing: 0.04em;">
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #dbfae5 45%, #b1f3c5 100%); padding: 1.15rem 1rem; border-radius: var(--radius-md); border: 1.5px solid #86efac; text-align: center; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #15803d; letter-spacing: 0.05em;">
                     Present Count
                 </div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: #15803d; margin-top: 0.25rem;">
+                <div style="font-size: 1.6rem; font-weight: 900; color: #15803d; margin-top: 0.25rem;">
                     {{ metrics.present_today or 0 }}
                 </div>
                 <div style="font-size: 0.72rem; color: #16a34a; margin-top: 0.2rem;">{{ metrics.attendance_rate or 0 }}% verified</div>
             </div>
 
-            <div style="background: #fef2f2; padding: 1rem; border-radius: var(--radius-md); border: 1px solid #fecaca; text-align: center;">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 700; color: #b91c1c; letter-spacing: 0.04em;">
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #ffe3e7 45%, #fdbec7 100%); padding: 1.15rem 1rem; border-radius: var(--radius-md); border: 1.5px solid #fca5a5; text-align: center; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.12);">
+                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #b91c1c; letter-spacing: 0.05em;">
                     Absent Count
                 </div>
-                <div style="font-size: 1.5rem; font-weight: 900; color: #b91c1c; margin-top: 0.25rem;">
+                <div style="font-size: 1.6rem; font-weight: 900; color: #b91c1c; margin-top: 0.25rem;">
                     {{ metrics.absent_today or 0 }}
                 </div>
                 <div style="font-size: 0.72rem; color: #dc2626; margin-top: 0.2rem;">
@@ -197,17 +212,17 @@
             </div>
         </div>
 
-        <!-- Daily Cutoff Schedule Summary -->
-        <div style="background: var(--bg-card-subtle); border-radius: var(--radius-md); padding: 1.15rem; border: 1px solid var(--border-glass);">
+        <!-- Daily Cutoff Schedule Summary with Linear Gradient -->
+        <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border-radius: var(--radius-md); padding: 1.15rem; border: 1.5px solid #93c5fd; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
             <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 800; color: var(--text-main); text-transform: uppercase; letter-spacing: 0.04em;">
+                <span style="font-size: 0.8rem; font-weight: 800; color: #062354; text-transform: uppercase; letter-spacing: 0.04em;">
                     ⏰ Cutoff Policy
                 </span>
                 <span style="font-size: 0.82rem; font-weight: 700; color: var(--primary);">
                     {{ cutoff_time }} Daily
                 </span>
             </div>
-            <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5; margin: 0;">
+            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
                 Students arriving after {{ cutoff_time }} cannot mark attendance. Unmarked students are automatically logged as absent in daily attendance reports.
             </p>
         </div>

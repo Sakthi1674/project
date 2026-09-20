@@ -33,7 +33,7 @@
     <div class="ref-center-canvas">
         <!-- LEFT COLUMN: Wall Visitor Check-In Poster + Office Potted Plant -->
         <div style="display: flex; flex-direction: column; align-items: center;">
-            <div class="ref-poster-card">
+            <div class="ref-poster-card animate-float">
                 <div style="font-size: 0.78rem; font-weight: 900; letter-spacing: 0.16em; text-transform: uppercase; color: #38bdf8; margin-bottom: 0.25rem;">
                     SCAN HERE
                 </div>
@@ -60,8 +60,9 @@
 
             <!-- Plant Graphic Representation below poster -->
             <div style="margin-top: 1rem; display: flex; flex-direction: column; align-items: center;">
-                <div style="font-size: 1.8rem; line-height: 1;">🪴</div>
-                <div style="width: 32px; height: 16px; background: #e2e8f0; border-radius: 0 0 8px 8px; border: 1px solid #cbd5e1;"></div>
+                <img src="{{ url_for('static', filename='images/clean_floor_plant.png') }}" 
+                     alt="Office Potted Plant" 
+                     style="width: 76px; height: auto; display: block; filter: drop-shadow(0 6px 14px rgba(6, 35, 84, 0.25));">
             </div>
         </div>
 
@@ -91,7 +92,7 @@
             </div>
 
             <!-- Glowing Biometric Shield Reticle with Doodles matching reference image -->
-            <div class="reticle-doodle-box">
+            <div class="reticle-doodle-box animate-pulse-glow">
                 <!-- 4 Corner Doodle Brackets -->
                 <div class="reticle-corner-doodle tl"></div>
                 <div class="reticle-corner-doodle tr"></div>
@@ -111,14 +112,14 @@
             </div>
 
             <!-- Login Button redirecting to Admin Login / Dashboard -->
-            <a href="{{ url_for('dashboard') if logged_in else url_for('login') }}" class="ref-btn-get-started" id="btn-home-get-started">
+            <a href="{{ url_for('dashboard') if logged_in else url_for('login') }}" class="ref-btn-get-started animate-pulse-glow" id="btn-home-get-started">
                 {% if logged_in %}OPEN DASHBOARD &rarr;{% else %}LOGIN &rarr;{% endif %}
             </a>
         </div>
 
         <!-- RIGHT COLUMN: Student with Live Scanner Smartphone Mockup -->
         <div style="display: flex; justify-content: center; align-items: center;">
-            <div class="ref-student-card" style="max-width: 290px; width: 100%; border-radius: 20px; overflow: hidden; padding: 0.65rem; background: #ffffff; box-shadow: 0 12px 30px rgba(0, 82, 204, 0.12); border: 2px solid #bfdbfe;">
+            <div class="ref-student-card animate-float-delayed" style="max-width: 290px; width: 100%; border-radius: 20px; overflow: hidden; padding: 0.65rem; background: linear-gradient(145deg, #ffffff 0%, #e2effe 50%, #c9e3fd 100%); box-shadow: 0 16px 36px rgba(0, 82, 204, 0.16); border: 2px solid #93c5fd;">
                 <!-- Exact Student Photo with Smartphone Scanner from Reference Graphic -->
                 <div style="position: relative; border-radius: 16px; overflow: hidden; box-shadow: 0 6px 18px rgba(6, 35, 84, 0.15);">
                     <img src="{{ url_for('static', filename='images/student_holding_phone_perfect.png') }}" 
@@ -196,7 +197,7 @@
         </div>
 
         <div class="grid-cols-4">
-            <div class="glass-card" style="padding: 1.5rem; border-top: 3.5px solid #0052cc;">
+            <div class="glass-card glass-card-blue" style="padding: 1.5rem; border-top: 3.5px solid #0052cc;">
                 <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">📱</div>
                 <h4 style="font-size: 1.05rem; font-weight: 800; color: #062354; margin-bottom: 0.4rem;">
                     Departmental QR Storage
@@ -206,7 +207,7 @@
                 </p>
             </div>
 
-            <div class="glass-card" style="padding: 1.5rem; border-top: 3.5px solid #10b981;">
+            <div class="glass-card glass-card-green" style="padding: 1.5rem; border-top: 3.5px solid #10b981;">
                 <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">📸</div>
                 <h4 style="font-size: 1.05rem; font-weight: 800; color: #062354; margin-bottom: 0.4rem;">
                     Auto-Stop Face Capture
@@ -216,7 +217,7 @@
                 </p>
             </div>
 
-            <div class="glass-card" style="padding: 1.5rem; border-top: 3.5px solid #8b5cf6;">
+            <div class="glass-card glass-card-purple" style="padding: 1.5rem; border-top: 3.5px solid #8b5cf6;">
                 <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">🛡️</div>
                 <h4 style="font-size: 1.05rem; font-weight: 800; color: #062354; margin-bottom: 0.4rem;">
                     Duplicate Collision Shield
@@ -226,7 +227,7 @@
                 </p>
             </div>
 
-            <div class="glass-card" style="padding: 1.5rem; border-top: 3.5px solid #ef4444;">
+            <div class="glass-card glass-card-red" style="padding: 1.5rem; border-top: 3.5px solid #ef4444;">
                 <div style="font-size: 1.75rem; margin-bottom: 0.75rem;">⏰</div>
                 <h4 style="font-size: 1.05rem; font-weight: 800; color: #062354; margin-bottom: 0.4rem;">
                     Automated Daily Cutoff

@@ -679,3 +679,60 @@ class DatabaseService:
             "present_today": present_today,
             "total_departments": total_depts
         }
+
+    @classmethod
+    def get_student_complete_details(cls, person_id):
+        """
+        Returns full profile information and all previous attendance history for a student.
+        """
+        person = cls.get_person_by_id(person_id)
+        if not person:
+            return None
+
+        # 1. Face sample count
+        from services.face_service import FaceService
+        sample_count = FaceService.get_captured_count(person["id"], person.get("person_code", ""))
+
+        # 2. Complete Attendance History (All Previous Data)
+        query = """
+            SELECT 
+                id AS attendance_id,
+                attendance_date,
+                attendance_time,
+                status
+            FROM attendance
+            WHERE person_id = %s
+            ORDER BY attendance_date DESC, attendance_time DESC
+        """
+        history_rows = cls.execute_query(query, (person_id,), fetch_all=True) or []
+
+        total_sessions = len(history_rows)
+        present_count = sum(1 for h in history_rows if h.get("status") == "PRESENT")
+        absent_count = sum(1 for h in history_rows if h.get("status") == "ABSENT")
+        rate = round((present_count / total_sessions * 100), 1) if total_sessions > 0 else 0.0
+
+        history = []
+        for h in history_rows:
+            history.append({
+                "id": h["attendance_id"],
+                "date": str(h["attendance_date"]),
+                "time": str(h["attendance_time"]) if h.get("attendance_time") else "Recorded",
+                "status": h["status"]
+            })
+
+        return {
+            "id": person["id"],
+            "person_code": person["person_code"],
+            "name": person["name"],
+            "email": person.get("email") or "Not provided",
+            "department": person.get("department") or "General",
+            "qr_code_path": person.get("qr_code_path") or "",
+            "created_at": str(person.get("created_at") or ""),
+            "sample_count": sample_count,
+            "face_enrolled": sample_count >= 50,
+            "total_sessions": total_sessions,
+            "present_count": present_count,
+            "absent_count": absent_count,
+            "attendance_rate": rate,
+            "history": history
+        }
