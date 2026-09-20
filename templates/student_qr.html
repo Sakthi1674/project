@@ -3,20 +3,8 @@
 {% block title %}Official Student QR Credential | {{ person.name }}{% endblock %}
 
 {% block content %}
-<!-- <div class="page-hero">
-    <div>
-        <h2>Official Student Credential Issued</h2>
-        <p>A permanent attendance QR code and campus pass has been generated for <strong>{{ person.name }}</strong> (Registration No: <strong style="color: #38bdf8;">{{ person.person_code }}</strong>).</p>
-    </div>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <a href="{{ url_for('department_detail_page', dept_name=person.department or 'General') }}" class="btn btn-outline">
-            <span>🏢</span> {{ person.department or 'Department' }}
-        </a>
-    </div>
-</div> -->
-
 <!-- Step Navigation Wizard -->
-<div class="steps-nav" style="margin-bottom: 2rem;">
+<div class="steps-nav" style="margin-bottom: 0.85rem; padding: 0.5rem 1rem;">
     <div class="step-item completed">
         <div class="step-circle">✓</div>
         <span>1. Profile Saved</span>
@@ -33,36 +21,23 @@
     </div>
 </div>
 
-<div style="max-width: 480px; margin: 0 auto 2.5rem auto;" class="animate-fade-in">
-    <div class="credential-card">
-        <!-- Header Band with Smart Card Metallic Chip -->
-        <!-- <div class="credential-header-band">
-            <div>
-                <div style="font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.12em; opacity: 0.9; font-weight: 700;">
-                    CAMPUS ATTENDANCE SYSTEM
-                </div>
-                <div style="font-size: 1.15rem; font-weight: 800; letter-spacing: -0.01em;">
-                    Official Student Credential Pass
-                </div>
-            </div>
-            <div class="credential-chip" title="Biometric NFC / Smart Pass Simulation"></div>
-        </div> -->
-
-        <div class="credential-body" style="text-align: center;">
+<div style="max-width: 440px; margin: 0 auto 1rem auto;" class="animate-fade-in">
+    <div class="credential-card" style="border-radius: 16px;">
+        <div class="credential-body" style="text-align: center; padding: 1.25rem 1.4rem;">
             <!-- Student Identity Meta -->
-            <div style="display: flex; align-items: center; justify-content: center; gap: 0.9rem; margin-bottom: 1.25rem;">
-                <div style="width: 54px; height: 54px; border-radius: var(--radius-full); background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(6, 182, 212, 0.15)); border: 2px solid rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; color: var(--primary); font-weight: 800;">
+            <div style="display: flex; align-items: center; justify-content: center; gap: 0.85rem; margin-bottom: 0.85rem;">
+                <div style="width: 46px; height: 46px; border-radius: var(--radius-full); background: linear-gradient(135deg, rgba(37, 99, 235, 0.15), rgba(6, 182, 212, 0.15)); border: 2px solid rgba(37, 99, 235, 0.25); display: flex; align-items: center; justify-content: center; font-size: 1.4rem; color: var(--primary); font-weight: 800;">
                     {{ person.name[0] if person.name else 'S' }}
                 </div>
                 <div style="text-align: left;">
-                    <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.15rem;">
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.1rem;">
                         {{ person.name }}
                     </h3>
-                    <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;">
-                        <span class="badge badge-primary" style="font-family: monospace; font-size: 0.82rem; padding: 0.25rem 0.6rem;">
+                    <div style="display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;">
+                        <span class="badge badge-primary" style="font-family: monospace; font-size: 0.78rem; padding: 0.2rem 0.5rem;">
                             ID: {{ person.person_code }}
                         </span>
-                        <span class="badge badge-purple" style="font-size: 0.78rem;">
+                        <span class="badge badge-purple" style="font-size: 0.74rem;">
                             {{ person.department or 'General' }}
                         </span>
                     </div>
@@ -70,7 +45,7 @@
             </div>
 
             <!-- High-Precision QR Showcase Frame with Targeting Corners -->
-            <div class="qr-showcase-box">
+            <div class="qr-showcase-box" style="padding: 0.85rem; margin-bottom: 0.85rem;">
                 <div class="qr-corner top-left"></div>
                 <div class="qr-corner top-right"></div>
                 <div class="qr-corner bottom-left"></div>
@@ -79,30 +54,30 @@
                     src="{{ person.qr_code_path }}" 
                     alt="Student QR Code" 
                     id="student-qr-img" 
-                    style="width: 210px; height: 210px; display: block; border-radius: 4px;"
+                    style="width: 155px; height: 155px; display: block; border-radius: 4px;"
                 >
-                <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.6rem; font-weight: 600;">
+                <div style="font-size: 0.72rem; color: var(--text-muted); margin-top: 0.4rem; font-weight: 600;">
                     Present to terminal camera scanner
                 </div>
             </div>
 
             <!-- Department Storage Path -->
-            <div style="background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-sm); padding: 0.65rem 0.95rem; font-size: 0.78rem; color: #1e40af; margin-bottom: 1.25rem; word-break: break-all; box-shadow: 0 2px 8px rgba(0, 82, 204, 0.05);">
-                📁 Department Folder: <code style="color: var(--primary); font-weight: 700;">{{ person.qr_code_path }}</code>
+            <div style="background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-sm); padding: 0.45rem 0.75rem; font-size: 0.74rem; color: #1e40af; margin-bottom: 0.85rem; word-break: break-all; box-shadow: 0 2px 8px rgba(0, 82, 204, 0.05);">
+                📁 Folder: <code style="color: var(--primary); font-weight: 700;">{{ person.qr_code_path }}</code>
             </div>
 
             <!-- Action Buttons (Download & Print) -->
-            <div style="display: flex; gap: 0.75rem; margin-bottom: 0.85rem;">
-                <a href="{{ person.qr_code_path }}" download="{{ person.person_code }}.png" class="btn btn-outline" style="flex: 1; justify-content: center;">
-                    <span>📥</span> Download QR PNG
+            <div style="display: flex; gap: 0.6rem; margin-bottom: 0.75rem;">
+                <a href="{{ person.qr_code_path }}" download="{{ person.person_code }}.png" class="btn btn-outline btn-sm" style="flex: 1; justify-content: center; padding: 0.45rem 0.75rem;">
+                    <span>📥</span> Download PNG
                 </a>
-                <button onclick="window.print()" class="btn btn-outline" style="flex: 1; justify-content: center;">
-                    <span>🖨️</span> Print Official Pass
+                <button onclick="window.print()" class="btn btn-outline btn-sm" style="flex: 1; justify-content: center; padding: 0.45rem 0.75rem;">
+                    <span>🖨️</span> Print Pass
                 </button>
             </div>
 
             <!-- Primary Action Button: Proceed to Face Capture -->
-            <a href="{{ url_for('capture_face_page', person_id=person.id) }}" class="btn btn-primary" style="font-size: 0.95rem; padding: 0.8rem 1.25rem; width: 100%; justify-content: center; box-shadow: 0 4px 16px var(--primary-glow);">
+            <a href="{{ url_for('capture_face_page', person_id=person.id) }}" class="btn btn-primary" style="font-size: 0.9rem; padding: 0.65rem 1.15rem; width: 100%; justify-content: center; box-shadow: 0 4px 16px var(--primary-glow);">
                 <span>📷</span> Proceed to Face Data Capture &rarr;
             </a>
         </div>

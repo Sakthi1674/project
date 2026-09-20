@@ -3,24 +3,8 @@
 {% block title %}Mark Attendance | Real-Time Biometric Terminal{% endblock %}
 
 {% block content %}
-<!-- Page Hero Banner with Royal Blue Theme & Biometric BG -->
-<!-- <div class="page-hero animate-fade-in">
-    <div>
-        <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 0.1em; margin-bottom: 0.35rem;">
-            Biometric Access &amp; Kiosk Terminal
-        </div>
-        <h2>Automated Real-Time Attendance Terminal</h2>
-        <p>Dual-layer verification: Show student QR credential &rarr; Instant live biometric face cross-check &rarr; Official attendance logged.</p>
-    </div>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <button class="btn btn-outline" onclick="resetTerminal()">
-            <span>🔄</span> Reset Scanner
-        </button>
-    </div>
-</div> -->
-
 <!-- Step Wizard Indicator -->
-<div class="steps-nav animate-fade-in">
+<div class="steps-nav animate-fade-in" style="margin-bottom: 0.85rem; padding: 0.5rem 1rem;">
     <div id="step-1-indicator" class="step-item active">
         <div class="step-circle">1</div>
         <span>Scan Student QR</span>
@@ -38,31 +22,31 @@
 </div>
 
 <!-- Centered Attendance Scanner Kiosk -->
-<div style="max-width: 740px; margin: 0 auto 2.5rem auto;" class="animate-fade-in">
+<div style="max-width: 680px; margin: 0 auto 1rem auto;" class="animate-fade-in">
     <!-- =============================================================
          PHASE 1: SCAN STUDENT QR CODE
          ============================================================= -->
-    <div id="phase-qr" class="glass-card" style="padding: 1.75rem;">
+    <div id="phase-qr" class="glass-card" style="padding: 1.25rem;">
         <!-- Card Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-                <div style="display: flex; align-items: center; gap: 0.65rem; margin-bottom: 0.2rem;">
+                <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.15rem;">
                     <img src="{{ url_for('static', filename='images/phone_scan_qr.png') }}" 
                          alt="QR Icon" 
-                         style="width: 28px; height: 28px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 82, 204, 0.3));">
-                    <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                         style="width: 24px; height: 24px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 82, 204, 0.3));">
+                    <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">
                         Step 1: Scan Student Attendance QR
                     </h3>
                 </div>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin: 0;">
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin: 0;">
                     Hold your student QR pass 15&ndash;30 cm in front of the camera lens.
                 </p>
             </div>
-            <span id="qr-cam-badge" class="badge badge-warning">Camera Standby</span>
+            <span id="qr-cam-badge" class="badge badge-warning" style="font-size: 0.78rem;">Camera Standby</span>
         </div>
 
         <!-- Viewfinder Camera Box -->
-        <div class="camera-container" id="qr-camera-box" style="aspect-ratio: 16 / 10; min-height: 400px;">
+        <div class="camera-container" id="qr-camera-box" style="aspect-ratio: 16 / 9; max-height: 310px; min-height: 250px;">
             <!-- High-Tech HUD Overlays -->
             <div class="kiosk-hud-top">
                 <div class="kiosk-hud-pill">
@@ -83,86 +67,86 @@
         </div>
 
         <!-- QR Controls Toolbar -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1.5rem; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; gap: 0.6rem;">
-                <button id="btn-start-qr-cam" class="btn btn-primary" onclick="startQRScanner()">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; gap: 0.5rem;">
+                <button id="btn-start-qr-cam" class="btn btn-primary btn-sm" onclick="startQRScanner()" style="padding: 0.45rem 1rem;">
                     <span>📷</span> Start Camera
                 </button>
-                <button id="btn-stop-qr-cam" class="btn btn-outline" onclick="stopQRScanner()" style="display: none;">
+                <button id="btn-stop-qr-cam" class="btn btn-outline btn-sm" onclick="stopQRScanner()" style="display: none; padding: 0.45rem 1rem;">
                     <span>⏹️</span> Stop Camera
                 </button>
-                <button class="btn btn-outline" onclick="resetTerminal()" title="Restart scanner cycle">
+                <button class="btn btn-outline btn-sm" onclick="resetTerminal()" title="Restart scanner cycle" style="padding: 0.45rem 0.8rem;">
                     <span>🔄</span> Refresh
                 </button>
             </div>
 
             <!-- Manual Token / ID Entry Toggle -->
-            <button class="btn btn-outline" onclick="toggleManualToken()" style="font-size: 0.85rem;">
-                <span>⌨️</span> Enter Student ID / Token
+            <button class="btn btn-outline btn-sm" onclick="toggleManualToken()" style="font-size: 0.8rem; padding: 0.45rem 0.85rem;">
+                <span>⌨️</span> Enter ID / Token
             </button>
         </div>
 
         <!-- Manual Token Drawer -->
-        <div id="manual-token-box" style="display: none; margin-top: 1.25rem; padding: 1.1rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0, 82, 204, 0.06);">
-            <label for="manual-token-input" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.4rem; color: #1e40af; font-weight: 700;">
+        <div id="manual-token-box" style="display: none; margin-top: 1rem; padding: 0.85rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); box-shadow: 0 4px 12px rgba(0, 82, 204, 0.06);">
+            <label for="manual-token-input" class="form-label" style="font-size: 0.82rem; margin-bottom: 0.3rem; color: #1e40af; font-weight: 700;">
                 Enter Student Roll No, ID, or QR Token:
             </label>
             <div style="display: flex; gap: 0.5rem;">
-                <input type="text" id="manual-token-input" class="form-control" placeholder="e.g. 2026CS101, DEPT_TEST_1789196708, or STU_..." style="font-size: 0.9rem;">
-                <button class="btn btn-primary" onclick="submitManualToken()" style="white-space: nowrap;">
+                <input type="text" id="manual-token-input" class="form-control" placeholder="e.g. 2026CS101, DEPT_TEST_1789196708, or STU_..." style="font-size: 0.85rem; padding: 0.45rem 0.75rem;">
+                <button class="btn btn-primary btn-sm" onclick="submitManualToken()" style="white-space: nowrap;">
                     Verify Student
                 </button>
             </div>
         </div>
 
         <!-- Feedback Alert Box -->
-        <div id="qr-alert-box" style="display: none; margin-top: 1.25rem; padding: 0.9rem 1.15rem; border-radius: var(--radius-sm); font-size: 0.88rem; font-weight: 600;"></div>
+        <div id="qr-alert-box" style="display: none; margin-top: 1rem; padding: 0.75rem 1rem; border-radius: var(--radius-sm); font-size: 0.85rem; font-weight: 600;"></div>
     </div>
 
     <!-- =============================================================
          PHASE 2: REAL-TIME BIOMETRIC FACE CROSS-VALIDATION
          ============================================================= -->
-    <div id="phase-face" class="glass-card" style="display: none; padding: 1.75rem;">
+    <div id="phase-face" class="glass-card" style="display: none; padding: 1.25rem;">
         <!-- Identified Student Preview Banner -->
-        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 1.25rem; margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
-            <div style="display: flex; align-items: center; gap: 1rem;">
-                <div class="stat-icon icon-cyan" style="width: 52px; height: 52px; font-size: 1.6rem; border-radius: var(--radius-full);">
+        <div style="background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1rem; margin-bottom: 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div class="stat-icon icon-cyan" style="width: 42px; height: 42px; font-size: 1.35rem; border-radius: var(--radius-full);">
                     👤
                 </div>
                 <div>
-                    <div style="font-size: 0.72rem; text-transform: uppercase; color: var(--primary); font-weight: 800; letter-spacing: 0.08em;">
+                    <div style="font-size: 0.7rem; text-transform: uppercase; color: var(--primary); font-weight: 800; letter-spacing: 0.08em;">
                         Scanned Student Identity
                     </div>
-                    <div id="scanned-student-name" style="font-size: 1.35rem; font-weight: 800; color: var(--text-main); line-height: 1.2; margin: 0.15rem 0;">
+                    <div id="scanned-student-name" style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); line-height: 1.2; margin: 0.1rem 0;">
                         -
                     </div>
-                    <div id="scanned-student-meta" style="font-size: 0.82rem; color: var(--text-muted); font-family: monospace;">
+                    <div id="scanned-student-meta" style="font-size: 0.78rem; color: var(--text-muted); font-family: monospace;">
                         -
                     </div>
                 </div>
             </div>
-            <span class="badge badge-success" style="font-size: 0.82rem; padding: 0.4rem 0.85rem;">
+            <span class="badge badge-success" style="font-size: 0.78rem; padding: 0.3rem 0.7rem;">
                 <span class="pulse-dot"></span> QR Verified
             </span>
         </div>
 
         <!-- Step Header -->
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.75rem;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
             <div>
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">
                     Step 2: Real-Time Face Cross-Check
                 </h3>
-                <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.2rem;">
+                <p style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.15rem;">
                     Look directly into the oval reticle. The OpenCV biometric engine verifies facial features live.
                 </p>
             </div>
-            <span id="face-cam-badge" class="badge badge-cyan">
+            <span id="face-cam-badge" class="badge badge-cyan" style="font-size: 0.78rem;">
                 <span class="pulse-dot"></span> Live Biometric Active
             </span>
         </div>
 
         <!-- Face Camera Box -->
-        <div class="camera-container" id="face-camera-box" style="aspect-ratio: 16 / 10; min-height: 400px;">
+        <div class="camera-container" id="face-camera-box" style="aspect-ratio: 16 / 9; max-height: 310px; min-height: 250px;">
             <!-- High-Tech HUD Overlays -->
             <div class="kiosk-hud-top">
                 <div class="kiosk-hud-pill">

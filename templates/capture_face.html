@@ -3,35 +3,20 @@
 {% block title %}Capture Face Samples | {{ person.name }}{% endblock %}
 
 {% block content %}
-<!-- <div class="page-hero">
-    <div>
-        <h2>Facial Biometric Dataset Collection</h2>
-        <p>Capturing 50 high-precision facial images for <strong>{{ person.name }}</strong> (Registration No: <strong style="color: #38bdf8;">{{ person.person_code }}</strong>).</p>
-    </div>
-    <div style="display: flex; gap: 0.75rem; flex-wrap: wrap;">
-        <a href="{{ url_for('department_detail_page', dept_name=person.department or 'General') }}" class="btn btn-outline">
-            <span>🏢</span> {{ person.department or 'Department' }}
-        </a>
-    </div>
-</div> -->
-
 <!-- Banner if face is already registered for this student -->
 {% if captured_count >= required_samples %}
-<div class="glass-card" style="margin-bottom: 1.5rem; background: #eff6ff; border: 1.5px solid #93c5fd; padding: 1rem 1.25rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 1.6rem;">ℹ️</span>
-        <div>
-            <div style="font-weight: 800; color: #1e40af; font-size: 0.95rem;">Face Biometrics Already Enrolled</div>
-            <div style="color: #1e40af; font-size: 0.85rem;">
-                This student already has <strong>{{ captured_count }}</strong> biometric samples enrolled. You can retrain with <strong>"Save Profile"</strong> or collect additional samples.
-            </div>
+<div class="glass-card" style="margin-bottom: 0.75rem; background: #eff6ff; border: 1.5px solid #93c5fd; padding: 0.65rem 1rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;">
+    <div style="display: flex; align-items: center; gap: 0.5rem;">
+        <span style="font-size: 1.3rem;">ℹ️</span>
+        <div style="font-size: 0.82rem; color: #1e40af;">
+            <strong>Face Enrolled:</strong> {{ captured_count }} samples ready. You can retrain with "Save Profile".
         </div>
     </div>
-    <div style="display: flex; gap: 0.5rem;">
-        <button onclick="saveProfileAndTrain()" class="btn btn-success btn-sm">
-            <span>💾</span> Re-Save Profile
+    <div style="display: flex; gap: 0.4rem;">
+        <button onclick="saveProfileAndTrain()" class="btn btn-success btn-sm" style="padding: 0.3rem 0.7rem; font-size: 0.78rem;">
+            <span>💾</span> Re-Save
         </button>
-        <a href="{{ url_for('attendance_page') }}" class="btn btn-primary btn-sm">
+        <a href="{{ url_for('attendance_page') }}" class="btn btn-primary btn-sm" style="padding: 0.3rem 0.7rem; font-size: 0.78rem;">
             Mark Attendance →
         </a>
     </div>
@@ -39,44 +24,43 @@
 {% endif %}
 
 <!-- Centered Camera Studio Layout -->
-<div style="max-width: 680px; margin: 0 auto 2.5rem auto;" class="animate-fade-in">
-    <div class="glass-card" style="padding: 1.75rem; display: flex; flex-direction: column;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem;">
+<div style="max-width: 620px; margin: 0 auto 1rem auto;" class="animate-fade-in">
+    <div class="glass-card" style="padding: 1.15rem 1.35rem; display: flex; flex-direction: column;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.65rem; flex-wrap: wrap; gap: 0.4rem;">
             <div>
-                <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main);">Live Camera Studio</h3>
-                <p style="font-size: 0.8rem; color: var(--text-muted);">Expansive camera feed for high-accuracy facial biometric dataset creation</p>
+                <h3 style="font-size: 1.15rem; font-weight: 800; color: var(--text-main); margin: 0;">Live Camera Studio</h3>
+                <p style="font-size: 0.76rem; color: var(--text-muted); margin: 0.1rem 0 0 0;">Webcam feed for facial biometric dataset creation</p>
             </div>
-            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                <span id="collection-badge" class="badge {% if captured_count >= required_samples %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">
-                    {% if captured_count >= required_samples %}✓ Complete &amp; Camera Stopped{% else %}⏳ In Progress ({{ captured_count }}/{{ required_samples }}){% endif %}
+            <div style="display: flex; align-items: center; gap: 0.4rem;">
+                <span id="collection-badge" class="badge {% if captured_count >= required_samples %}badge-success{% else %}badge-warning{% endif %}" style="font-size: 0.76rem; padding: 0.25rem 0.6rem;">
+                    {% if captured_count >= required_samples %}✓ Complete{% else %}⏳ In Progress ({{ captured_count }}/{{ required_samples }}){% endif %}
                 </span>
-                <span id="cam-status-badge" class="badge badge-warning">Camera Standby</span>
+                <span id="cam-status-badge" class="badge badge-warning" style="font-size: 0.76rem; padding: 0.25rem 0.6rem;">Camera Standby</span>
             </div>
         </div>
 
         <!-- Integrated Progress Bar -->
-        <div style="margin-bottom: 1.25rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.85rem 1rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; font-weight: 700; margin-bottom: 0.4rem;">
-                <span style="color: var(--text-main);">Dataset Progress: <strong id="progress-count-label" style="color: var(--primary);">{{ captured_count }}</strong> / {{ required_samples }} Photos</span>
+        <div style="margin-bottom: 0.75rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px solid #bfdbfe; border-radius: var(--radius-sm); padding: 0.5rem 0.85rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; font-weight: 700; margin-bottom: 0.25rem;">
+                <span style="color: var(--text-main);">Progress: <strong id="progress-count-label" style="color: var(--primary);">{{ captured_count }}</strong> / {{ required_samples }} Photos</span>
                 <span id="progress-percentage-label" style="font-weight: 800; color: var(--primary);">0%</span>
             </div>
-            <div class="progress-container" style="height: 10px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden;">
+            <div class="progress-container" style="height: 8px; background: #e2e8f0; border-radius: var(--radius-full); overflow: hidden;">
                 <div id="capture-progress-bar" class="progress-bar" style="width: 0%; height: 100%; background: linear-gradient(90deg, #2563eb, #8b5cf6, #10b981); transition: width 0.2s ease;"></div>
             </div>
         </div>
 
         <!-- Camera Container: Native 4:3 Aspect Ratio (Zero Zoom) -->
-        <div class="camera-container" id="camera-box" style="aspect-ratio: 4 / 3; width: 100%; max-height: 480px; flex: 0 0 auto;">
+        <div class="camera-container" id="camera-box" style="aspect-ratio: 4 / 3; width: 100%; max-height: 270px; flex: 0 0 auto;">
             <!-- Floating Left HUD: Sample Counter -->
             <div class="camera-hud-badge" id="hud-counter-badge">
                 <span class="pulse-dot"></span>
-                <span>📸 <strong id="hud-count" style="color: #38bdf8; font-size: 1.05rem;">{{ captured_count }}</strong> / {{ required_samples }} Taken</span>
+                <span>📸 <strong id="hud-count" style="color: #38bdf8; font-size: 0.95rem;">{{ captured_count }}</strong> / {{ required_samples }}</span>
             </div>
 
             <!-- Floating Right HUD: Percentage -->
-            <div class="camera-hud-badge" style="left: auto; right: 16px;">
-                <span style="color: #94a3b8; font-size: 0.75rem; text-transform: uppercase;">Progress:</span>
-                <strong id="hud-pct" style="color: #34d399; font-size: 0.95rem;">0%</strong>
+            <div class="camera-hud-badge" style="left: auto; right: 12px;">
+                <strong id="hud-pct" style="color: #34d399; font-size: 0.9rem;">0%</strong>
             </div>
 
             <video id="capture-video" class="camera-video" autoplay playsinline webkit-playsinline muted style="width: 100%; height: 100%; object-fit: contain; background: #090d16; transform: none !important;"></video>
@@ -88,66 +72,63 @@
 
             <!-- Camera Auto-Stop & 50 Photos Complete Overlay -->
             <div class="camera-complete-screen" id="camera-complete-overlay" style="display: {% if captured_count >= required_samples %}flex{% else %}none{% endif %};">
-                <div class="camera-complete-icon">✓</div>
-                <h3 style="font-size: 1.5rem; font-weight: 800; margin-bottom: 0.35rem; color: #ffffff;">
+                <div class="camera-complete-icon" style="width: 48px; height: 48px; font-size: 1.8rem; margin-bottom: 0.5rem;">✓</div>
+                <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 0.25rem; color: #ffffff;">
                     50 Photos Captured Successfully!
                 </h3>
-                <p style="color: #cbd5e1; font-size: 0.95rem; max-width: 480px; margin-bottom: 1.5rem; line-height: 1.5;">
-                    The camera has been <strong>automatically stopped</strong>. Click <strong>"Save Profile &amp; Complete Registration"</strong> below to finalize student enrollment.
+                <p style="color: #cbd5e1; font-size: 0.84rem; max-width: 420px; margin-bottom: 1rem; line-height: 1.4;">
+                    Camera automatically stopped. Click <strong>"Save Profile"</strong> below to finalize enrollment.
                 </p>
-                <button class="btn btn-save-profile pulse-ready" onclick="saveProfileAndTrain()" style="max-width: 340px; font-size: 1.05rem;">
-                    <span>💾</span> Save Profile &amp; Complete Registration
+                <button class="btn btn-save-profile pulse-ready" onclick="saveProfileAndTrain()" style="max-width: 300px; font-size: 0.95rem; padding: 0.65rem 1rem;">
+                    <span>💾</span> Save Profile &amp; Complete
                 </button>
             </div>
         </div>
 
         <!-- Camera Action Controls Row -->
-        <div style="display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem; align-items: center;">
-            <button id="btn-start-camera" class="btn btn-outline" onclick="initCamera()">
+        <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.75rem; align-items: center;">
+            <button id="btn-start-camera" class="btn btn-outline btn-sm" onclick="initCamera()" style="padding: 0.45rem 0.85rem;">
                 <span>📷</span> Start Camera
             </button>
             
-            <button id="btn-start-capture" class="btn btn-primary" onclick="startAutomatedCapture()" disabled>
-                <span>⚡</span> Start Taking Pictures (50 Samples)
+            <button id="btn-start-capture" class="btn btn-primary btn-sm" onclick="startAutomatedCapture()" disabled style="padding: 0.45rem 1rem;">
+                <span>⚡</span> Take Pictures (50 Samples)
             </button>
 
-            <button id="btn-stop-capture" class="btn btn-outline" onclick="stopCapture()" style="display: none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4);">
+            <button id="btn-stop-capture" class="btn btn-outline btn-sm" onclick="stopCapture()" style="display: none; color: var(--danger); border-color: rgba(239, 68, 68, 0.4); padding: 0.45rem 0.85rem;">
                 <span>⏹️</span> Stop Taking
             </button>
         </div>
 
         <!-- Live Status Feedback Message Box -->
-        <div id="capture-status-box" style="display: flex; align-items: center; padding: 0.75rem 1rem; border-radius: var(--radius-sm); margin-top: 1rem; font-size: 0.86rem; font-weight: 600; min-height: 46px; background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-muted);">
+        <div id="capture-status-box" style="display: flex; align-items: center; padding: 0.45rem 0.75rem; border-radius: var(--radius-sm); margin-top: 0.6rem; font-size: 0.8rem; font-weight: 600; min-height: 38px; background: #f8fafc; border: 1px solid #e2e8f0; color: var(--text-muted);">
             Camera ready. Align your face inside the green oval reticle to begin.
         </div>
 
         <!-- Live Captured Images Filmstrip Strip -->
-        <div style="margin-top: 1.25rem;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                <div style="font-size: 0.78rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
-                    📸 Real-Time Captured Face Samples:
-                </div>
-                <div style="font-size: 0.75rem; color: var(--text-muted);">
-                    Showing latest snapshots
+        <div style="margin-top: 0.65rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
+                <div style="font-size: 0.72rem; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em;">
+                    📸 Real-Time Captured Samples:
                 </div>
             </div>
-            <div class="capture-gallery" id="thumbs-gallery" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-md); padding: 0.5rem; height: 72px; min-height: 72px; max-height: 72px; display: flex; gap: 0.5rem; overflow-x: auto; overflow-y: hidden; contain: strict; flex: 0 0 auto;">
+            <div class="capture-gallery" id="thumbs-gallery" style="background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: var(--radius-sm); padding: 0.35rem; height: 54px; min-height: 54px; max-height: 54px; display: flex; gap: 0.4rem; overflow-x: auto; overflow-y: hidden; contain: strict; flex: 0 0 auto;">
                 <!-- Live captured face crops will append here -->
             </div>
         </div>
 
         <!-- Centered Save Profile Button Section -->
-        <div style="margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid var(--border-glass); text-align: center;">
+        <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--border-glass); text-align: center;">
             <button 
                 id="btn-save-profile-sidebar" 
                 class="btn-save-profile {% if captured_count >= required_samples %}pulse-ready{% endif %}" 
                 onclick="saveProfileAndTrain()" 
                 {% if captured_count < required_samples %}disabled{% endif %}
-                style="width: 100%; justify-content: center; font-size: 1rem; padding: 0.9rem;"
+                style="width: 100%; justify-content: center; font-size: 0.95rem; padding: 0.7rem;"
             >
                 <span>💾</span> Save Profile &amp; Complete Registration
             </button>
-            <div id="save-profile-hint" style="margin-top: 0.6rem; font-size: 0.8rem; text-align: center; color: {% if captured_count >= required_samples %}#15803d{% else %}var(--text-muted){% endif %}; font-weight: 600;">
+            <div id="save-profile-hint" style="margin-top: 0.4rem; font-size: 0.76rem; text-align: center; color: {% if captured_count >= required_samples %}#15803d{% else %}var(--text-muted){% endif %}; font-weight: 600;">
                 {% if captured_count >= required_samples %}
                 ✓ 50 samples ready! Click to save and train profile.
                 {% else %}

@@ -13,14 +13,16 @@
 
 <div class="animate-fade-in" style="max-width: 840px; margin: 0 auto 2.5rem auto;">
     <div class="glass-card" style="padding: 2rem 2.25rem;">
-        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
+        <div
+            style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-glass);">
             <div style="display: flex; align-items: center; gap: 1rem;">
-                <img src="{{ url_for('static', filename='images/phone_scan_qr.png') }}" 
-                     alt="Student QR Icon" 
-                     style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0, 82, 204, 0.3));">
+                <img src="{{ url_for('static', filename='images/phone_scan_qr.png') }}" alt="Student QR Icon"
+                    style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 2px 8px rgba(0, 82, 204, 0.3));">
                 <div>
-                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Student Enrollment Form</h3>
-                    <p style="color: var(--text-muted); font-size: 0.84rem;">Fill in student details below. Fields marked with (<span class="required-star">*</span>) are mandatory.</p>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main);">Student Enrollment Form
+                    </h3>
+                    <p style="color: var(--text-muted); font-size: 0.84rem;">Fill in student details below. Fields
+                        marked with (<span class="required-star">*</span>) are mandatory.</p>
                 </div>
             </div>
             <span class="badge badge-cyan" style="font-size: 0.8rem; padding: 0.35rem 0.75rem;">Step 1 of 3</span>
@@ -28,23 +30,16 @@
 
         <form action="{{ url_for('register') }}" method="POST" id="registration-form">
             <!-- Row 1: Student ID & Full Name -->
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.15rem; margin-bottom: 1.25rem;">
+            <div
+                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 1.15rem; margin-bottom: 1.25rem;">
                 <!-- Student ID / Registration No. -->
                 <div class="form-group" style="margin-bottom: 0;">
                     <label for="person_id" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
                         Registration No. / Roll No. <span class="required-star">*</span>
                     </label>
-                    <input 
-                        type="text" 
-                        id="person_id" 
-                        name="person_id" 
-                        class="form-control" 
-                        placeholder="e.g. 2026CS101, REG-4501" 
-                        value="{{ person_code or '' }}" 
-                        required 
-                        autofocus
-                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
-                    >
+                    <input type="text" id="person_id" name="person_id" class="form-control"
+                        placeholder="e.g. 2026CS101, REG-4501" value="{{ person_code or '' }}" required autofocus
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;">
                     <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
                         QR code image will be saved as <code>&lt;Roll_No&gt;.png</code>.
                     </small>
@@ -55,16 +50,8 @@
                     <label for="name" class="form-label" style="font-size: 0.85rem; margin-bottom: 0.35rem;">
                         Full Name <span class="required-star">*</span>
                     </label>
-                    <input 
-                        type="text" 
-                        id="name" 
-                        name="name" 
-                        class="form-control" 
-                        placeholder="e.g. Arthi.K" 
-                        value="{{ name or '' }}" 
-                        required
-                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
-                    >
+                    <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Arthi.K"
+                        value="{{ name or '' }}" required style="padding: 0.55rem 0.85rem; font-size: 0.9rem;">
                     <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
                         Official name registered for academic records.
                     </small>
@@ -74,31 +61,25 @@
             <!-- Row 2: Department Selection with Inline Add Option -->
             <div style="margin-bottom: 1.25rem;">
                 <div class="form-group" style="margin-bottom: 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
                         <label for="department_select" class="form-label" style="margin-bottom: 0; font-size: 0.85rem;">
                             Academic Department <span class="required-star">*</span>
                         </label>
-                        <button 
-                            type="button" 
-                            id="toggle-dept-btn" 
-                            class="btn btn-outline btn-sm" 
+                        <button type="button" id="toggle-dept-btn" class="btn btn-outline btn-sm"
                             onclick="toggleAddDeptSection()"
-                            style="padding: 0.2rem 0.6rem; font-size: 0.75rem; color: var(--primary); border-color: rgba(37, 99, 235, 0.3); font-weight: 700;"
-                        >
+                            style="padding: 0.2rem 0.6rem; font-size: 0.75rem; color: var(--primary); border-color: rgba(37, 99, 235, 0.3); font-weight: 700;">
                             ➕ Add New Dept
                         </button>
                     </div>
 
-                    <select 
-                        id="department_select" 
-                        name="department" 
-                        class="form-control" 
-                        required
-                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
-                    >
-                        <option value="" disabled {% if not department %}selected{% endif %}>-- Select Department --</option>
+                    <select id="department_select" name="department" class="form-control" required
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;">
+                        <option value="" disabled {% if not department %}selected{% endif %}>-- Select Department --
+                        </option>
                         {% for dept in departments_list %}
-                            <option value="{{ dept }}" {% if department == dept or request.args.get('department') == dept %}selected{% endif %}>{{ dept }}</option>
+                        <option value="{{ dept }}" {% if department==dept or request.args.get('department')==dept
+                            %}selected{% endif %}>{{ dept }}</option>
                         {% endfor %}
                     </select>
                     <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
@@ -108,41 +89,33 @@
             </div>
 
             <!-- Inline Department Adding Section (Collapsible Drawer) -->
-            <div id="new-dept-box" style="display: none; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08); transition: var(--transition);">
-                <div style="font-size: 0.82rem; font-weight: 700; color: #1e40af; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
+            <div id="new-dept-box"
+                style="display: none; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); padding: 1rem; margin-bottom: 1.25rem; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08); transition: var(--transition);">
+                <div
+                    style="font-size: 0.82rem; font-weight: 700; color: #1e40af; margin-bottom: 0.4rem; display: flex; align-items: center; gap: 0.4rem;">
                     <span>🏢</span> Add New Academic Department
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <input 
-                        type="text" 
-                        id="new-dept-name-input" 
-                        class="form-control" 
-                        placeholder="e.g. Biomedical Engineering, Robotics" 
-                        style="background: #ffffff; padding: 0.45rem 0.75rem; font-size: 0.85rem;"
-                    >
-                    <button 
-                        type="button" 
-                        class="btn btn-primary btn-sm" 
-                        onclick="saveNewDepartmentInline()"
-                        style="white-space: nowrap;"
-                    >
+                    <input type="text" id="new-dept-name-input" class="form-control"
+                        placeholder="e.g. Biomedical Engineering, Robotics"
+                        style="background: #ffffff; padding: 0.45rem 0.75rem; font-size: 0.85rem;">
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveNewDepartmentInline()"
+                        style="white-space: nowrap;">
                         Save &amp; Select
                     </button>
-                    <button 
-                        type="button" 
-                        class="btn btn-outline btn-sm" 
-                        onclick="toggleAddDeptSection()"
-                        title="Cancel"
-                    >
+                    <button type="button" class="btn btn-outline btn-sm" onclick="toggleAddDeptSection()"
+                        title="Cancel">
                         ✕
                     </button>
                 </div>
             </div>
 
             <!-- Form Actions -->
-            <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); margin-top: 0.5rem;">
+            <div
+                style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border-glass); margin-top: 0.5rem;">
                 <a href="{{ url_for('index') }}" class="btn btn-outline" style="padding: 0.55rem 1.2rem;">Cancel</a>
-                <button type="submit" class="btn btn-primary" id="btn-submit-reg" style="padding: 0.55rem 1.35rem; font-weight: 700;">
+                <button type="submit" class="btn btn-primary" id="btn-submit-reg"
+                    style="padding: 0.55rem 1.35rem; font-weight: 700;">
                     <span>💾</span> Complete Registration &amp; Issue QR Credential →
                 </button>
             </div>
