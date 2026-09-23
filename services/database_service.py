@@ -491,6 +491,10 @@ class DatabaseService:
         query = """
             INSERT INTO attendance (person_id, qr_session_id, attendance_date, attendance_time, status)
             VALUES (%s, %s, %s, %s, %s)
+            ON DUPLICATE KEY UPDATE
+                attendance_time = VALUES(attendance_time),
+                status = VALUES(status),
+                qr_session_id = COALESCE(VALUES(qr_session_id), qr_session_id)
         """
         return cls.execute_query(query, (person_id, qr_session_id, current_date, current_time, status), commit=True, last_id=True)
 
@@ -622,6 +626,30 @@ class DatabaseService:
             LEFT JOIN attendance a 
                 ON p.id = a.person_id AND a.attendance_date = %s
             WHERE a.status IS NULL OR a.status != 'PRESENT'
+            ORDER BY department ASC, p.name ASC
+        """
+        return cls.execute_query(query, (attendance_date,), fetch_all=True) or []
+
+    @classmethod
+    def get_unmarked_students_for_date(cls, attendance_date=None):
+        """
+        Returns all registered students who have NO attendance record (neither PRESENT nor ABSENT)
+        for a specific date. Used to idempotently process and mark absentees upon cutoff.
+        """
+        if not attendance_date:
+            attendance_date = date.today().isoformat()
+
+        query = """
+            SELECT 
+                p.id,
+                p.person_code,
+                p.name,
+                p.email,
+                COALESCE(NULLIF(p.department, ''), 'General') AS department
+            FROM persons p
+            LEFT JOIN attendance a 
+                ON p.id = a.person_id AND a.attendance_date = %s
+            WHERE a.id IS NULL
             ORDER BY department ASC, p.name ASC
         """
         return cls.execute_query(query, (attendance_date,), fetch_all=True) or []

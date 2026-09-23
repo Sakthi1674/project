@@ -237,13 +237,13 @@ class TestAttendanceSystem(unittest.TestCase):
         person_id = DatabaseService.add_person(test_code, "Biometric Tester", "AI & Data Science")
         self.created_person_ids.append(person_id)
 
-        # Mark first attendance
-        res1 = AttendanceService.process_attendance(person_id)
+        # Mark first attendance (pass enforce_cutoff=False to test duplicate prevention logic regardless of test run time)
+        res1 = AttendanceService.process_attendance(person_id, enforce_cutoff=False)
         self.assertTrue(res1["success"])
         self.assertEqual(res1["status"], "PRESENT")
 
         # Attempt duplicate attendance on same day
-        res2 = AttendanceService.process_attendance(person_id)
+        res2 = AttendanceService.process_attendance(person_id, enforce_cutoff=False)
         self.assertFalse(res2["success"])
         self.assertTrue(res2["is_duplicate"])
         print("  Passed: First attendance recorded, duplicate attendance blocked.")
@@ -299,6 +299,64 @@ class TestAttendanceSystem(unittest.TestCase):
         save_res = FaceService.save_face_sample_from_frame(dummy_frame, person_id=999999)
         self.assertFalse(save_res["success"])
         print("  Passed: Face already registered checking mechanism validated.")
+
+    def test_09_attendance_cutoff_enforcement_and_time_parsing(self):
+        """Test cutoff time parsing (10:30, 10.30, AM/PM), past cutoff blocking, and auto absentee marking."""
+        print("\n[Test 9] Testing Cutoff Parsing & Hard Attendance Blocking...")
+        from datetime import time
+
+        # 1. Test robust parsing for 10:30, 10.30, 10:30 AM, 10:30 PM, and 09.45
+        t1 = AttendanceService.parse_cutoff_time("10:30")
+        self.assertEqual(t1, time(10, 30))
+        t2 = AttendanceService.parse_cutoff_time("10.30")
+        self.assertEqual(t2, time(10, 30))
+        t3 = AttendanceService.parse_cutoff_time("10:30 AM")
+        self.assertEqual(t3, time(10, 30))
+        t4 = AttendanceService.parse_cutoff_time("10:30 PM")
+        self.assertEqual(t4, time(22, 30))
+        t5 = AttendanceService.parse_cutoff_time("09.45")
+        self.assertEqual(t5, time(9, 45))
+
+        # 2. Test is_past_cutoff with simulated times
+        self.assertFalse(AttendanceService.is_past_cutoff("10:30", current_time=time(10, 15)))
+        self.assertTrue(AttendanceService.is_past_cutoff("10:30", current_time=time(10, 30)))
+        self.assertTrue(AttendanceService.is_past_cutoff("10:30", current_time=time(11, 0)))
+
+        # 3. Test attendance blocking when past cutoff
+        ts = int(datetime.now().timestamp())
+        test_code = f"CUTOFF_STU_{ts}"
+        person_id = DatabaseService.add_person(test_code, "LateStudent", "Computer Science")
+        self.created_person_ids.append(person_id)
+
+        # Force cutoff time to a past time (00:01) to verify past cutoff rejection
+        past_cutoff = "00:01"
+        self.assertTrue(AttendanceService.is_past_cutoff(past_cutoff))
+
+        # Test process_attendance rejection with enforce_cutoff=True
+        Config.ATTENDANCE_CUTOFF_TIME = past_cutoff
+        block_res = AttendanceService.process_attendance(person_id, enforce_cutoff=True)
+        self.assertFalse(block_res["success"])
+        self.assertTrue(block_res.get("is_past_cutoff", False))
+        self.assertIn("cutoff time", block_res["message"].lower())
+
+        # Test API endpoints reject after cutoff (HTTP 403)
+        res_qr = self.client.post("/validate-student-qr", json={"qr_data": test_code})
+        self.assertEqual(res_qr.status_code, 403)
+        self.assertTrue(res_qr.get_json().get("is_past_cutoff"))
+
+        res_att = self.client.post("/verify-student-attendance", json={"student_id": person_id, "image": "dummy"})
+        self.assertEqual(res_att.status_code, 403)
+        self.assertTrue(res_att.get_json().get("is_past_cutoff"))
+
+        # 4. Test auto absentee marking for unmarked students
+        AttendanceService.auto_mark_absentees_if_past_cutoff()
+        rec = DatabaseService.check_today_attendance(person_id)
+        self.assertIsNotNone(rec)
+        self.assertEqual(rec["status"], "ABSENT")
+
+        # Reset Config cutoff time back to environment / default
+        Config.get_cutoff_time()
+        print("  Passed: Cutoff time parsing, hard attendance blocking (403), and auto-absentee marking verified.")
 
 if __name__ == "__main__":
     unittest.main()

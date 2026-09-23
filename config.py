@@ -57,10 +57,15 @@ class Config:
 
     @classmethod
     def get_cutoff_time(cls):
-        """Dynamically re-reads ATTENDANCE_CUTOFF_TIME from .env or environment."""
+        """Dynamically re-reads ATTENDANCE_CUTOFF_TIME from .env or environment, normalizing format."""
         load_env_file()
         cutoff = os.environ.get("ATTENDANCE_CUTOFF_TIME", cls.ATTENDANCE_CUTOFF_TIME)
-        return cutoff.strip() if cutoff else "10:30"
+        clean = cutoff.strip() if cutoff else "10:30"
+        # Support user entering '10.30' with a dot
+        if "." in clean and ":" not in clean:
+            clean = clean.replace(".", ":")
+        cls.ATTENDANCE_CUTOFF_TIME = clean
+        return clean
 
     @classmethod
     def get_smtp_config(cls):

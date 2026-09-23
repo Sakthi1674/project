@@ -11,9 +11,10 @@ class AttendanceService:
     """Manages attendance verification, duplicate prevention, and logging."""
 
     @classmethod
-    def process_student_biometric_attendance(cls, student_id, frame_bgr):
+    def process_student_biometric_attendance(cls, student_id, frame_bgr, enforce_cutoff=True):
         """
         Validates student attendance using biometric cross-validation:
+        0. Verifies attendance cutoff window (blocks check-in after cutoff).
         1. Confirms student exists.
         2. Detects face in webcam frame.
         3. Recognizes face using LBPH model.
@@ -21,6 +22,18 @@ class AttendanceService:
         5. Checks for duplicate attendance today.
         6. Saves attendance in MySQL and returns confirmation details.
         """
+        # 0. Enforce Attendance Cutoff Window
+        cutoff_str = Config.get_cutoff_time()
+        if enforce_cutoff and cls.is_past_cutoff(cutoff_str):
+            cls.auto_mark_absentees_if_past_cutoff()
+            logger.warning(f"Attendance rejected for student #{student_id}: past cutoff time ({cutoff_str}).")
+            return {
+                "success": False,
+                "is_past_cutoff": True,
+                "cutoff_time": cutoff_str,
+                "message": f"Attendance cutoff time ({cutoff_str}) has passed. Attendance cannot be recorded for today."
+            }
+
         # 1. Fetch expected student from DB
         student = DatabaseService.get_person_by_id(student_id)
         if not student:
@@ -100,8 +113,20 @@ class AttendanceService:
             }
 
     @classmethod
-    def process_attendance(cls, person_id, qr_token=None):
-        """Standard attendance marking with duplicate check."""
+    def process_attendance(cls, person_id, qr_token=None, enforce_cutoff=True):
+        """Standard attendance marking with duplicate check and cutoff enforcement."""
+        # 0. Enforce Attendance Cutoff Window
+        cutoff_str = Config.get_cutoff_time()
+        if enforce_cutoff and cls.is_past_cutoff(cutoff_str):
+            cls.auto_mark_absentees_if_past_cutoff()
+            logger.warning(f"Attendance rejected for person #{person_id}: past cutoff time ({cutoff_str}).")
+            return {
+                "success": False,
+                "is_past_cutoff": True,
+                "cutoff_time": cutoff_str,
+                "message": f"Attendance cutoff time ({cutoff_str}) has passed. Attendance cannot be recorded for today."
+            }
+
         person = DatabaseService.get_person_by_id(person_id)
         if not person:
             return {
@@ -170,31 +195,63 @@ class AttendanceService:
 
     @classmethod
     def parse_cutoff_time(cls, cutoff_str):
-        """Parses HH:MM string to datetime.time object."""
+        """Parses HH:MM, HH.MM, or 12/24-hour time string to datetime.time object."""
+        if not cutoff_str:
+            return time(10, 30)
+        cutoff_str = str(cutoff_str).strip()
+        normalized = cutoff_str.replace(".", ":")
+        for fmt in ("%H:%M", "%I:%M %p", "%I:%M%p", "%H:%M:%S"):
+            try:
+                return datetime.strptime(normalized, fmt).time()
+            except ValueError:
+                pass
         try:
-            parts = cutoff_str.strip().split(":")
+            parts = normalized.split(":")
             return time(int(parts[0]), int(parts[1]))
         except Exception:
             return time(10, 30)
 
     @classmethod
-    def is_past_cutoff(cls, cutoff_str=None):
-        """Checks if current system time is past the specified cutoff time."""
-        cutoff_str = cutoff_str or Config.ATTENDANCE_CUTOFF_TIME
+    def is_past_cutoff(cls, cutoff_str=None, current_time=None):
+        """Checks if current system time (or given time) is past the specified cutoff time."""
+        cutoff_str = cutoff_str or Config.get_cutoff_time()
         cutoff = cls.parse_cutoff_time(cutoff_str)
-        now_time = datetime.now().time()
+        now_time = current_time or datetime.now().time()
         return now_time >= cutoff
+
+    @classmethod
+    def auto_mark_absentees_if_past_cutoff(cls):
+        """
+        Automatically checks if current time is past cutoff for today.
+        If past cutoff, marks all unmarked students as ABSENT in MySQL.
+        Thread-safe and idempotent.
+        """
+        try:
+            today_str = date.today().isoformat()
+            cutoff_str = Config.get_cutoff_time()
+            if cls.is_past_cutoff(cutoff_str):
+                unmarked_students = DatabaseService.get_unmarked_students_for_date(today_str)
+                if unmarked_students:
+                    marked_count = 0
+                    for student in unmarked_students:
+                        DatabaseService.update_attendance_status(student["id"], today_str, status="ABSENT")
+                        marked_count += 1
+                    logger.info(f"Auto-cutoff: marked {marked_count} unmarked students as ABSENT for {today_str}.")
+                    return marked_count
+            return 0
+        except Exception as e:
+            logger.error(f"Error in auto_mark_absentees_if_past_cutoff: {e}")
+            return 0
 
     @classmethod
     def process_cutoff_absentees(cls, cutoff_time_str=None, target_date=None, force=False):
         """
         Evaluates attendance cutoff:
         1. Verifies current time is past cutoff (unless force=True).
-        2. Identifies all students with no 'PRESENT' record for the date.
+        2. Identifies all students with no 'PRESENT' or 'ABSENT' record for the date.
         3. Marks their status as 'ABSENT' in attendance table.
-        (Email notification service removed as requested).
         """
-        cutoff_time_str = cutoff_time_str or Config.ATTENDANCE_CUTOFF_TIME
+        cutoff_time_str = cutoff_time_str or Config.get_cutoff_time()
         if not target_date:
             target_date = date.today().isoformat()
 
@@ -209,11 +266,11 @@ class AttendanceService:
                     "current_time": current_hhmm
                 }
 
-        unmarked_students = DatabaseService.get_unmarked_or_absent_students_for_date(target_date)
+        unmarked_students = DatabaseService.get_unmarked_students_for_date(target_date)
         if not unmarked_students:
             return {
                 "success": True,
-                "message": "All students have already marked attendance for this date.",
+                "message": "All students have already been processed for this date.",
                 "total_absentees": 0,
                 "cutoff_time": cutoff_time_str,
                 "date": target_date

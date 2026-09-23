@@ -45,6 +45,13 @@ def login_required(f):
     return decorated_function
 
 # Context processor to inject common metrics/variables into templates
+@app.before_request
+def auto_check_cutoff_absentees():
+    """Automatically marks unmarked students as ABSENT when past daily cutoff time."""
+    if request.path.startswith("/static"):
+        return
+    AttendanceService.auto_mark_absentees_if_past_cutoff()
+
 @app.context_processor
 def inject_globals():
     try:
@@ -529,11 +536,29 @@ def attendance_page():
     except Exception:
         recent_logs = []
     model_exists = os.path.exists(Config.TRAINER_FILE)
-    return render_template("attendance.html", recent_logs=recent_logs, model_exists=model_exists)
+    cutoff_val = Config.get_cutoff_time()
+    is_past = AttendanceService.is_past_cutoff(cutoff_val)
+    return render_template(
+        "attendance.html",
+        recent_logs=recent_logs,
+        model_exists=model_exists,
+        cutoff_time=cutoff_val,
+        is_past_cutoff=is_past
+    )
 
 @app.route("/validate-student-qr", methods=["POST"])
 def validate_student_qr():
     """Validates scanned student QR code and returns student profile."""
+    cutoff_str = Config.get_cutoff_time()
+    if AttendanceService.is_past_cutoff(cutoff_str):
+        AttendanceService.auto_mark_absentees_if_past_cutoff()
+        return jsonify({
+            "success": False,
+            "is_past_cutoff": True,
+            "cutoff_time": cutoff_str,
+            "message": f"Attendance window closed at {cutoff_str}. Attendance cannot be marked after the cutoff time."
+        }), 403
+
     data = request.get_json(silent=True) or {}
     qr_data = data.get("qr_data") or data.get("qr_token") or data.get("token")
     if not qr_data:
@@ -550,6 +575,16 @@ def verify_student_attendance():
     Checks that the face in front of the camera matches the scanned student,
     checks for duplicate attendance today, and records attendance.
     """
+    cutoff_str = Config.get_cutoff_time()
+    if AttendanceService.is_past_cutoff(cutoff_str):
+        AttendanceService.auto_mark_absentees_if_past_cutoff()
+        return jsonify({
+            "success": False,
+            "is_past_cutoff": True,
+            "cutoff_time": cutoff_str,
+            "message": f"Attendance window closed at {cutoff_str}. Attendance cannot be marked after the cutoff time."
+        }), 403
+
     data = request.get_json(silent=True) or {}
     student_id = data.get("student_id") or data.get("person_id")
     image_base64 = data.get("image")
@@ -597,6 +632,16 @@ def recognize_face():
 
 @app.route("/mark-attendance", methods=["POST"])
 def mark_attendance():
+    cutoff_str = Config.get_cutoff_time()
+    if AttendanceService.is_past_cutoff(cutoff_str):
+        AttendanceService.auto_mark_absentees_if_past_cutoff()
+        return jsonify({
+            "success": False,
+            "is_past_cutoff": True,
+            "cutoff_time": cutoff_str,
+            "message": f"Attendance window closed at {cutoff_str}. Attendance cannot be marked after the cutoff time."
+        }), 403
+
     data = request.get_json(silent=True) or {}
     qr_token = data.get("qr_token")
     image_base64 = data.get("image")
@@ -657,7 +702,8 @@ def report():
     # 3. Flat attendance logs for table
     records = AttendanceService.get_report(date_filter=date_filter, search=search_query)
 
-    is_past_cutoff = AttendanceService.is_past_cutoff(Config.ATTENDANCE_CUTOFF_TIME)
+    cutoff_val = Config.get_cutoff_time()
+    is_past_cutoff = AttendanceService.is_past_cutoff(cutoff_val)
 
     return render_template(
         "report.html",
@@ -669,7 +715,7 @@ def report():
         overall_present=overall_present,
         overall_absent=overall_absent,
         overall_rate=overall_rate,
-        cutoff_time=Config.ATTENDANCE_CUTOFF_TIME,
+        cutoff_time=cutoff_val,
         is_past_cutoff=is_past_cutoff,
         is_today=(date_filter == date.today().isoformat())
     )
@@ -699,7 +745,7 @@ def api_process_absentees():
     force = bool(data.get("force", False))
 
     result = AttendanceService.process_cutoff_absentees(
-        cutoff_time_str=Config.ATTENDANCE_CUTOFF_TIME,
+        cutoff_time_str=Config.get_cutoff_time(),
         target_date=target_date,
         force=force
     )

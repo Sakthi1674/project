@@ -92,8 +92,13 @@
                     </li>
                     {% if cutoff_time %}
                     <li>
-                        <span class="cutoff-badge" title="Attendance Cutoff Time from environment">
+                        <span class="cutoff-badge" title="Attendance Cutoff Time: {{ cutoff_time }}{% if is_past_cutoff %} (Window Closed){% else %} (Check-in Active){% endif %}" style="{% if is_past_cutoff %}background: #fee2e2; border-color: #fca5a5; color: #b91c1c;{% endif %}">
                             <span>⏰</span> Cutoff: {{ cutoff_time }}
+                            {% if is_past_cutoff %}
+                                <span class="badge badge-danger" style="font-size: 0.68rem; margin-left: 4px; padding: 0.15rem 0.45rem;">Closed</span>
+                            {% else %}
+                                <span class="badge badge-success" style="font-size: 0.68rem; margin-left: 4px; padding: 0.15rem 0.45rem;"><span class="pulse-dot"></span> Active</span>
+                            {% endif %}
                         </span>
                     </li>
                     {% endif %}

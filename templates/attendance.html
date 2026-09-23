@@ -21,6 +21,28 @@
     </div>
 </div>
 
+{% if is_past_cutoff %}
+<!-- Cutoff Window Closed Notice -->
+<div class="glass-card animate-fade-in" style="max-width: 680px; margin: 0 auto 1.25rem auto; padding: 1.15rem 1.35rem; background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%); border: 1.5px solid #fca5a5; border-left: 5px solid #dc2626; border-radius: var(--radius-md); box-shadow: 0 4px 14px rgba(220, 38, 38, 0.08); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 0.75rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+        <div style="width: 42px; height: 42px; border-radius: 50%; background: #fee2e2; color: #dc2626; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; flex-shrink: 0;">
+            ⏰
+        </div>
+        <div>
+            <div style="font-size: 1.05rem; font-weight: 800; color: #991b1b; line-height: 1.2;">
+                Attendance Window Closed (Cutoff: {{ cutoff_time }})
+            </div>
+            <div style="font-size: 0.8rem; color: #b91c1c; margin-top: 0.2rem;">
+                Daily attendance check-in closed at {{ cutoff_time }}. New attendance records are blocked, and unmarked students are logged as Absent.
+            </div>
+        </div>
+    </div>
+    <span class="badge badge-danger" style="font-size: 0.78rem; padding: 0.35rem 0.75rem;">
+        Past Cutoff &bull; Kiosk Locked
+    </span>
+</div>
+{% endif %}
+
 <!-- Centered Attendance Scanner Kiosk -->
 <div style="max-width: 680px; margin: 0 auto 1rem auto;" class="animate-fade-in">
     <!-- =============================================================
@@ -42,7 +64,11 @@
                     Hold your student QR pass 15&ndash;30 cm in front of the camera lens.
                 </p>
             </div>
+            {% if is_past_cutoff %}
+            <span id="qr-cam-badge" class="badge badge-danger" style="font-size: 0.78rem;">Window Closed (Cutoff: {{ cutoff_time }})</span>
+            {% else %}
             <span id="qr-cam-badge" class="badge badge-warning" style="font-size: 0.78rem;">Camera Standby</span>
+            {% endif %}
         </div>
 
         <!-- Viewfinder Camera Box -->
@@ -72,7 +98,8 @@
             style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; flex-wrap: wrap; gap: 0.75rem;">
             <div style="display: flex; gap: 0.5rem;">
                 <button id="btn-start-qr-cam" class="btn btn-primary btn-sm" onclick="startQRScanner()"
-                    style="padding: 0.45rem 1rem;">
+                    style="padding: 0.45rem 1rem; {% if is_past_cutoff %}opacity: 0.55; cursor: not-allowed;{% endif %}"
+                    {% if is_past_cutoff %}disabled title="Attendance window closed at {{ cutoff_time }}"{% endif %}>
                     <span>📷</span> Start Camera
                 </button>
                 <button id="btn-stop-qr-cam" class="btn btn-outline btn-sm" onclick="stopQRScanner()"
@@ -291,6 +318,9 @@
 
 {% block scripts %}
 <script>
+    const isPastCutoff = {{ 'true' if is_past_cutoff else 'false' }};
+    const cutoffTime = "{{ cutoff_time }}";
+
     let currentStudent = null;
     let qrScanner = null;
     let faceStream = null;
@@ -318,6 +348,12 @@
 
     // --- Phase 1: Real-Time Student QR Code Scanning ---
     function startQRScanner() {
+        if (isPastCutoff) {
+            setAlert(qrAlert, `⚠️ Attendance window closed at ${cutoffTime}. New attendance records cannot be created today.`, 'danger');
+            showToast(`Attendance window closed at ${cutoffTime}.`, 'danger');
+            return;
+        }
+
         if (!qrScanner) {
             qrScanner = new QRScanner(qrVideo, null, {
                 onScan: (decodedText) => handleStudentQRScanned(decodedText),
@@ -353,13 +389,25 @@
         document.getElementById('btn-stop-qr-cam').style.display = 'none';
         const badge = document.getElementById('qr-cam-badge');
         if (badge) {
-            badge.className = 'badge badge-warning';
-            badge.innerText = 'Camera Standby';
+            if (isPastCutoff) {
+                badge.className = 'badge badge-danger';
+                badge.innerText = `Window Closed (${cutoffTime})`;
+            } else {
+                badge.className = 'badge badge-warning';
+                badge.innerText = 'Camera Standby';
+            }
         }
     }
 
     async function handleStudentQRScanned(qrData) {
         if (!qrData) return;
+        if (isPastCutoff) {
+            if (qrScanner) qrScanner.stop();
+            setAlert(qrAlert, `⚠️ Attendance window closed at ${cutoffTime}. New check-ins are blocked.`, 'danger');
+            showToast(`Attendance window closed at ${cutoffTime}.`, 'danger');
+            return;
+        }
+
         qrScanner.stop();
         setAlert(qrAlert, `Student QR Detected! Validating credential in real-time...`, 'info');
 
@@ -371,6 +419,12 @@
             });
             const data = await res.json();
 
+            if (data.is_past_cutoff) {
+                setAlert(qrAlert, `⚠️ ${data.message || 'Attendance window closed at ' + cutoffTime + '.'}`, 'danger');
+                showToast(data.message || 'Attendance cutoff reached.', 'danger', 5000);
+                return;
+            }
+
             if (data.success && data.person) {
                 currentStudent = data.person;
                 showToast(`Student Verified: ${currentStudent.name}! Starting face cross-check...`, 'success', 2500);
@@ -379,12 +433,16 @@
             } else {
                 setAlert(qrAlert, data.message || 'QR code does not match any enrolled student.', 'danger');
                 showToast(data.message || 'Invalid Student QR.', 'danger');
-                setTimeout(() => startQRScanner(), 2000);
+                setTimeout(() => {
+                    if (!isPastCutoff) startQRScanner();
+                }, 2000);
             }
         } catch (err) {
             console.error(err);
             setAlert(qrAlert, 'Server error during student QR verification.', 'danger');
-            setTimeout(() => startQRScanner(), 2000);
+            setTimeout(() => {
+                if (!isPastCutoff) startQRScanner();
+            }, 2000);
         }
     }
 
@@ -453,6 +511,14 @@
                 });
 
                 const data = await res.json();
+
+                if (data.is_past_cutoff) {
+                    clearInterval(realTimeFaceCheckInterval);
+                    realTimeFaceCheckInterval = null;
+                    setAlert(faceAlert, `⚠️ ${data.message || 'Attendance window closed at ' + cutoffTime + '.'}`, 'danger');
+                    showToast(data.message || 'Attendance closed.', 'danger', 5000);
+                    return;
+                }
 
                 if (res.ok && data.success) {
                     // Match Confirmed!
@@ -603,7 +669,11 @@
         qrAlert.style.display = 'none';
         faceAlert.style.display = 'none';
 
-        startQRScanner();
+        if (!isPastCutoff) {
+            startQRScanner();
+        } else {
+            setAlert(qrAlert, `⚠️ Daily attendance window closed at <strong>${cutoffTime}</strong>. New check-ins are locked for today.`, 'danger');
+        }
     }
 
     function setAlert(el, msg, type) {
@@ -629,9 +699,13 @@
         el.innerHTML = msg;
     }
 
-    // Auto-start QR scanner on initial load
+    // Auto-start QR scanner on initial load only if check-in window is open
     window.addEventListener('DOMContentLoaded', () => {
-        startQRScanner();
+        if (!isPastCutoff) {
+            startQRScanner();
+        } else {
+            setAlert(qrAlert, `⚠️ Daily attendance window closed at <strong>${cutoffTime}</strong>. New check-ins are locked for today.`, 'danger');
+        }
     });
 </script>
 {% endblock %}
