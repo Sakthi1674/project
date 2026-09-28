@@ -358,5 +358,90 @@ class TestAttendanceSystem(unittest.TestCase):
         Config.get_cutoff_time()
         print("  Passed: Cutoff time parsing, hard attendance blocking (403), and auto-absentee marking verified.")
 
+    def test_10_edit_student_details(self):
+        """Test editing student profile details (name, roll no, department, email) and QR synchronization."""
+        print("\n[Test 10] Testing Student Details Edit Flow...")
+
+        # Login admin session for test client
+        with self.client.session_transaction() as sess:
+            sess["logged_in"] = True
+            sess["admin_user"] = Config.ADMIN_USERNAME
+
+        ts = int(datetime.now().timestamp())
+        init_code = f"EDIT_INIT_{ts}"
+        person_id = DatabaseService.add_person(init_code, "Initial Name", "Computer Science", email="init@test.edu")
+        self.created_person_ids.append(person_id)
+
+        # Generate initial QR code
+        qr_init = QRService.generate_student_qr(person_id, init_code, "Initial Name", "Computer Science")
+        old_qr_path = qr_init["qr_code_path"]
+        old_full_path = os.path.join(Config.BASE_DIR, old_qr_path.lstrip("/\\"))
+        self.assertTrue(os.path.exists(old_full_path))
+
+        # 1. Test GET /edit-student/<person_id> renders page
+        get_res = self.client.get(f"/edit-student/{person_id}")
+        self.assertEqual(get_res.status_code, 200)
+        self.assertIn(b"Edit Student Profile", get_res.data)
+        self.assertIn(b"Initial Name", get_res.data)
+
+        # 2. Test POST /api/student/edit/<person_id> with updated details
+        new_code = f"EDIT_NEW_{ts}"
+        edit_payload = {
+            "name": "Updated Name",
+            "person_code": new_code,
+            "department": "AI & Data Science",
+            "email": "updated@test.edu"
+        }
+        post_res = self.client.post(f"/api/student/edit/{person_id}", json=edit_payload)
+        self.assertEqual(post_res.status_code, 200)
+        res_data = post_res.get_json()
+        self.assertTrue(res_data["success"])
+        self.assertTrue(res_data["department_changed"])
+
+        # 3. Verify Database reflects updated student details
+        updated = DatabaseService.get_person_by_id(person_id)
+        self.assertEqual(updated["name"], "Updated Name")
+        self.assertEqual(updated["person_code"], new_code)
+        self.assertEqual(updated["department"], "AI & Data Science")
+        self.assertEqual(updated["email"], "updated@test.edu")
+
+        # 4. Verify QR code was regenerated and old QR file was cleaned up
+        new_qr_path = updated["qr_code_path"]
+        new_full_path = os.path.join(Config.BASE_DIR, new_qr_path.lstrip("/\\"))
+        self.assertTrue(os.path.exists(new_full_path))
+        self.assertNotEqual(old_qr_path, new_qr_path)
+        self.assertFalse(os.path.exists(old_full_path))
+
+        # 5. Test Duplicate Prevention during Edit:
+        # Create a second student
+        other_code = f"OTHER_{ts}"
+        other_id = DatabaseService.add_person(other_code, "Other Student", "Mechanical Engineering")
+        self.created_person_ids.append(other_id)
+
+        # Attempt to edit student #person_id with other_code
+        dup_payload = {
+            "name": "Should Fail",
+            "person_code": other_code,
+            "department": "Mechanical Engineering"
+        }
+        dup_res = self.client.post(f"/api/student/edit/{person_id}", json=dup_payload)
+        self.assertEqual(dup_res.status_code, 400)
+        dup_data = dup_res.get_json()
+        self.assertFalse(dup_data["success"])
+        self.assertIn("already registered", dup_data["message"].lower())
+
+        # 6. Test that keeping the student's own code is permitted
+        self_payload = {
+            "name": "Updated Name 2",
+            "person_code": new_code,
+            "department": "AI & Data Science"
+        }
+        self_res = self.client.post(f"/api/student/edit/{person_id}", json=self_payload)
+        self.assertEqual(self_res.status_code, 200)
+        self.assertTrue(self_res.get_json()["success"])
+
+        print("  Passed: Student edit flow, QR regeneration, database update, and duplicate validation verified.")
+
 if __name__ == "__main__":
     unittest.main()
+

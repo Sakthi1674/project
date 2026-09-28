@@ -246,6 +246,27 @@ class DatabaseService:
         return cls.execute_query(query, (qr_token, qr_code_path, person_id), commit=True)
 
     @classmethod
+    def update_person(cls, person_id, person_code, name, department, email=None):
+        """Updates an existing student's details in persons table."""
+        dept = department.strip() if department else "General"
+        clean_email = email.strip() if email and email.strip() else None
+
+        # Ensure department exists in departments table
+        if dept and dept != "General":
+            cls.add_department(dept)
+
+        query = """
+            UPDATE persons
+            SET person_code = %s, name = %s, department = %s, email = %s
+            WHERE id = %s
+        """
+        return cls.execute_query(
+            query,
+            (person_code.strip(), name.strip(), dept, clean_email, person_id),
+            commit=True
+        )
+
+    @classmethod
     def get_person_by_id(cls, person_id):
         """Fetches person by integer id."""
         query = "SELECT * FROM persons WHERE id = %s"
@@ -753,6 +774,7 @@ class DatabaseService:
             "person_code": person["person_code"],
             "name": person["name"],
             "email": person.get("email") or "Not provided",
+            "raw_email": person.get("email") or "",
             "department": person.get("department") or "General",
             "qr_code_path": person.get("qr_code_path") or "",
             "created_at": str(person.get("created_at") or ""),

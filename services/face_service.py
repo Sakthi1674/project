@@ -107,6 +107,39 @@ class FaceService:
         return deleted
 
     @classmethod
+    def update_person_face_samples(cls, serial_id, old_person_code, new_name, new_person_code):
+        """
+        Renames face training images when a student's name or person_code is edited.
+        Format: Name.Serial.PersonCode.SampleNumber.jpg
+        """
+        cls.ensure_directories()
+        renamed = 0
+        clean_name = re.sub(r'[^a-zA-Z0-9]', '', str(new_name or '')) or "Person"
+        clean_code = str(new_person_code).strip()
+
+        # Match files for this student's serial_id
+        pattern = re.compile(rf"^.+\.{serial_id}\.(?:{re.escape(str(old_person_code))}|.+)\.(\d+)\.jpg$", re.IGNORECASE)
+        for filename in os.listdir(Config.TRAINING_IMAGE_DIR):
+            m = pattern.match(filename)
+            if m:
+                sample_num = m.group(1)
+                new_filename = f"{clean_name}.{serial_id}.{clean_code}.{sample_num}.jpg"
+                if filename != new_filename:
+                    old_path = os.path.join(Config.TRAINING_IMAGE_DIR, filename)
+                    new_path = os.path.join(Config.TRAINING_IMAGE_DIR, new_filename)
+                    try:
+                        os.rename(old_path, new_path)
+                        renamed += 1
+                    except Exception as e:
+                        logger.warning(f"Could not rename face sample {filename} -> {new_filename}: {e}")
+
+        logger.info(f"Renamed {renamed} face sample files for student #{serial_id} ({new_person_code})")
+        if renamed > 0:
+            cls.train_lbph_model()
+        return renamed
+
+
+    @classmethod
     def save_face_sample_from_frame(cls, frame_bgr, person_id):
         """
         Processes a single camera frame for a registered person:

@@ -285,14 +285,16 @@ def department_detail_page(dept_name):
     
     total_students = len(students)
     all_departments = DatabaseService.get_all_departments()
-    
+    departments_list = DatabaseService.get_departments_list()
+
     return render_template(
         "department_detail.html",
         dept_name=dept_name,
         students=students,
         total_students=total_students,
         face_enrolled_count=face_enrolled_count,
-        all_departments=all_departments
+        all_departments=all_departments,
+        departments_list=departments_list
     )
 
 @app.route("/departments", methods=["GET"])
@@ -339,6 +341,118 @@ def api_student_complete_details(person_id):
     if not details:
         return jsonify({"success": False, "message": "Student not found."}), 404
     return jsonify({"success": True, "student": details})
+
+@app.route("/edit-student/<int:person_id>", methods=["GET"])
+@login_required
+def edit_student_page(person_id):
+    """Renders full dedicated edit page for a student."""
+    student = DatabaseService.get_person_by_id(person_id)
+    if not student:
+        flash("Student not found.", "danger")
+        return redirect(url_for("departments_page"))
+
+    student["sample_count"] = FaceService.get_captured_count(student["id"], student["person_code"])
+    departments_list = DatabaseService.get_departments_list()
+    return render_template(
+        "edit_student.html",
+        student=student,
+        departments_list=departments_list
+    )
+
+@app.route("/edit-student/<int:person_id>", methods=["POST"])
+@app.route("/api/student/edit/<int:person_id>", methods=["POST"])
+@login_required
+def edit_student(person_id):
+    """
+    Updates student profile (name, roll no / person_code, department, email).
+    Regenerates QR credential if roll no or department changed.
+    Renames biometric face training samples if name or roll no changed and retrains model.
+    Supports both JSON / AJAX and standard HTML form POST.
+    """
+    is_ajax = request.is_json or request.headers.get("X-Requested-With") == "XMLHttpRequest" or request.accept_mimetypes.best == "application/json"
+
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        name = data.get("name", "").strip()
+        person_code = data.get("person_code") or data.get("person_id", "")
+        person_code = str(person_code).strip()
+        department = data.get("department", "").strip() or "General"
+        email = data.get("email", "").strip() or None
+    else:
+        name = request.form.get("name", "").strip()
+        person_code = request.form.get("person_code") or request.form.get("person_id", "")
+        person_code = str(person_code).strip()
+        department = request.form.get("department", "").strip() or "General"
+        email = request.form.get("email", "").strip() or None
+
+    if not name or not person_code:
+        msg = "Student Name and Roll No. / Student ID are required."
+        if is_ajax:
+            return jsonify({"success": False, "message": msg}), 400
+        flash(msg, "danger")
+        return redirect(url_for("edit_student_page", person_id=person_id))
+
+    # Duplicate roll number or email verification (exclude this student's ID)
+    dup_check = DatabaseService.check_duplicate_student(person_code, email=email, exclude_person_id=person_id)
+    if dup_check.get("is_duplicate"):
+        msg = dup_check["message"]
+        if is_ajax:
+            return jsonify({"success": False, "message": msg}), 400
+        flash(msg, "danger")
+        return redirect(url_for("edit_student_page", person_id=person_id))
+
+    student = DatabaseService.get_person_by_id(person_id)
+    if not student:
+        msg = "Student record not found."
+        if is_ajax:
+            return jsonify({"success": False, "message": msg}), 404
+        flash(msg, "danger")
+        return redirect(url_for("departments_page"))
+
+    old_code = student["person_code"]
+    old_name = student["name"]
+    old_dept = student.get("department") or "General"
+    old_qr_path = student.get("qr_code_path")
+
+    try:
+        # 1. Update MySQL database
+        DatabaseService.update_person(person_id, person_code, name, department, email)
+
+        # 2. Check if QR code needs updating (if name, code, or department changed)
+        new_qr_path = old_qr_path
+        if old_code != person_code or old_name != name or old_dept != department or not old_qr_path:
+            qr_info = QRService.generate_student_qr(person_id, person_code, name, department)
+            new_qr_path = qr_info.get("qr_code_path")
+            # If the QR code image path changed, remove old QR image
+            if old_qr_path and old_qr_path != new_qr_path:
+                QRService.delete_student_qr(old_qr_path)
+
+        # 3. Rename face sample files if name or roll number changed
+        if old_code != person_code or old_name != name:
+            FaceService.update_person_face_samples(person_id, old_code, name, person_code)
+
+        updated_student = DatabaseService.get_person_by_id(person_id)
+        updated_student["sample_count"] = FaceService.get_captured_count(person_id, person_code)
+
+        logger.info(f"Updated student #{person_id}: '{name}' ({person_code}) in '{department}'")
+
+        if is_ajax:
+            return jsonify({
+                "success": True,
+                "message": f"Student '{name}' ({person_code}) updated successfully!",
+                "student": updated_student,
+                "department_changed": (old_dept != department)
+            })
+
+        flash(f"Student '{name}' ({person_code}) details updated successfully!", "success")
+        return redirect(url_for("department_detail_page", dept_name=department))
+
+    except Exception as e:
+        logger.error(f"Error editing student #{person_id}: {e}")
+        if is_ajax:
+            return jsonify({"success": False, "message": f"Failed to update student: {str(e)}"}), 500
+        flash(f"Failed to update student: {str(e)}", "danger")
+        return redirect(url_for("edit_student_page", person_id=person_id))
 
 @app.route("/delete-student/<int:person_id>", methods=["POST"])
 @login_required
@@ -717,7 +831,8 @@ def report():
         overall_rate=overall_rate,
         cutoff_time=cutoff_val,
         is_past_cutoff=is_past_cutoff,
-        is_today=(date_filter == date.today().isoformat())
+        is_today=(date_filter == date.today().isoformat()),
+        departments_list=DatabaseService.get_departments_list()
     )
 
 @app.route("/api/attendance/update-status", methods=["POST"])

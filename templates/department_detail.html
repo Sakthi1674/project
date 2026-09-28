@@ -146,6 +146,14 @@
                                     >
                                         <span>📊</span> View Details
                                     </button>
+                                    <button 
+                                        class="btn btn-outline btn-sm" 
+                                        onclick="openEditStudentModal('{{ student.id }}')"
+                                        style="padding: 0.35rem 0.65rem; font-size: 0.78rem; font-weight: 700; color: var(--primary); border-color: rgba(37, 99, 235, 0.35);"
+                                        title="Edit Student Details"
+                                    >
+                                        <span>✏️</span> Edit
+                                    </button>
                                     <a 
                                         href="{{ url_for('capture_face_page', person_id=student.id) }}" 
                                         class="btn btn-outline btn-sm" 
@@ -265,7 +273,12 @@
                         </div>
                     </div>
                 </div>
-                <button onclick="closeStudentDetailsModal()" style="background: none; border: none; font-size: 1.8rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px;" title="Close Modal">&times;</button>
+                <div style="display: flex; align-items: center; gap: 0.6rem;">
+                    <button id="smodal-edit-btn" onclick="openEditStudentModalFromDetails()" class="btn btn-outline btn-sm" style="font-size: 0.8rem; font-weight: 700; color: var(--primary); border-color: rgba(37, 99, 235, 0.4); padding: 0.35rem 0.75rem;">
+                        <span>✏️</span> Edit Profile
+                    </button>
+                    <button onclick="closeStudentDetailsModal()" style="background: none; border: none; font-size: 1.8rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px;" title="Close Modal">&times;</button>
+                </div>
             </div>
 
             <!-- Profile Meta & Biometrics Row -->
@@ -385,33 +398,154 @@
         </div>
     </div>
 </div>
+
+<!-- Edit Student Details Modal -->
+<div id="edit-student-modal" style="display: none; position: fixed; inset: 0; background: rgba(6, 35, 84, 0.72); backdrop-filter: blur(8px); z-index: 10000; align-items: center; justify-content: center; padding: 1rem;">
+    <div class="glass-card animate-fade-in" style="max-width: 620px; width: 100%; max-height: 92vh; overflow-y: auto; padding: 2rem 2.25rem; background: linear-gradient(160deg, #ffffff 0%, #edf6ff 50%, #d8ebfe 100%); border: 1.5px solid rgba(0, 194, 255, 0.65); border-radius: var(--radius-lg); box-shadow: 0 25px 65px rgba(6, 35, 84, 0.4);">
+        <!-- Header -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--border-glass);">
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <div style="width: 44px; height: 44px; border-radius: 50%; background: linear-gradient(135deg, rgba(0, 82, 204, 0.15), rgba(0, 194, 255, 0.25)); border: 2px solid #38bdf8; display: flex; align-items: center; justify-content: center; font-size: 1.4rem;">
+                    ✏️
+                </div>
+                <div>
+                    <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0;">Edit Student Details</h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Update name, roll number, department, or email.</p>
+                </div>
+            </div>
+            <button onclick="closeEditStudentModal()" style="background: none; border: none; font-size: 1.8rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px;" title="Close Modal">&times;</button>
+        </div>
+
+        <!-- Alert Notification Inside Modal -->
+        <div id="edit-modal-alert" style="display: none; padding: 0.75rem 1rem; border-radius: var(--radius-md); font-size: 0.84rem; margin-bottom: 1.25rem;"></div>
+
+        <!-- Informational banner -->
+        <div style="background: #ffffff; border: 1px solid #bfdbfe; border-radius: var(--radius-md); padding: 0.75rem 1rem; margin-bottom: 1.25rem; font-size: 0.8rem; color: #1e40af; display: flex; align-items: center; gap: 0.5rem;">
+            <span>💡</span>
+            <span>QR attendance credentials and facial biometric samples will automatically sync with updated details.</span>
+        </div>
+
+        <!-- Edit Form -->
+        <form id="edit-student-form" onsubmit="executeEditStudent(event)">
+            <input type="hidden" id="edit-student-id" value="">
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem;" class="dash-split-grid">
+                <!-- Full Name -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-student-name" class="form-label" style="font-size: 0.84rem; font-weight: 700; margin-bottom: 0.35rem;">
+                        Full Name <span class="required-star">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="edit-student-name" 
+                        class="form-control" 
+                        required 
+                        placeholder="e.g. Arthi.K"
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                </div>
+
+                <!-- Roll Number -->
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-student-code" class="form-label" style="font-size: 0.84rem; font-weight: 700; margin-bottom: 0.35rem;">
+                        Roll No. / ID <span class="required-star">*</span>
+                    </label>
+                    <input 
+                        type="text" 
+                        id="edit-student-code" 
+                        class="form-control" 
+                        required 
+                        placeholder="e.g. 2026CS101"
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem; font-family: monospace; font-weight: 700;"
+                    >
+                </div>
+            </div>
+
+            <!-- Academic Department Selection with Add Option -->
+            <div style="margin-bottom: 1rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label for="edit-student-dept-select" class="form-label" style="font-size: 0.84rem; font-weight: 700; margin-bottom: 0;">
+                            Academic Department <span class="required-star">*</span>
+                        </label>
+                        <button 
+                            type="button" 
+                            class="btn btn-outline btn-sm" 
+                            onclick="toggleEditDeptDrawer()"
+                            style="padding: 0.15rem 0.55rem; font-size: 0.72rem; color: var(--primary); border-color: rgba(37, 99, 235, 0.3); font-weight: 700;"
+                        >
+                            ➕ Add New Dept
+                        </button>
+                    </div>
+                    <select 
+                        id="edit-student-dept-select" 
+                        class="form-control" 
+                        required
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                        {% for dept in departments_list %}
+                            <option value="{{ dept }}">{{ dept }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Inline Department Creation Drawer -->
+            <div id="edit-new-dept-drawer" style="display: none; background: #ffffff; border: 1.5px dashed #93c5fd; border-radius: var(--radius-md); padding: 0.85rem; margin-bottom: 1rem; box-shadow: 0 4px 12px rgba(0, 82, 204, 0.08);">
+                <div style="font-size: 0.8rem; font-weight: 700; color: #1e40af; margin-bottom: 0.35rem; display: flex; align-items: center; gap: 0.35rem;">
+                    <span>🏢</span> Add New Academic Department
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input 
+                        type="text" 
+                        id="edit-new-dept-input" 
+                        class="form-control" 
+                        placeholder="e.g. Artificial Intelligence, Mechatronics"
+                        style="background: #ffffff; padding: 0.4rem 0.7rem; font-size: 0.82rem;"
+                    >
+                    <button type="button" class="btn btn-primary btn-sm" onclick="saveEditNewDepartmentInline()" style="white-space: nowrap; font-size: 0.78rem;">
+                        Save &amp; Select
+                    </button>
+                    <button type="button" class="btn btn-outline btn-sm" onclick="toggleEditDeptDrawer()" title="Cancel" style="font-size: 0.78rem;">
+                        ✕
+                    </button>
+                </div>
+            </div>
+
+            <!-- Email Address (Optional) -->
+            <div style="margin-bottom: 1.5rem;">
+                <div class="form-group" style="margin-bottom: 0;">
+                    <label for="edit-student-email" class="form-label" style="font-size: 0.84rem; font-weight: 700; margin-bottom: 0.35rem;">
+                        Email Address <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(Optional)</span>
+                    </label>
+                    <input 
+                        type="email" 
+                        id="edit-student-email" 
+                        class="form-control" 
+                        placeholder="student@example.edu"
+                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
+                    >
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div style="display: flex; justify-content: flex-end; gap: 0.75rem; padding-top: 1rem; border-top: 1px solid var(--border-glass);">
+                <button type="button" onclick="closeEditStudentModal()" class="btn btn-outline" style="padding: 0.55rem 1.25rem;">
+                    Cancel
+                </button>
+                <button type="submit" id="btn-submit-student-edit" class="btn btn-primary" style="padding: 0.55rem 1.6rem; font-weight: 800;">
+                    <span>💾</span> Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
 
 {% block scripts %}
 <script>
     let studentToDeleteId = null;
-
-    function filterDeptStudentsLive() {
-        const query = document.getElementById('dept-student-search-input').value.toLowerCase().trim();
-        const cards = document.querySelectorAll('.dept-student-card');
-        let visible = 0;
-
-        cards.forEach(card => {
-            const name = card.getAttribute('data-name') || '';
-            const code = card.getAttribute('data-code') || '';
-            if (!query || name.includes(query) || code.includes(query)) {
-                card.style.display = 'flex';
-                visible++;
-            } else {
-                card.style.display = 'none';
-            }
-        });
-
-        const noRes = document.getElementById('no-search-results');
-        if (noRes) {
-            noRes.style.display = (visible === 0) ? 'block' : 'none';
-        }
-    }
+    let currentViewingStudentId = null;
 
     function showQRModal(name, code, dept, qrPath) {
         document.getElementById('modal-student-name').innerText = name;
@@ -429,6 +563,7 @@
     }
 
     async function openStudentDetailsModal(studentId) {
+        currentViewingStudentId = studentId;
         const modal = document.getElementById('student-complete-details-modal');
         const loading = document.getElementById('student-modal-loading');
         const body = document.getElementById('student-modal-body');
@@ -597,6 +732,228 @@
         } finally {
             btn.disabled = false;
             btn.innerHTML = 'Delete Student';
+        }
+    }
+
+    // --- Student Edit Modal Functions ---
+    async function openEditStudentModal(studentId) {
+        const modal = document.getElementById('edit-student-modal');
+        const alertBox = document.getElementById('edit-modal-alert');
+        if (alertBox) {
+            alertBox.style.display = 'none';
+            alertBox.innerHTML = '';
+        }
+
+        document.getElementById('edit-student-id').value = studentId;
+        document.getElementById('edit-student-name').value = 'Loading...';
+        document.getElementById('edit-student-code').value = '';
+        document.getElementById('edit-student-email').value = '';
+        modal.style.display = 'flex';
+
+        try {
+            const res = await fetch(`/api/student-details/${studentId}`);
+            const data = await res.json();
+            if (data.success && data.student) {
+                const s = data.student;
+                document.getElementById('edit-student-id').value = s.id;
+                document.getElementById('edit-student-name').value = s.name;
+                document.getElementById('edit-student-code').value = s.person_code;
+                document.getElementById('edit-student-email').value = s.raw_email || (s.email !== 'Not provided' ? s.email : '');
+
+                const deptSelect = document.getElementById('edit-student-dept-select');
+                let found = false;
+                for (let i = 0; i < deptSelect.options.length; i++) {
+                    if (deptSelect.options[i].value.toLowerCase() === (s.department || '').toLowerCase()) {
+                        deptSelect.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                if (!found && s.department) {
+                    const opt = document.createElement('option');
+                    opt.value = s.department;
+                    opt.text = s.department;
+                    opt.selected = true;
+                    deptSelect.appendChild(opt);
+                }
+            } else {
+                showToast(data.message || 'Could not fetch student data.', 'danger');
+                closeEditStudentModal();
+            }
+        } catch (e) {
+            showToast('Network error loading student details.', 'danger');
+            closeEditStudentModal();
+        }
+    }
+
+    function openEditStudentModalFromDetails() {
+        closeStudentDetailsModal();
+        if (currentViewingStudentId) {
+            openEditStudentModal(currentViewingStudentId);
+        }
+    }
+
+    function closeEditStudentModal() {
+        document.getElementById('edit-student-modal').style.display = 'none';
+        const drawer = document.getElementById('edit-new-dept-drawer');
+        if (drawer) drawer.style.display = 'none';
+    }
+
+    function toggleEditDeptDrawer() {
+        const drawer = document.getElementById('edit-new-dept-drawer');
+        const input = document.getElementById('edit-new-dept-input');
+        if (drawer.style.display === 'none' || drawer.style.display === '') {
+            drawer.style.display = 'block';
+            if (input) input.focus();
+        } else {
+            drawer.style.display = 'none';
+        }
+    }
+
+    async function saveEditNewDepartmentInline() {
+        const input = document.getElementById('edit-new-dept-input');
+        const name = input ? input.value.trim() : '';
+        if (!name) {
+            showToast('Please enter a department name.', 'warning');
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/department/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name: name })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showToast(`Department '${name}' added!`, 'success');
+                const select = document.getElementById('edit-student-dept-select');
+                let exists = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value.toLowerCase() === name.toLowerCase()) {
+                        exists = true;
+                        select.selectedIndex = i;
+                        break;
+                    }
+                }
+                if (!exists) {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.text = name;
+                    opt.selected = true;
+                    select.appendChild(opt);
+                }
+
+                input.value = '';
+                toggleEditDeptDrawer();
+            } else {
+                showToast(data.message || 'Could not add department.', 'danger');
+            }
+        } catch (e) {
+            showToast('Server error adding department.', 'danger');
+        }
+    }
+
+    async function executeEditStudent(event) {
+        event.preventDefault();
+        const studentId = document.getElementById('edit-student-id').value;
+        const name = document.getElementById('edit-student-name').value.trim();
+        const person_code = document.getElementById('edit-student-code').value.trim();
+        const department = document.getElementById('edit-student-dept-select').value.trim();
+        const email = document.getElementById('edit-student-email').value.trim();
+        const alertBox = document.getElementById('edit-modal-alert');
+        const submitBtn = document.getElementById('btn-submit-student-edit');
+
+        if (!name || !person_code) {
+            if (alertBox) {
+                alertBox.className = 'flash-alert flash-danger';
+                alertBox.innerHTML = 'Student Name and Roll No. are required.';
+                alertBox.style.display = 'block';
+            }
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner"></span> Saving...';
+        if (alertBox) alertBox.style.display = 'none';
+
+        try {
+            const res = await fetch(`/api/student/edit/${studentId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    name: name,
+                    person_code: person_code,
+                    department: department,
+                    email: email
+                })
+            });
+            const data = await res.json();
+
+            if (res.ok && data.success) {
+                showToast(data.message, 'success', 4000);
+                closeEditStudentModal();
+
+                if (data.department_changed) {
+                    showToast(`Student moved to '${department}' department. Refreshing roster...`, 'info', 3000);
+                    setTimeout(() => window.location.reload(), 800);
+                } else {
+                    // Update table row in-place
+                    const row = document.getElementById(`student-row-${studentId}`);
+                    if (row) {
+                        row.setAttribute('data-name', name.toLowerCase());
+                        row.setAttribute('data-code', person_code.toLowerCase());
+
+                        // Name cell (2nd column)
+                        const nameDiv = row.querySelector('td:nth-child(2) div');
+                        if (nameDiv) nameDiv.innerText = name;
+
+                        // Code cell (3rd column)
+                        const codeSpan = row.querySelector('td:nth-child(3) span');
+                        if (codeSpan) codeSpan.innerText = person_code;
+
+                        // QR preview onclick in 4th column
+                        const qrDiv = row.querySelector('td:nth-child(4) div');
+                        if (qrDiv && data.student && data.student.qr_code_path) {
+                            const cleanName = name.replace(/'/g, "\\'");
+                            const cleanCode = person_code.replace(/'/g, "\\'");
+                            const cleanDept = department.replace(/'/g, "\\'");
+                            qrDiv.setAttribute('onclick', `showQRModal('${cleanName}', '${cleanCode}', '${cleanDept}', '${data.student.qr_code_path}')`);
+                            const qrImg = qrDiv.querySelector('img');
+                            if (qrImg) qrImg.src = data.student.qr_code_path;
+                        }
+
+                        // Delete button onclick in 6th column
+                        const delBtn = row.querySelector('button[title="Delete Student"]');
+                        if (delBtn) {
+                            delBtn.setAttribute('onclick', `confirmDeleteStudentDept('${studentId}', '${name.replace(/'/g, "\\'")}', '${person_code.replace(/'/g, "\\'")}')`);
+                        }
+                    }
+                }
+            } else {
+                if (alertBox) {
+                    alertBox.className = 'flash-alert flash-danger';
+                    alertBox.innerHTML = `<strong>Error:</strong> ${data.message || 'Failed to update student.'}`;
+                    alertBox.style.display = 'block';
+                } else {
+                    showToast(data.message || 'Failed to update student.', 'danger');
+                }
+            }
+        } catch (e) {
+            if (alertBox) {
+                alertBox.className = 'flash-alert flash-danger';
+                alertBox.innerHTML = 'Server error during student update. Please try again.';
+                alertBox.style.display = 'block';
+            } else {
+                showToast('Server error updating student.', 'danger');
+            }
+        } finally {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>💾</span> Save Changes';
         }
     }
 </script>
