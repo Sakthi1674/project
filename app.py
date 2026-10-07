@@ -187,7 +187,7 @@ def dashboard():
 index = dashboard
 
 # -------------------------------------------------------------------
-# 2. Student Registration Flow (Email Service Removed)
+# 2. Student Registration Flow
 # -------------------------------------------------------------------
 @app.route("/register", methods=["GET", "POST"])
 @login_required
@@ -212,8 +212,8 @@ def register():
             return render_template("register.html", person_code=person_code, name=name, department=department, departments_list=departments_list)
 
         try:
-            # 1. Save student to MySQL (without email)
-            new_id = DatabaseService.add_person(person_code, name, department, email=None)
+            # 1. Save student to MySQL
+            new_id = DatabaseService.add_person(person_code, name, department)
             
             # 2. Automatically generate unique student attendance QR code in department folder
             QRService.generate_student_qr(new_id, person_code, name, department)
@@ -364,7 +364,7 @@ def edit_student_page(person_id):
 @login_required
 def edit_student(person_id):
     """
-    Updates student profile (name, roll no / person_code, department, email).
+    Updates student profile (name, roll no / person_code, department).
     Regenerates QR credential if roll no or department changed.
     Renames biometric face training samples if name or roll no changed and retrains model.
     Supports both JSON / AJAX and standard HTML form POST.
@@ -377,13 +377,11 @@ def edit_student(person_id):
         person_code = data.get("person_code") or data.get("person_id", "")
         person_code = str(person_code).strip()
         department = data.get("department", "").strip() or "General"
-        email = data.get("email", "").strip() or None
     else:
         name = request.form.get("name", "").strip()
         person_code = request.form.get("person_code") or request.form.get("person_id", "")
         person_code = str(person_code).strip()
         department = request.form.get("department", "").strip() or "General"
-        email = request.form.get("email", "").strip() or None
 
     if not name or not person_code:
         msg = "Student Name and Roll No. / Student ID are required."
@@ -392,8 +390,8 @@ def edit_student(person_id):
         flash(msg, "danger")
         return redirect(url_for("edit_student_page", person_id=person_id))
 
-    # Duplicate roll number or email verification (exclude this student's ID)
-    dup_check = DatabaseService.check_duplicate_student(person_code, email=email, exclude_person_id=person_id)
+    # Duplicate roll number verification (exclude this student's ID)
+    dup_check = DatabaseService.check_duplicate_student(person_code, exclude_person_id=person_id)
     if dup_check.get("is_duplicate"):
         msg = dup_check["message"]
         if is_ajax:
@@ -416,7 +414,7 @@ def edit_student(person_id):
 
     try:
         # 1. Update MySQL database
-        DatabaseService.update_person(person_id, person_code, name, department, email)
+        DatabaseService.update_person(person_id, person_code, name, department)
 
         # 2. Check if QR code needs updating (if name, code, or department changed)
         new_qr_path = old_qr_path
@@ -853,7 +851,6 @@ def api_update_attendance_status():
 def api_process_absentees():
     """
     API endpoint to check attendance cutoff time and mark unmarked students as ABSENT.
-    (Email dispatches removed as requested).
     """
     data = request.get_json(silent=True) or {}
     target_date = data.get("date") or date.today().isoformat()

@@ -67,25 +67,5 @@ class Config:
         cls.ATTENDANCE_CUTOFF_TIME = clean
         return clean
 
-    @classmethod
-    def get_smtp_config(cls):
-        """Dynamically re-reads SMTP settings from .env or environment."""
-        load_env_file()
-        cls.SMTP_EMAIL = os.environ.get("SMTP_EMAIL", "").strip()
-        cls.SMTP_PASSWORD = os.environ.get("SMTP_PASSWORD", "").strip()
-        cls.SMTP_SERVER = os.environ.get("SMTP_SERVER", "smtp.gmail.com").strip()
-        try:
-            cls.SMTP_PORT = int(os.environ.get("SMTP_PORT", 587))
-        except (ValueError, TypeError):
-            cls.SMTP_PORT = 587
-        cls.SMTP_USE_TLS = os.environ.get("SMTP_USE_TLS", "True").lower() in ("true", "1", "yes")
-        return {
-            "email": cls.SMTP_EMAIL,
-            "password": cls.SMTP_PASSWORD,
-            "server": cls.SMTP_SERVER,
-            "port": cls.SMTP_PORT,
-            "use_tls": cls.SMTP_USE_TLS
-        }
-
     # Haar Cascade Model
     HAAR_CASCADE_FILE = os.path.join(BASE_DIR, "haarcascade_frontalface_default.xml")

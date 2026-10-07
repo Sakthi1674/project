@@ -314,9 +314,6 @@
                                 📷 Update Face Samples
                             </a>
                         </div>
-                        <div style="font-size: 0.82rem; color: var(--text-muted);">
-                            Email: <strong id="smodal-email" style="color: var(--text-main);"></strong>
-                        </div>
                     </div>
 
                     <!-- Attendance Progress Bar -->
@@ -411,7 +408,7 @@
                 </div>
                 <div>
                     <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin: 0;">Edit Student Details</h3>
-                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Update name, roll number, department, or email.</p>
+                    <p style="font-size: 0.82rem; color: var(--text-muted); margin: 0.15rem 0 0 0;">Update name, roll number, or department.</p>
                 </div>
             </div>
             <button onclick="closeEditStudentModal()" style="background: none; border: none; font-size: 1.8rem; line-height: 1; color: var(--text-muted); cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 6px;" title="Close Modal">&times;</button>
@@ -510,22 +507,6 @@
                     <button type="button" class="btn btn-outline btn-sm" onclick="toggleEditDeptDrawer()" title="Cancel" style="font-size: 0.78rem;">
                         ✕
                     </button>
-                </div>
-            </div>
-
-            <!-- Email Address (Optional) -->
-            <div style="margin-bottom: 1.5rem;">
-                <div class="form-group" style="margin-bottom: 0;">
-                    <label for="edit-student-email" class="form-label" style="font-size: 0.84rem; font-weight: 700; margin-bottom: 0.35rem;">
-                        Email Address <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(Optional)</span>
-                    </label>
-                    <input 
-                        type="email" 
-                        id="edit-student-email" 
-                        class="form-control" 
-                        placeholder="student@example.edu"
-                        style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
-                    >
                 </div>
             </div>
 
@@ -661,7 +642,6 @@
                 document.getElementById('smodal-name').innerText = s.name;
                 document.getElementById('smodal-code').innerText = s.person_code;
                 document.getElementById('smodal-dept-badge').innerText = s.department;
-                document.getElementById('smodal-email').innerText = s.email;
                 document.getElementById('smodal-created').innerText = s.created_at ? s.created_at.split(' ')[0] : 'Enrolled';
                 
                 const qrImg = document.getElementById('smodal-qr-img');
@@ -756,7 +736,6 @@
         document.getElementById('edit-student-id').value = studentId;
         document.getElementById('edit-student-name').value = 'Loading...';
         document.getElementById('edit-student-code').value = '';
-        document.getElementById('edit-student-email').value = '';
         modal.style.display = 'flex';
 
         try {
@@ -767,7 +746,6 @@
                 document.getElementById('edit-student-id').value = s.id;
                 document.getElementById('edit-student-name').value = s.name;
                 document.getElementById('edit-student-code').value = s.person_code;
-                document.getElementById('edit-student-email').value = s.raw_email || (s.email !== 'Not provided' ? s.email : '');
 
                 const deptSelect = document.getElementById('edit-student-dept-select');
                 let found = false;
@@ -870,7 +848,6 @@
         const name = document.getElementById('edit-student-name').value.trim();
         const person_code = document.getElementById('edit-student-code').value.trim();
         const department = document.getElementById('edit-student-dept-select').value.trim();
-        const email = document.getElementById('edit-student-email').value.trim();
         const alertBox = document.getElementById('edit-modal-alert');
         const submitBtn = document.getElementById('btn-submit-student-edit');
 
@@ -897,8 +874,7 @@
                 body: JSON.stringify({
                     name: name,
                     person_code: person_code,
-                    department: department,
-                    email: email
+                    department: department
                 })
             });
             const data = await res.json();

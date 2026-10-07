@@ -73,15 +73,15 @@ class TestAttendanceSystem(unittest.TestCase):
             FaceService.train_lbph_model()
 
     def test_01_database_and_student_registration_with_dept_qr(self):
-        """Test Student Registration with department and departmental QR code storage (without email requirement)."""
+        """Test Student Registration with department and departmental QR code storage."""
         print("\n[Test 1] Testing Student Registration & Departmental QR Storage...")
         ts = int(datetime.now().timestamp())
         test_code = f"STU_{ts}"
         test_name = "Arun Kumar"
         test_dept = "Computer Science"
 
-        # 1. Insert Student without email
-        person_id = DatabaseService.add_person(test_code, test_name, test_dept, email=None)
+        # 1. Insert Student
+        person_id = DatabaseService.add_person(test_code, test_name, test_dept)
         self.created_person_ids.append(person_id)
         self.assertIsNotNone(person_id)
         self.assertGreater(person_id, 0)
@@ -177,7 +177,7 @@ class TestAttendanceSystem(unittest.TestCase):
         print("  Passed: Department-wise report verified, manual edit blocked (403), and automated attendance confirmed.")
 
     def test_04_cutoff_absentee_processing(self):
-        """Test absentee processing after cutoff time without email service."""
+        """Test absentee processing after cutoff time."""
         print("\n[Test 4] Testing Cutoff Absentee Processing (AttendanceService)...")
         today_str = date.today().isoformat()
         test_code = f"ABS_TEST_{int(datetime.now().timestamp())}"
@@ -359,7 +359,7 @@ class TestAttendanceSystem(unittest.TestCase):
         print("  Passed: Cutoff time parsing, hard attendance blocking (403), and auto-absentee marking verified.")
 
     def test_10_edit_student_details(self):
-        """Test editing student profile details (name, roll no, department, email) and QR synchronization."""
+        """Test editing student profile details (name, roll no, department) and QR synchronization."""
         print("\n[Test 10] Testing Student Details Edit Flow...")
 
         # Login admin session for test client
@@ -369,7 +369,7 @@ class TestAttendanceSystem(unittest.TestCase):
 
         ts = int(datetime.now().timestamp())
         init_code = f"EDIT_INIT_{ts}"
-        person_id = DatabaseService.add_person(init_code, "Initial Name", "Computer Science", email="init@test.edu")
+        person_id = DatabaseService.add_person(init_code, "Initial Name", "Computer Science")
         self.created_person_ids.append(person_id)
 
         # Generate initial QR code
@@ -389,8 +389,7 @@ class TestAttendanceSystem(unittest.TestCase):
         edit_payload = {
             "name": "Updated Name",
             "person_code": new_code,
-            "department": "AI & Data Science",
-            "email": "updated@test.edu"
+            "department": "AI & Data Science"
         }
         post_res = self.client.post(f"/api/student/edit/{person_id}", json=edit_payload)
         self.assertEqual(post_res.status_code, 200)
@@ -403,7 +402,6 @@ class TestAttendanceSystem(unittest.TestCase):
         self.assertEqual(updated["name"], "Updated Name")
         self.assertEqual(updated["person_code"], new_code)
         self.assertEqual(updated["department"], "AI & Data Science")
-        self.assertEqual(updated["email"], "updated@test.edu")
 
         # 4. Verify QR code was regenerated and old QR file was cleaned up
         new_qr_path = updated["qr_code_path"]

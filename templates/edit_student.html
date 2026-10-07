@@ -196,26 +196,6 @@
                     </div>
                 </div>
 
-                <!-- Row 3: Email Address (Optional) -->
-                <div style="margin-bottom: 1.75rem;">
-                    <div class="form-group" style="margin-bottom: 0;">
-                        <label for="email" class="form-label" style="font-size: 0.85rem; font-weight: 700; margin-bottom: 0.35rem;">
-                            Email Address <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: normal;">(Optional)</span>
-                        </label>
-                        <input 
-                            type="email" 
-                            id="email" 
-                            name="email" 
-                            class="form-control" 
-                            value="{{ student.raw_email if student.raw_email is defined else (student.email if student.email != 'Not provided' else '') }}" 
-                            placeholder="student@example.edu"
-                            style="padding: 0.6rem 0.85rem; font-size: 0.92rem;"
-                        >
-                        <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
-                            Optional contact email for academic correspondence.
-                        </small>
-                    </div>
-                </div>
 
                 <!-- Form Action Buttons -->
                 <div style="display: flex; justify-content: flex-end; align-items: center; gap: 0.75rem; padding-top: 1.25rem; border-top: 1px solid var(--border-glass);">

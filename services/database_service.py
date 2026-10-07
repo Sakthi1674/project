@@ -69,18 +69,18 @@ class DatabaseService:
             except Error as mig_err:
                 logger.warning(f"Migration check notice (qr columns): {mig_err}")
 
-            # Migration 2: ensure email column exists on persons table
+            # Migration 2: Drop email column if it exists on persons table
             try:
                 cursor.execute("""
                     SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS
                     WHERE TABLE_SCHEMA = %s AND TABLE_NAME = 'persons' AND COLUMN_NAME = 'email'
                 """, (Config.DB_NAME,))
-                if not cursor.fetchone():
-                    cursor.execute("ALTER TABLE persons ADD COLUMN email VARCHAR(150) AFTER name;")
+                if cursor.fetchone():
+                    cursor.execute("ALTER TABLE persons DROP COLUMN email;")
                     conn.commit()
-                    logger.info("Migrated persons table: added email column.")
+                    logger.info("Migrated persons table: dropped email column.")
             except Error as mig_err:
-                logger.warning(f"Migration check notice (email column): {mig_err}")
+                logger.warning(f"Migration check notice (dropping email column): {mig_err}")
 
             # Migration 3: ensure departments table exists and seed defaults
             try:
@@ -181,22 +181,21 @@ class DatabaseService:
 
     # --- Person / Student Management ---
     @classmethod
-    def add_person(cls, person_code, name, department, email=None, qr_token=None, qr_code_path=None):
-        """Inserts a new person/student record with email. Returns the new person's integer primary key ID."""
+    def add_person(cls, person_code, name, department, qr_token=None, qr_code_path=None):
+        """Inserts a new person/student record. Returns the new person's integer primary key ID."""
         dept = department.strip() if department else "General"
-        clean_email = email.strip() if email else None
         
         # Ensure department exists in departments table
         if dept and dept != "General":
             cls.add_department(dept)
 
         query = """
-            INSERT INTO persons (person_code, name, email, department, qr_token, qr_code_path)
-            VALUES (%s, %s, %s, %s, %s, %s)
+            INSERT INTO persons (person_code, name, department, qr_token, qr_code_path)
+            VALUES (%s, %s, %s, %s, %s)
         """
         return cls.execute_query(
             query,
-            (person_code.strip(), name.strip(), clean_email, dept, qr_token, qr_code_path),
+            (person_code.strip(), name.strip(), dept, qr_token, qr_code_path),
             commit=True,
             last_id=True
         )
@@ -246,10 +245,9 @@ class DatabaseService:
         return cls.execute_query(query, (qr_token, qr_code_path, person_id), commit=True)
 
     @classmethod
-    def update_person(cls, person_id, person_code, name, department, email=None):
+    def update_person(cls, person_id, person_code, name, department):
         """Updates an existing student's details in persons table."""
         dept = department.strip() if department else "General"
-        clean_email = email.strip() if email and email.strip() else None
 
         # Ensure department exists in departments table
         if dept and dept != "General":
@@ -257,12 +255,12 @@ class DatabaseService:
 
         query = """
             UPDATE persons
-            SET person_code = %s, name = %s, department = %s, email = %s
+            SET person_code = %s, name = %s, department = %s
             WHERE id = %s
         """
         return cls.execute_query(
             query,
-            (person_code.strip(), name.strip(), dept, clean_email, person_id),
+            (person_code.strip(), name.strip(), dept, person_id),
             commit=True
         )
 
@@ -279,17 +277,9 @@ class DatabaseService:
         return cls.execute_query(query, (person_code.strip(),), fetch_one=True)
 
     @classmethod
-    def get_person_by_email(cls, email):
-        """Fetches person by email address."""
-        if not email or not email.strip():
-            return None
-        query = "SELECT * FROM persons WHERE LOWER(TRIM(email)) = LOWER(%s)"
-        return cls.execute_query(query, (email.strip(),), fetch_one=True)
-
-    @classmethod
-    def check_duplicate_student(cls, person_code, email=None, exclude_person_id=None):
+    def check_duplicate_student(cls, person_code, exclude_person_id=None):
         """
-        Checks if person_code or email already exists in any department.
+        Checks if person_code already exists in any department.
         Returns a dict indicating whether a duplicate exists with the conflicting department.
         """
         if person_code and person_code.strip():
@@ -311,28 +301,6 @@ class DatabaseService:
                         f"under student '{name}'. Duplicate student registration across departments is not allowed."
                     ),
                     "existing_person": existing_code
-                }
-
-        if email and email.strip():
-            email_clean = email.strip()
-            query = "SELECT * FROM persons WHERE LOWER(TRIM(email)) = LOWER(%s)"
-            params = [email_clean]
-            if exclude_person_id:
-                query += " AND id != %s"
-                params.append(exclude_person_id)
-            existing_email = cls.execute_query(query, params, fetch_one=True)
-            if existing_email:
-                dept = existing_email.get("department") or "General"
-                name = existing_email.get("name") or "Unknown"
-                code = existing_email.get("person_code") or "N/A"
-                return {
-                    "is_duplicate": True,
-                    "field": "email",
-                    "message": (
-                        f"Email '{email_clean}' is already registered to student '{name}' ({code}) "
-                        f"in department '{dept}'. A student cannot be registered multiple times across departments."
-                    ),
-                    "existing_person": existing_email
                 }
 
         return {"is_duplicate": False, "field": None, "message": None, "existing_person": None}
@@ -566,7 +534,6 @@ class DatabaseService:
                 p.id AS person_id,
                 p.person_code,
                 p.name,
-                p.email,
                 COALESCE(NULLIF(p.department, ''), 'General') AS department,
                 p.qr_code_path,
                 a.id AS attendance_id,
@@ -599,7 +566,6 @@ class DatabaseService:
                 "id": r["person_id"],
                 "person_code": r["person_code"],
                 "name": r["name"],
-                "email": r.get("email") or "",
                 "department": dept,
                 "qr_code_path": r.get("qr_code_path") or "",
                 "attendance_id": r["attendance_id"],
@@ -639,7 +605,6 @@ class DatabaseService:
                 p.id,
                 p.person_code,
                 p.name,
-                p.email,
                 COALESCE(NULLIF(p.department, ''), 'General') AS department,
                 a.id AS attendance_id,
                 a.status
@@ -665,7 +630,6 @@ class DatabaseService:
                 p.id,
                 p.person_code,
                 p.name,
-                p.email,
                 COALESCE(NULLIF(p.department, ''), 'General') AS department
             FROM persons p
             LEFT JOIN attendance a 
@@ -773,8 +737,6 @@ class DatabaseService:
             "id": person["id"],
             "person_code": person["person_code"],
             "name": person["name"],
-            "email": person.get("email") or "Not provided",
-            "raw_email": person.get("email") or "",
             "department": person.get("department") or "General",
             "qr_code_path": person.get("qr_code_path") or "",
             "created_at": str(person.get("created_at") or ""),

@@ -29,7 +29,6 @@ CREATE TABLE IF NOT EXISTS persons (
     id INT AUTO_INCREMENT PRIMARY KEY,
     person_code VARCHAR(50) NOT NULL UNIQUE,
     name VARCHAR(100) NOT NULL,
-    email VARCHAR(150),
     department VARCHAR(100),
     qr_token VARCHAR(255) UNIQUE,
     qr_code_path VARCHAR(255),
