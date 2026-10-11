@@ -78,7 +78,7 @@ class TestAttendanceSystem(unittest.TestCase):
         ts = int(datetime.now().timestamp())
         test_code = f"STU_{ts}"
         test_name = "Arun Kumar"
-        test_dept = "Computer Science"
+        test_dept = "B.Sc. Computer Science"
 
         # 1. Insert Student
         person_id = DatabaseService.add_person(test_code, test_name, test_dept)
@@ -96,7 +96,8 @@ class TestAttendanceSystem(unittest.TestCase):
         self.assertIn("qr_code_path", qr_info)
 
         # Verify path matches /static/qr/<department>/<person_code>.png
-        expected_rel_path = f"/static/qr/Computer_Science/{test_code}.png"
+        dept_folder = "".join([c if c.isalnum() else "_" for c in test_dept])
+        expected_rel_path = f"/static/qr/{dept_folder}/{test_code}.png"
         self.assertEqual(qr_info["qr_code_path"], expected_rel_path)
         
         full_disk_path = os.path.join(Config.BASE_DIR, expected_rel_path.lstrip("/"))
@@ -139,7 +140,7 @@ class TestAttendanceSystem(unittest.TestCase):
         print("\n[Test 3] Testing Department-Wise Attendance & Disabled Manual Edits...")
         today_str = date.today().isoformat()
         test_code = f"DEPT_TEST_{int(datetime.now().timestamp())}"
-        dept_name = "Information Technology"
+        dept_name = "B.Sc. Mathematics"
         person_id = DatabaseService.add_person(test_code, "DeptTester", dept_name)
         self.created_person_ids.append(person_id)
 
@@ -181,7 +182,7 @@ class TestAttendanceSystem(unittest.TestCase):
         print("\n[Test 4] Testing Cutoff Absentee Processing (AttendanceService)...")
         today_str = date.today().isoformat()
         test_code = f"ABS_TEST_{int(datetime.now().timestamp())}"
-        person_id = DatabaseService.add_person(test_code, "AbsenteeStudent", "Mechanical")
+        person_id = DatabaseService.add_person(test_code, "AbsenteeStudent", "B.Sc. Physics")
         self.created_person_ids.append(person_id)
 
         # Run absentee check with force=True
@@ -325,7 +326,7 @@ class TestAttendanceSystem(unittest.TestCase):
         # 3. Test attendance blocking when past cutoff
         ts = int(datetime.now().timestamp())
         test_code = f"CUTOFF_STU_{ts}"
-        person_id = DatabaseService.add_person(test_code, "LateStudent", "Computer Science")
+        person_id = DatabaseService.add_person(test_code, "LateStudent", "B.Sc. Computer Science")
         self.created_person_ids.append(person_id)
 
         # Force cutoff time to a past time (00:01) to verify past cutoff rejection
@@ -369,11 +370,11 @@ class TestAttendanceSystem(unittest.TestCase):
 
         ts = int(datetime.now().timestamp())
         init_code = f"EDIT_INIT_{ts}"
-        person_id = DatabaseService.add_person(init_code, "Initial Name", "Computer Science")
+        person_id = DatabaseService.add_person(init_code, "Initial Name", "B.Sc. Computer Science")
         self.created_person_ids.append(person_id)
 
         # Generate initial QR code
-        qr_init = QRService.generate_student_qr(person_id, init_code, "Initial Name", "Computer Science")
+        qr_init = QRService.generate_student_qr(person_id, init_code, "Initial Name", "B.Sc. Computer Science")
         old_qr_path = qr_init["qr_code_path"]
         old_full_path = os.path.join(Config.BASE_DIR, old_qr_path.lstrip("/\\"))
         self.assertTrue(os.path.exists(old_full_path))
@@ -389,7 +390,7 @@ class TestAttendanceSystem(unittest.TestCase):
         edit_payload = {
             "name": "Updated Name",
             "person_code": new_code,
-            "department": "AI & Data Science"
+            "department": "B.C.A."
         }
         post_res = self.client.post(f"/api/student/edit/{person_id}", json=edit_payload)
         self.assertEqual(post_res.status_code, 200)
@@ -401,7 +402,7 @@ class TestAttendanceSystem(unittest.TestCase):
         updated = DatabaseService.get_person_by_id(person_id)
         self.assertEqual(updated["name"], "Updated Name")
         self.assertEqual(updated["person_code"], new_code)
-        self.assertEqual(updated["department"], "AI & Data Science")
+        self.assertEqual(updated["department"], "B.C.A.")
 
         # 4. Verify QR code was regenerated and old QR file was cleaned up
         new_qr_path = updated["qr_code_path"]
@@ -413,14 +414,14 @@ class TestAttendanceSystem(unittest.TestCase):
         # 5. Test Duplicate Prevention during Edit:
         # Create a second student
         other_code = f"OTHER_{ts}"
-        other_id = DatabaseService.add_person(other_code, "Other Student", "Mechanical Engineering")
+        other_id = DatabaseService.add_person(other_code, "Other Student", "B.Com.")
         self.created_person_ids.append(other_id)
 
         # Attempt to edit student #person_id with other_code
         dup_payload = {
             "name": "Should Fail",
             "person_code": other_code,
-            "department": "Mechanical Engineering"
+            "department": "B.Com."
         }
         dup_res = self.client.post(f"/api/student/edit/{person_id}", json=dup_payload)
         self.assertEqual(dup_res.status_code, 400)

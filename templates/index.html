@@ -4,226 +4,149 @@
 
 {% block content %}
 <!-- Page Hero (Project Title & High-Tech Biometric BG) -->
-<div class="page-hero animate-fade-in" style="margin-bottom: 1.75rem;">
-    <div style="display: flex; align-items: center; gap: 1.25rem;">
-        <div class="ref-shield-logo animate-pulse-glow" style="width: 58px; height: 58px; font-size: 1.8rem; box-shadow: 0 0 24px rgba(0, 194, 255, 0.65); flex-shrink: 0;">⚡</div>
-        <div>
-            <div style="font-size: 0.8rem; text-transform: uppercase; font-weight: 800; color: #38bdf8; letter-spacing: 0.12em; margin-bottom: 0.25rem;">
-                CAMPUS BIOMETRIC INTELLIGENCE
+<div class="page-hero dash-hero animate-fade-in">
+    <div class="dash-hero-content">
+        <div class="ref-shield-logo animate-pulse-glow">⚡</div>
+        <div class="dash-hero-text">
+            <div class="dash-hero-badge">
+                CAMPUS ATTENDANCE INTELLIGENCE
             </div>
-            <h1 style="font-size: 1.85rem; font-weight: 900; color: #ffffff; margin: 0; line-height: 1.2; letter-spacing: -0.02em;">
+            <h1>
                 QR Code Based Attendance Management System
             </h1>
-            <p style="color: #e0f2fe; font-size: 0.92rem; margin-top: 0.3rem;">
+            <p>
                 Live Face Recognition &bull; Dynamic Departmental QR &bull; Automated Daily Cutoff
             </p>
         </div>
     </div>
-    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
-        <a href="{{ url_for('attendance_page') }}" class="ref-btn-get-started animate-pulse-glow" style="font-size: 0.95rem; padding: 0.65rem 1.6rem; box-shadow: 0 4px 18px rgba(0, 194, 255, 0.45);">
+    <div class="dash-hero-actions">
+        <a href="{{ url_for('attendance_page') }}" class="ref-btn-get-started animate-pulse-glow">
             <span>📷</span> Mark Attendance &rarr;
         </a>
     </div>
 </div>
 
 <!-- Operational Status Bar -->
-<div class="glass-card animate-fade-in" style="margin-bottom: 2rem; padding: 0.9rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; border-left: 4px solid var(--primary);">
-    <div style="display: flex; align-items: center; gap: 1.25rem; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; font-weight: 700; color: var(--text-main);">
+<div class="glass-card dash-status-bar animate-fade-in">
+    <div class="status-items-group">
+        <div class="status-item">
             <span>📅</span>
-            <span>Today: {{ current_date_today }}</span>
+            <span>Today: <strong>{{ current_date_today }}</strong></span>
         </div>
-        <div style="height: 16px; width: 1px; background: var(--border-glass);"></div>
-        <div style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; color: var(--text-muted);">
+        <div class="status-divider"></div>
+        <div class="status-item">
             <span>⏰</span>
             <span>Cutoff Schedule: <strong>{{ cutoff_time }}</strong></span>
             {% if is_past_cutoff %}
-                <span class="badge badge-danger" style="font-size: 0.75rem;">Past Cutoff &bull; Absentees Logged</span>
+                <span class="badge badge-danger">Past Cutoff &bull; Absentees Logged</span>
             {% else %}
-                <span class="badge badge-success" style="font-size: 0.75rem;"><span class="pulse-dot"></span> Check-in Window Active</span>
+                <span class="badge badge-success"><span class="pulse-dot"></span> Check-in Window Active</span>
             {% endif %}
         </div>
     </div>
 
-    <div style="display: flex; align-items: center; gap: 0.75rem;">
-        <span style="font-size: 0.82rem; font-weight: 600; color: var(--text-dim);">Engine:</span>
+    <div class="status-engine-group">
+        <span class="status-engine-label">Engine:</span>
         {% if model_exists %}
-            <span class="badge badge-success" style="font-size: 0.75rem;"><span class="pulse-dot"></span> LBPH Model Loaded</span>
+            <span class="badge badge-success"><span class="pulse-dot"></span> LBPH Model Loaded</span>
         {% else %}
-            <span class="badge badge-warning" style="font-size: 0.75rem;">Awaiting Face Training</span>
+            <span class="badge badge-warning">Awaiting Face Training</span>
         {% endif %}
     </div>
 </div>
 
-<!-- 5 High-Value Overall Count & Metric Cards -->
-<div class="animate-fade-in" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 1.25rem; margin-bottom: 2.25rem;">
-    <!-- Total Students -->
-    <div class="glass-card stat-card">
-        <div class="stat-icon icon-cyan">👥</div>
-        <div class="stat-content">
-            <h3>Total Students</h3>
-            <div class="stat-number">{{ metrics.total_students or 0 }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Enrolled in system</div>
+<!-- All Concluded in One Clean Unified Box -->
+<div class="glass-card dash-summary-card animate-fade-in">
+    <!-- Box Header -->
+    <div class="dash-summary-header">
+        <div>
+            <h2 class="dash-summary-title">📊 Today's Attendance Summary</h2>
+            <p class="dash-summary-subtitle">Overview of campus attendance verification for {{ current_date_today }}</p>
+        </div>
+        <div class="dash-summary-badges">
+            <span class="badge badge-primary">{{ metrics.total_students or 0 }} Enrolled</span>
+            {% if is_past_cutoff %}
+                <span class="badge badge-danger">Cutoff Closed</span>
+            {% else %}
+                <span class="badge badge-success"><span class="pulse-dot"></span> Check-in Active</span>
+            {% endif %}
         </div>
     </div>
 
-    <!-- Present Today -->
-    <div class="glass-card stat-card">
-        <div class="stat-icon icon-green">✅</div>
-        <div class="stat-content">
-            <h3>Present Today</h3>
-            <div class="stat-number" style="color: var(--success);">{{ metrics.present_today or 0 }}</div>
-            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Verified via Face + QR</div>
-        </div>
-    </div>
-
-    <!-- Absent / Unmarked Today -->
-    <div class="glass-card stat-card">
-        <div class="stat-icon icon-amber">❌</div>
-        <div class="stat-content">
-            <h3>Absent / Pending</h3>
-            <div class="stat-number" style="color: {% if metrics.absent_today > 0 %}var(--danger){% else %}var(--text-main){% endif %};">
-                {{ metrics.absent_today or 0 }}
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">Not yet marked</div>
-        </div>
-    </div>
-
-    <!-- Today's Attendance Rate -->
-    <div class="glass-card stat-card">
-        <div class="stat-icon icon-purple">📈</div>
-        <div class="stat-content">
-            <h3>Attendance Rate</h3>
-            <div class="stat-number" style="color: var(--primary);">{{ metrics.attendance_rate or 0 }}%</div>
-            <div style="margin-top: 0.4rem; background: #e2e8f0; border-radius: var(--radius-full); height: 6px; overflow: hidden; width: 100%;">
-                <div style="background: var(--gradient-primary); height: 100%; width: {{ metrics.attendance_rate or 0 }}%; transition: width 0.6s ease;"></div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Biometric Model Status -->
-    <div class="glass-card stat-card">
-        <div class="stat-icon icon-cyan">🤖</div>
-        <div class="stat-content">
-            <h3>Face Dataset</h3>
-            <div class="stat-number" style="font-size: 1.5rem; line-height: 1.2;">
-                {{ metrics.face_enrolled_count or 0 }}<span style="font-size: 1rem; color: var(--text-dim); font-weight: 500;">/{{ metrics.total_students or 0 }}</span>
-            </div>
-            <div style="font-size: 0.75rem; color: var(--text-dim); margin-top: 0.2rem;">50/50 Samples Ready</div>
-        </div>
-    </div>
-</div>
-
-<!-- Overall Attendance Intelligence & Distribution Section -->
-<div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 1.5rem; margin-bottom: 2.25rem;" class="dash-split-grid">
-    <!-- Card 1: Today's Attendance Distribution Breakdown -->
-    <div class="glass-card" style="padding: 1.75rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-glass);">
-            <div>
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem;">
-                    📊 Daily Attendance Distribution
-                </h3>
-                <p style="font-size: 0.82rem; color: var(--text-dim);">
-                    Overall count and percentage breakdown for today's session.
-                </p>
-            </div>
-            <span class="badge badge-primary" style="font-size: 0.8rem;">
-                {{ metrics.total_students or 0 }} Total Students
-            </span>
-        </div>
-
-        <!-- Multi-Segment Visual Attendance Bar -->
-        <div style="margin-bottom: 1.75rem;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.82rem; font-weight: 700; margin-bottom: 0.5rem;">
-                <span style="color: var(--success);">Present: {{ metrics.present_today or 0 }} ({{ metrics.attendance_rate or 0 }}%)</span>
-                <span style="color: var(--danger);">Absent: {{ metrics.absent_today or 0 }} ({% if metrics.total_students > 0 %}{{ (100 - (metrics.attendance_rate or 0))|round(1) }}{% else %}0{% endif %}%)</span>
-            </div>
-            <div style="height: 14px; background: #fee2e2; border-radius: var(--radius-full); overflow: hidden; display: flex;">
-                <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ metrics.attendance_rate or 0 }}%; transition: width 0.8s ease;" title="Present: {{ metrics.present_today }}"></div>
-                <div style="background: linear-gradient(90deg, #ef4444, #dc2626); height: 100%; width: {% if metrics.total_students > 0 %}{{ 100 - (metrics.attendance_rate or 0) }}{% else %}0{% endif %}%; transition: width 0.8s ease;" title="Absent: {{ metrics.absent_today }}"></div>
+    <!-- 4 Core Metric Tiles (Unique - No duplicates) -->
+    <div class="dash-summary-grid">
+        <!-- Total Students -->
+        <div class="summary-tile tile-blue">
+            <div class="summary-tile-icon">👥</div>
+            <div class="summary-tile-content">
+                <div class="summary-tile-label">Total Students</div>
+                <div class="summary-tile-number">{{ metrics.total_students or 0 }}</div>
+                <div class="summary-tile-caption">Enrolled in campus</div>
             </div>
         </div>
 
-        <!-- Detailed Statistical Count Grid with Rich Linear Gradients -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
-            <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); padding: 1.15rem 1rem; border-radius: var(--radius-md); border: 1.5px solid #93c5fd; text-align: center; box-shadow: 0 4px 16px rgba(0, 82, 204, 0.1);">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #1e40af; letter-spacing: 0.05em;">
-                    Total Enrolled
-                </div>
-                <div style="font-size: 1.6rem; font-weight: 900; color: #062354; margin-top: 0.25rem;">
-                    {{ metrics.total_students or 0 }}
-                </div>
-                <div style="font-size: 0.72rem; color: #1e40af; margin-top: 0.2rem;">100% of campus</div>
+        <!-- Present Today -->
+        <div class="summary-tile tile-green">
+            <div class="summary-tile-icon">✅</div>
+            <div class="summary-tile-content">
+                <div class="summary-tile-label">Present Today</div>
+                <div class="summary-tile-number text-success">{{ metrics.present_today or 0 }}</div>
+                <div class="summary-tile-caption">Verified via Face + QR</div>
             </div>
+        </div>
 
-            <div style="background: linear-gradient(145deg, #ffffff 0%, #dbfae5 45%, #b1f3c5 100%); padding: 1.15rem 1rem; border-radius: var(--radius-md); border: 1.5px solid #86efac; text-align: center; box-shadow: 0 4px 16px rgba(16, 185, 129, 0.12);">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #15803d; letter-spacing: 0.05em;">
-                    Present Count
-                </div>
-                <div style="font-size: 1.6rem; font-weight: 900; color: #15803d; margin-top: 0.25rem;">
-                    {{ metrics.present_today or 0 }}
-                </div>
-                <div style="font-size: 0.72rem; color: #16a34a; margin-top: 0.2rem;">{{ metrics.attendance_rate or 0 }}% verified</div>
-            </div>
-
-            <div style="background: linear-gradient(145deg, #ffffff 0%, #ffe3e7 45%, #fdbec7 100%); padding: 1.15rem 1rem; border-radius: var(--radius-md); border: 1.5px solid #fca5a5; text-align: center; box-shadow: 0 4px 16px rgba(239, 68, 68, 0.12);">
-                <div style="font-size: 0.74rem; text-transform: uppercase; font-weight: 800; color: #b91c1c; letter-spacing: 0.05em;">
-                    Absent Count
-                </div>
-                <div style="font-size: 1.6rem; font-weight: 900; color: #b91c1c; margin-top: 0.25rem;">
+        <!-- Absent / Pending -->
+        <div class="summary-tile tile-amber">
+            <div class="summary-tile-icon">❌</div>
+            <div class="summary-tile-content">
+                <div class="summary-tile-label">Absent / Pending</div>
+                <div class="summary-tile-number {% if metrics.absent_today > 0 %}text-danger{% endif %}">
                     {{ metrics.absent_today or 0 }}
                 </div>
-                <div style="font-size: 0.72rem; color: #dc2626; margin-top: 0.2rem;">
-                    {% if metrics.total_students > 0 %}{{ (100 - (metrics.attendance_rate or 0))|round(1) }}%{% else %}0%{% endif %} unverified
-                </div>
+                <div class="summary-tile-caption">Not yet marked</div>
+            </div>
+        </div>
+
+        <!-- Today's Attendance Rate -->
+        <div class="summary-tile tile-purple">
+            <div class="summary-tile-icon">📈</div>
+            <div class="summary-tile-content">
+                <div class="summary-tile-label">Attendance Rate</div>
+                <div class="summary-tile-number text-primary">{{ metrics.attendance_rate or 0 }}%</div>
+                <div class="summary-tile-caption">Verified check-in ratio</div>
             </div>
         </div>
     </div>
 
-    <!-- Card 2: Biometric Dataset Coverage & Daily Cutoff Schedule -->
-    <div class="glass-card" style="padding: 1.75rem; display: flex; flex-direction: column; justify-content: space-between;">
-        <div>
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--border-glass);">
-                <h3 style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.2rem;">
-                    🤖 Biometric Readiness
-                </h3>
-                <span class="badge {% if metrics.face_coverage_rate >= 80 %}badge-success{% else %}badge-warning{% endif %}">
-                    {{ metrics.face_coverage_rate or 0 }}% Coverage
-                </span>
-            </div>
-
-            <!-- Face Dataset Count & Progress -->
-            <div style="margin-bottom: 1.5rem;">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
-                    <span style="font-size: 0.84rem; font-weight: 700; color: var(--text-main);">
-                        50-Sample Biometric Sets
-                    </span>
-                    <span style="font-size: 0.84rem; font-weight: 800; color: var(--primary);">
-                        {{ metrics.face_enrolled_count or 0 }} / {{ metrics.total_students or 0 }}
-                    </span>
-                </div>
-                <div style="background: #e2e8f0; border-radius: var(--radius-full); height: 10px; overflow: hidden; width: 100%;">
-                    <div style="background: var(--gradient-accent); height: 100%; width: {{ metrics.face_coverage_rate or 0 }}%; transition: width 0.6s ease;"></div>
-                </div>
-                <div style="display: flex; justify-content: space-between; font-size: 0.74rem; color: var(--text-dim); margin-top: 0.35rem;">
-                    <span>{{ metrics.face_enrolled_count or 0 }} Enrolled</span>
-                    <span>{{ metrics.face_pending_count or 0 }} Pending Capture</span>
-                </div>
-            </div>
+    <!-- Progress Track Section -->
+    <div class="dash-summary-progress">
+        <div class="progress-info-row">
+            <span class="progress-info-label">Overall Session Progress</span>
+            <span class="progress-info-val"><strong>{{ metrics.attendance_rate or 0 }}%</strong> Complete</span>
         </div>
+        <div class="progress-bar-track">
+            <div class="progress-bar-fill" style="width: {{ metrics.attendance_rate or 0 }}%;"></div>
+        </div>
+        <div class="progress-meta-row">
+            <span>{{ metrics.present_today or 0 }} of {{ metrics.total_students or 0 }} students present</span>
+            <span>{{ metrics.absent_today or 0 }} pending / absent</span>
+        </div>
+    </div>
 
-        <!-- Daily Cutoff Schedule Summary with Linear Gradient -->
-        <div style="background: linear-gradient(145deg, #ffffff 0%, #e0f0fe 45%, #badcff 100%); border-radius: var(--radius-md); padding: 1.15rem; border: 1.5px solid #93c5fd; box-shadow: 0 4px 14px rgba(0, 82, 204, 0.08);">
-            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.5rem;">
-                <span style="font-size: 0.8rem; font-weight: 800; color: #062354; text-transform: uppercase; letter-spacing: 0.04em;">
-                    ⏰ Cutoff Policy
-                </span>
-                <span style="font-size: 0.82rem; font-weight: 700; color: var(--primary);">
-                    {{ cutoff_time }} Daily
-                </span>
+    <!-- Cutoff Policy Notice Banner -->
+    <div class="dash-summary-cutoff">
+        <div class="cutoff-notice-icon">⏰</div>
+        <div class="cutoff-notice-content">
+            <div class="cutoff-notice-heading">
+                <span>Daily Cutoff Policy: <strong>{{ cutoff_time }}</strong></span>
+                {% if is_past_cutoff %}
+                    <span class="badge badge-danger">Window Closed &bull; Absentees Logged</span>
+                {% else %}
+                    <span class="badge badge-success"><span class="pulse-dot"></span> Active Check-in Window</span>
+                {% endif %}
             </div>
-            <p style="font-size: 0.8rem; color: var(--text-secondary); line-height: 1.5; margin: 0;">
-                Students arriving after {{ cutoff_time }} cannot mark attendance. Unmarked students are automatically logged as absent in daily attendance reports.
+            <p class="cutoff-notice-text">
+                Attendance marking is permitted until {{ cutoff_time }}. After cutoff, all remaining unmarked students are automatically logged as absent in daily attendance records.
             </p>
         </div>
     </div>

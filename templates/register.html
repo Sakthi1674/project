@@ -75,11 +75,25 @@
 
                     <select id="department_select" name="department" class="form-control" required
                         style="padding: 0.55rem 0.85rem; font-size: 0.9rem;">
-                        <option value="" disabled {% if not department %}selected{% endif %}>-- Select Department --
-                        </option>
-                        {% for dept in departments_list %}
-                        <option value="{{ dept }}" {% if department==dept or request.args.get('department')==dept
-                            %}selected{% endif %}>{{ dept }}</option>
+                        <option value="" disabled {% if not department %}selected{% endif %}>-- Select Course / Department --</option>
+                        <optgroup label="UG Courses (Undergraduate)">
+                            {% for dept in departments_list if dept.startswith('B.') %}
+                            <option value="{{ dept }}" {% if department==dept or request.args.get('department')==dept %}selected{% endif %}>{{ dept }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="PG Courses (Postgraduate)">
+                            {% for dept in departments_list if dept.startswith('M.') %}
+                            <option value="{{ dept }}" {% if department==dept or request.args.get('department')==dept %}selected{% endif %}>{{ dept }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% for dept in departments_list if not dept.startswith('B.') and not dept.startswith('M.') %}
+                            {% if loop.first %}
+                            <optgroup label="Other Departments">
+                            {% endif %}
+                            <option value="{{ dept }}" {% if department==dept or request.args.get('department')==dept %}selected{% endif %}>{{ dept }}</option>
+                            {% if loop.last %}
+                            </optgroup>
+                            {% endif %}
                         {% endfor %}
                     </select>
                     <small style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">

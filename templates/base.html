@@ -7,7 +7,7 @@
     <title>{% block title %}Face & QR Attendance System{% endblock %}</title>
     <meta name="description"
         content="Local Attendance Management System using OpenCV LBPH Face Recognition and Dynamic QR Code Validation.">
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}?v=4.0">
     {% block head %}{% endblock %}
 </head>
 
@@ -23,7 +23,13 @@
                 </div>
             </a>
 
-            <nav>
+            <button type="button" class="mobile-nav-toggle" id="mobile-nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+                <span class="hamburger-bar"></span>
+            </button>
+
+            <nav class="nav-container" id="nav-container">
                 {% if request.endpoint == 'home' %}
                 <!-- Home page: Show Login button (or Dashboard + Signout if logged in) -->
                 <ul class="nav-links">
@@ -135,7 +141,6 @@
         </div>
         {% endif %}
         {% endwith %}
-
         {% block content %}{% endblock %}
     </main>
 
@@ -143,6 +148,27 @@
     <script src="{{ url_for('static', filename='js/jsqr.js') }}"></script>
     <script src="{{ url_for('static', filename='js/qr-scanner.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggle = document.getElementById('mobile-nav-toggle');
+            const nav = document.getElementById('nav-container');
+            if (toggle && nav) {
+                toggle.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const isOpen = nav.classList.toggle('nav-open');
+                    toggle.classList.toggle('active', isOpen);
+                    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+                });
+                document.addEventListener('click', function(e) {
+                    if (nav.classList.contains('nav-open') && !nav.contains(e.target) && !toggle.contains(e.target)) {
+                        nav.classList.remove('nav-open');
+                        toggle.classList.remove('active');
+                        toggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            }
+        });
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 

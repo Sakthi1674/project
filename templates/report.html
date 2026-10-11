@@ -481,8 +481,24 @@
                         required
                         style="padding: 0.55rem 0.85rem; font-size: 0.9rem;"
                     >
-                        {% for dept in departments_list %}
+                        <optgroup label="UG Courses (Undergraduate)">
+                            {% for dept in departments_list if dept.startswith('B.') %}
+                                <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        <optgroup label="PG Courses (Postgraduate)">
+                            {% for dept in departments_list if dept.startswith('M.') %}
+                                <option value="{{ dept }}">{{ dept }}</option>
+                            {% endfor %}
+                        </optgroup>
+                        {% for dept in departments_list if not dept.startswith('B.') and not dept.startswith('M.') %}
+                            {% if loop.first %}
+                            <optgroup label="Other Departments">
+                            {% endif %}
                             <option value="{{ dept }}">{{ dept }}</option>
+                            {% if loop.last %}
+                            </optgroup>
+                            {% endif %}
                         {% endfor %}
                     </select>
                 </div>

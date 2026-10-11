@@ -12,6 +12,36 @@ class DatabaseService:
     
     _pool = None
 
+    UG_COURSES = [
+        "B.A. Tamil",
+        "B.A. English",
+        "B.A. Economics",
+        "B.A. History",
+        "B.Sc. Physics",
+        "B.Sc. Chemistry",
+        "B.Sc. Mathematics",
+        "B.Sc. Nutrition & Dietetics",
+        "B.Sc. Electronics & Communication",
+        "B.Sc. Computer Science",
+        "B.C.A.",
+        "B.Com. Corporate Secretaryship",
+        "B.Com.",
+        "B.Com. Accounting & Finance"
+    ]
+
+    PG_COURSES = [
+        "M.A. Tamil",
+        "M.A. English",
+        "M.Sc. Computer Science",
+        "M.Sc. Food & Nutrition",
+        "M.Sc. Mathematics",
+        "M.Sc. Physics",
+        "M.Sc. Electronics & Communication",
+        "M.Com."
+    ]
+
+    STANDARD_COURSES = UG_COURSES + PG_COURSES
+
     @classmethod
     def init_db(cls):
         """Initializes database, creates tables, and applies migrations if needed."""
@@ -91,19 +121,18 @@ class DatabaseService:
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ) ENGINE=InnoDB;
                 """)
-                standard_depts = [
-                    "Computer Science",
-                    "Information Technology",
-                    "AI & Data Science",
-                    "Electronics & Communication",
-                    "Mechanical Engineering",
-                    "Electrical & Electronics",
-                    "Civil Engineering"
-                ]
-                for dept_name in standard_depts:
+                # Purge obsolete departments if no students are assigned to them
+                placeholders = ', '.join(['%s'] * len(cls.STANDARD_COURSES))
+                cursor.execute(f"""
+                    DELETE FROM departments 
+                    WHERE name NOT IN ({placeholders})
+                    AND name NOT IN (SELECT DISTINCT department FROM persons WHERE department IS NOT NULL AND department != '')
+                """, tuple(cls.STANDARD_COURSES))
+
+                for dept_name in cls.STANDARD_COURSES:
                     cursor.execute("INSERT IGNORE INTO departments (name) VALUES (%s)", (dept_name,))
                 conn.commit()
-                logger.info("Departments table verified and standard departments seeded.")
+                logger.info("Departments table verified and 22 UG/PG college courses seeded.")
             except Error as mig_err:
                 logger.warning(f"Migration check notice (departments): {mig_err}")
 
@@ -134,6 +163,7 @@ class DatabaseService:
         if cls._pool is None:
             cls.init_db()
         try:
+            # pyrefly: ignore [missing-attribute]
             return cls._pool.get_connection()
         except Error:
             # Fallback to direct connection if pool is exhausted or unavailable
@@ -203,20 +233,21 @@ class DatabaseService:
     # --- Department Management ---
     @classmethod
     def get_departments_list(cls):
-        """Returns sorted list of unique department names from departments table and persons table."""
-        query = """
-            SELECT DISTINCT name FROM (
-                SELECT name FROM departments
-                UNION
-                SELECT COALESCE(NULLIF(department, ''), 'General') AS name FROM persons
-            ) AS combined_depts
-            WHERE name IS NOT NULL AND name != ''
-            ORDER BY name ASC
-        """
+        """Returns ordered list of unique course/department names from departments table and persons table."""
+        query = "SELECT name FROM departments ORDER BY id ASC"
         rows = cls.execute_query(query, fetch_all=True) or []
         depts = [r["name"] for r in rows if r.get("name")]
+
+        # Include any custom department from persons not yet in depts
+        p_query = "SELECT DISTINCT department FROM persons WHERE department IS NOT NULL AND department != ''"
+        p_rows = cls.execute_query(p_query, fetch_all=True) or []
+        for pr in p_rows:
+            d = pr.get("department")
+            if d and d not in depts:
+                depts.append(d)
+
         if not depts:
-            depts = ["Computer Science", "Information Technology", "AI & Data Science", "Electronics & Communication", "Mechanical Engineering"]
+            depts = list(cls.STANDARD_COURSES)
         return depts
 
     @classmethod
@@ -352,16 +383,42 @@ class DatabaseService:
 
     @classmethod
     def get_all_departments(cls):
-        """Returns distinct department names with student count."""
+        """
+        Returns all registered courses/departments with student counts,
+        ordered by ID (UG 1..14, then PG 1..8).
+        """
         query = """
             SELECT 
-                COALESCE(NULLIF(department, ''), 'General') AS department_name, 
-                COUNT(*) as student_count
-            FROM persons 
-            GROUP BY COALESCE(NULLIF(department, ''), 'General')
-            ORDER BY department_name ASC
+                d.id,
+                d.name AS department_name, 
+                COUNT(p.id) AS student_count
+            FROM departments d
+            LEFT JOIN persons p ON d.name = p.department
+            GROUP BY d.id, d.name
+            ORDER BY d.id ASC
         """
-        return cls.execute_query(query, fetch_all=True) or []
+        rows = cls.execute_query(query, fetch_all=True) or []
+        if not rows:
+            for idx, c_name in enumerate(cls.STANDARD_COURSES, start=1):
+                rows.append({
+                    "id": idx,
+                    "department_name": c_name,
+                    "student_count": 0
+                })
+
+        for r in rows:
+            name = r.get("department_name", "")
+            if name in cls.UG_COURSES:
+                r["category"] = "UG"
+                r["category_label"] = "Undergraduate"
+            elif name in cls.PG_COURSES:
+                r["category"] = "PG"
+                r["category_label"] = "Postgraduate"
+            else:
+                r["category"] = "Other"
+                r["category_label"] = "Department"
+
+        return rows
 
     @classmethod
     def get_persons_grouped_by_department(cls):
@@ -684,8 +741,8 @@ class DatabaseService:
         present_today = a_res["total"] if a_res else 0
 
         # 3. Total departments
-        d_res = cls.execute_query("SELECT COUNT(DISTINCT department) AS total FROM persons WHERE department IS NOT NULL AND department != ''", fetch_one=True)
-        total_depts = d_res["total"] if d_res else 0
+        d_res = cls.execute_query("SELECT COUNT(*) AS total FROM departments", fetch_one=True)
+        total_depts = d_res["total"] if d_res and d_res["total"] > 0 else len(cls.STANDARD_COURSES)
 
         return {
             "total_persons": total_persons,

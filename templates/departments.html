@@ -6,73 +6,178 @@
 <!-- Page Hero Banner with Gradient -->
 <div class="page-hero">
     <div>
-        <h2>Academic Departments</h2>
-        <p>Select any department to view enrolled students, unique QR credentials, and attendance analytics.</p>
+        <h2>Academic Courses &amp; Departments</h2>
+        <p>Select any undergraduate or postgraduate course to view enrolled students, unique QR credentials, and attendance analytics.</p>
     </div>
     <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
         <input 
             type="text" 
             id="dept-search-input" 
             class="form-control" 
-            placeholder="🔍 Search departments..." 
+            placeholder="🔍 Search course name (e.g. B.Sc, Tamil, M.Com)..." 
             onkeyup="filterDepartments()"
-            style="min-width: 220px; padding: 0.55rem 0.95rem; font-size: 0.88rem; background: rgba(255, 255, 255, 0.9);"
+            style="min-width: 260px; padding: 0.55rem 0.95rem; font-size: 0.88rem; background: rgba(255, 255, 255, 0.95);"
         >
-        <!-- <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.55rem 1rem; font-size: 0.88rem;">
-            <span>👤</span> + Add Student
-        </a> -->
         <button class="btn btn-outline" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.4); padding: 0.55rem 1rem; font-size: 0.88rem;" onclick="confirmClearAllData()">
             <span>🗑️</span> Clear All Data
         </button>
     </div>
 </div>
 
-<!-- Department Cards in Compact Grid -->
-{% if not departments %}
-<div class="glass-card" style="text-align: center; padding: 3.5rem 1.5rem; margin-bottom: 2.5rem; background: linear-gradient(145deg, #ffffff 0%, #edf6ff 50%, #d8ebfe 100%); border: 1.5px dashed #93c5fd;">
-    <div style="font-size: 3rem; margin-bottom: 0.75rem;">🏢</div>
-    <h3 style="font-size: 1.3rem; font-weight: 800; color: var(--text-main); margin-bottom: 0.5rem;">No Students or Departments Enrolled</h3>
-    <p style="color: var(--text-muted); font-size: 0.9rem; max-width: 480px; margin: 0 auto 1.5rem auto;">
-        All student records have been cleared. Register a new student to begin issuing attendance QR credentials and building the biometric dataset.
-    </p>
-    <a href="{{ url_for('register') }}" class="btn btn-primary" style="padding: 0.75rem 1.5rem;">
-        <span>👤</span> Register First Student
-    </a>
+<!-- Category Tabs / Filter Pills -->
+<div style="display: flex; gap: 0.6rem; align-items: center; flex-wrap: wrap; margin-bottom: 1.75rem;">
+    <button type="button" class="dept-tab active" id="tab-filter-all" onclick="setCategoryFilter('all')">
+        📚 All Courses ({{ departments|length }})
+    </button>
+    <button type="button" class="dept-tab" id="tab-filter-ug" onclick="setCategoryFilter('ug')">
+        🎓 Undergraduate (UG) ({{ departments|selectattr('category', 'equalto', 'UG')|list|length }})
+    </button>
+    <button type="button" class="dept-tab" id="tab-filter-pg" onclick="setCategoryFilter('pg')">
+        🏛️ Postgraduate (PG) ({{ departments|selectattr('category', 'equalto', 'PG')|list|length }})
+    </button>
 </div>
-{% else %}
-<div id="departments-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2.5rem;">
-    {% for dept in departments %}
-        <a 
-            href="{{ url_for('department_detail_page', dept_name=dept.department_name) }}"
-            class="dept-compact-card animate-fade-in" 
-            id="dept-card-{{ loop.index }}"
-            data-name="{{ dept.department_name|lower }}"
-            title="Open {{ dept.department_name }} Roster"
-        >
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div class="dept-compact-icon">🏢</div>
-                <span class="badge badge-cyan" style="font-size: 0.74rem; font-weight: 700; padding: 0.2rem 0.55rem;">
-                    {{ dept.student_count }} Student{% if dept.student_count != 1 %}s{% endif %}
-                </span>
-            </div>
-            <div class="dept-compact-name">
-                {{ dept.department_name }}
-            </div>
-            <div class="dept-compact-footer">
-                <span class="dept-compact-count">Open Roster</span>
-                <span class="dept-compact-arrow">&rarr;</span>
-            </div>
-        </a>
-    {% endfor %}
+
+<!-- Undergraduate Courses (UG) Section -->
+{% set ug_depts = departments|selectattr('category', 'equalto', 'UG')|list %}
+{% if ug_depts %}
+<div class="dept-section" id="ug-section" style="margin-bottom: 2.25rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(0, 82, 204, 0.15);">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="badge badge-primary" style="font-size: 0.82rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm);">UG</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                Undergraduate Courses (UG)
+            </h3>
+        </div>
+        <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700;">
+            {{ ug_depts|length }} Courses
+        </span>
+    </div>
+
+    <div class="departments-grid" id="ug-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem;">
+        {% for dept in ug_depts %}
+            <a 
+                href="{{ url_for('department_detail_page', dept_name=dept.department_name) }}"
+                class="dept-compact-card dept-card-ug animate-fade-in" 
+                id="dept-card-ug-{{ loop.index }}"
+                data-name="{{ dept.department_name|lower }}"
+                data-category="ug"
+                title="Open {{ dept.department_name }} Roster"
+            >
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="dept-compact-icon" style="background: linear-gradient(135deg, rgba(0, 82, 204, 0.15), rgba(0, 194, 255, 0.2));">🎓</div>
+                    <span class="badge badge-cyan" style="font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem;">
+                        {{ dept.student_count }} Student{% if dept.student_count != 1 %}s{% endif %}
+                    </span>
+                </div>
+                <div class="dept-compact-name">
+                    {{ dept.department_name }}
+                </div>
+                <div class="dept-compact-footer">
+                    <span class="dept-compact-count">View Students</span>
+                    <span class="dept-compact-arrow">&rarr;</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
 </div>
+{% endif %}
+
+<!-- Postgraduate Courses (PG) Section -->
+{% set pg_depts = departments|selectattr('category', 'equalto', 'PG')|list %}
+{% if pg_depts %}
+<div class="dept-section" id="pg-section" style="margin-bottom: 2.25rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(139, 92, 246, 0.25);">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="badge badge-purple" style="font-size: 0.82rem; font-weight: 800; padding: 0.25rem 0.65rem; border-radius: var(--radius-sm); background: #7c3aed; color: #fff;">PG</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                Postgraduate Courses (PG)
+            </h3>
+        </div>
+        <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700;">
+            {{ pg_depts|length }} Courses
+        </span>
+    </div>
+
+    <div class="departments-grid" id="pg-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem;">
+        {% for dept in pg_depts %}
+            <a 
+                href="{{ url_for('department_detail_page', dept_name=dept.department_name) }}"
+                class="dept-compact-card dept-card-pg animate-fade-in" 
+                id="dept-card-pg-{{ loop.index }}"
+                data-name="{{ dept.department_name|lower }}"
+                data-category="pg"
+                title="Open {{ dept.department_name }} Roster"
+                style="background: linear-gradient(145deg, rgba(255, 255, 255, 0.96) 0%, rgba(245, 240, 255, 0.9) 45%, rgba(233, 222, 255, 0.95) 100%); border-color: rgba(196, 181, 253, 0.8);"
+            >
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="dept-compact-icon" style="background: linear-gradient(135deg, rgba(124, 58, 237, 0.15), rgba(168, 85, 247, 0.2)); border-color: rgba(168, 85, 247, 0.3);">🏛️</div>
+                    <span class="badge badge-purple" style="font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem; background: rgba(124, 58, 237, 0.15); color: #6d28d9; border: 1px solid rgba(124, 58, 237, 0.3);">
+                        {{ dept.student_count }} Student{% if dept.student_count != 1 %}s{% endif %}
+                    </span>
+                </div>
+                <div class="dept-compact-name">
+                    {{ dept.department_name }}
+                </div>
+                <div class="dept-compact-footer" style="border-top-color: rgba(196, 181, 253, 0.4);">
+                    <span class="dept-compact-count" style="color: #6d28d9;">View Students</span>
+                    <span class="dept-compact-arrow" style="color: #6d28d9;">&rarr;</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Other / Custom Departments Section (if any) -->
+{% set other_depts = departments|selectattr('category', 'equalto', 'Other')|list %}
+{% if other_depts %}
+<div class="dept-section" id="other-section" style="margin-bottom: 2.25rem;">
+    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid rgba(100, 116, 139, 0.2);">
+        <div style="display: flex; align-items: center; gap: 0.6rem;">
+            <span class="badge badge-cyan" style="font-size: 0.82rem; font-weight: 800; padding: 0.25rem 0.65rem;">OTHER</span>
+            <h3 style="font-size: 1.25rem; font-weight: 800; color: var(--text-main); margin: 0;">
+                Additional Departments
+            </h3>
+        </div>
+        <span style="font-size: 0.82rem; color: var(--text-muted); font-weight: 700;">
+            {{ other_depts|length }} Departments
+        </span>
+    </div>
+
+    <div class="departments-grid" id="other-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 1rem;">
+        {% for dept in other_depts %}
+            <a 
+                href="{{ url_for('department_detail_page', dept_name=dept.department_name) }}"
+                class="dept-compact-card animate-fade-in" 
+                data-name="{{ dept.department_name|lower }}"
+                data-category="other"
+                title="Open {{ dept.department_name }} Roster"
+            >
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div class="dept-compact-icon">🏢</div>
+                    <span class="badge badge-cyan" style="font-size: 0.72rem; font-weight: 700; padding: 0.2rem 0.55rem;">
+                        {{ dept.student_count }} Students
+                    </span>
+                </div>
+                <div class="dept-compact-name">
+                    {{ dept.department_name }}
+                </div>
+                <div class="dept-compact-footer">
+                    <span class="dept-compact-count">View Students</span>
+                    <span class="dept-compact-arrow">&rarr;</span>
+                </div>
+            </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 
 <!-- Empty search state -->
 <div id="no-dept-found" style="display: none; text-align: center; padding: 3rem 1rem; color: var(--text-muted); background: linear-gradient(145deg, #ffffff 0%, #edf6ff 100%); border-radius: var(--radius-md); border: 1.5px dashed #bfdbfe; margin-bottom: 2rem;">
     <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🔍</div>
-    <h4 style="color: var(--text-main); font-weight: 800; margin-bottom: 0.35rem;">No Matching Departments</h4>
-    <p style="font-size: 0.88rem;">No departments match your search query.</p>
+    <h4 style="color: var(--text-main); font-weight: 800; margin-bottom: 0.35rem;">No Matching Courses or Departments</h4>
+    <p style="font-size: 0.88rem;">No courses match your current search query or category filter.</p>
 </div>
-{% endif %}
 
 <!-- Clear All Data Password Verification Modal -->
 <div id="clear-data-modal" style="display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.65); backdrop-filter: blur(8px); z-index: 9999; align-items: center; justify-content: center;">
@@ -114,21 +219,42 @@
 
 {% block scripts %}
 <script>
-    // Live filter departments in the compact grid
+    let currentCategory = 'all';
+
+    function setCategoryFilter(category) {
+        currentCategory = category;
+        document.querySelectorAll('.dept-tab').forEach(tab => tab.classList.remove('active'));
+        const activeTab = document.getElementById(`tab-filter-${category}`);
+        if (activeTab) activeTab.classList.add('active');
+        filterDepartments();
+    }
+
     function filterDepartments() {
         const input = document.getElementById('dept-search-input');
-        if (!input) return;
-        const query = input.value.toLowerCase().trim();
+        const query = input ? input.value.toLowerCase().trim() : '';
         const cards = document.querySelectorAll('.dept-compact-card');
         let visibleCount = 0;
 
         cards.forEach(card => {
             const name = card.getAttribute('data-name') || '';
-            if (!query || name.includes(query)) {
+            const cat = card.getAttribute('data-category') || '';
+            const matchesSearch = !query || name.includes(query);
+            const matchesCategory = currentCategory === 'all' || cat === currentCategory;
+
+            if (matchesSearch && matchesCategory) {
                 card.style.display = 'flex';
                 visibleCount++;
             } else {
                 card.style.display = 'none';
+            }
+        });
+
+        // Toggle section headers if they have matching cards
+        ['ug', 'pg', 'other'].forEach(sec => {
+            const sectionEl = document.getElementById(`${sec}-section`);
+            if (sectionEl) {
+                const visibleInSec = sectionEl.querySelectorAll('.dept-compact-card[style*="display: flex"]');
+                sectionEl.style.display = visibleInSec.length > 0 ? 'block' : 'none';
             }
         });
 

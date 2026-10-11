@@ -14,15 +14,30 @@ CREATE TABLE IF NOT EXISTS departments (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB;
 
--- Seed Standard Departments
+-- Seed Standard UG & PG Courses (Undergraduate and Postgraduate)
 INSERT IGNORE INTO departments (name) VALUES 
-('Computer Science'),
-('Information Technology'),
-('AI & Data Science'),
-('Electronics & Communication'),
-('Mechanical Engineering'),
-('Electrical & Electronics'),
-('Civil Engineering');
+('B.A. Tamil'),
+('B.A. English'),
+('B.A. Economics'),
+('B.A. History'),
+('B.Sc. Physics'),
+('B.Sc. Chemistry'),
+('B.Sc. Mathematics'),
+('B.Sc. Nutrition & Dietetics'),
+('B.Sc. Electronics & Communication'),
+('B.Sc. Computer Science'),
+('B.C.A.'),
+('B.Com. Corporate Secretaryship'),
+('B.Com.'),
+('B.Com. Accounting & Finance'),
+('M.A. Tamil'),
+('M.A. English'),
+('M.Sc. Computer Science'),
+('M.Sc. Food & Nutrition'),
+('M.Sc. Mathematics'),
+('M.Sc. Physics'),
+('M.Sc. Electronics & Communication'),
+('M.Com.');
 
 -- 2. Persons / Students Table
 CREATE TABLE IF NOT EXISTS persons (
