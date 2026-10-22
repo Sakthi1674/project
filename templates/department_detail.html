@@ -98,7 +98,13 @@
                         >
                             <td style="color: var(--text-muted); font-family: monospace;">{{ loop.index }}</td>
                             <td>
-                                <div style="font-weight: 800; color: var(--text-main); font-size: 0.95rem;">
+                                <div 
+                                    style="font-weight: 800; color: var(--text-main); font-size: 0.95rem; cursor: pointer; transition: color 0.15s ease;"
+                                    onclick="openStudentDetailsModal('{{ student.id }}')"
+                                    title="View Details for {{ student.name }}"
+                                    onmouseover="this.style.color='var(--primary)'"
+                                    onmouseout="this.style.color='var(--text-main)'"
+                                >
                                     {{ student.name }}
                                 </div>
                             </td>
@@ -138,14 +144,14 @@
                             </td>
                             <td style="text-align: right;">
                                 <div style="display: inline-flex; gap: 0.4rem; align-items: center;">
-                                    <button 
+                                    <!-- <button 
                                         class="btn btn-primary btn-sm" 
                                         onclick="openStudentDetailsModal('{{ student.id }}')"
                                         style="font-size: 0.78rem; font-weight: 800; padding: 0.35rem 0.75rem; white-space: nowrap;"
                                         title="View Complete Details & Attendance History"
                                     >
                                         <span>📊</span> View Details
-                                    </button>
+                                    </button> -->
                                     <button 
                                         class="btn btn-outline btn-sm" 
                                         onclick="openEditStudentModal('{{ student.id }}')"
