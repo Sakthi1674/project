@@ -19,11 +19,6 @@
             </p>
         </div>
     </div>
-    <div class="dash-hero-actions">
-        <a href="{{ url_for('attendance_page') }}" class="ref-btn-get-started animate-pulse-glow">
-            <span>📷</span> Mark Attendance &rarr;
-        </a>
-    </div>
 </div>
 
 <!-- Operational Status Bar -->
@@ -37,21 +32,7 @@
         <div class="status-item">
             <span>⏰</span>
             <span>Cutoff Schedule: <strong>{{ cutoff_time }}</strong></span>
-            {% if is_past_cutoff %}
-                <span class="badge badge-danger">Past Cutoff &bull; Absentees Logged</span>
-            {% else %}
-                <span class="badge badge-success"><span class="pulse-dot"></span> Check-in Window Active</span>
-            {% endif %}
         </div>
-    </div>
-
-    <div class="status-engine-group">
-        <span class="status-engine-label">Engine:</span>
-        {% if model_exists %}
-            <span class="badge badge-success"><span class="pulse-dot"></span> LBPH Model Loaded</span>
-        {% else %}
-            <span class="badge badge-warning">Awaiting Face Training</span>
-        {% endif %}
     </div>
 </div>
 
@@ -65,11 +46,6 @@
         </div>
         <div class="dash-summary-badges">
             <span class="badge badge-primary">{{ metrics.total_students or 0 }} Enrolled</span>
-            {% if is_past_cutoff %}
-                <span class="badge badge-danger">Cutoff Closed</span>
-            {% else %}
-                <span class="badge badge-success"><span class="pulse-dot"></span> Check-in Active</span>
-            {% endif %}
         </div>
     </div>
 
@@ -139,11 +115,6 @@
         <div class="cutoff-notice-content">
             <div class="cutoff-notice-heading">
                 <span>Daily Cutoff Policy: <strong>{{ cutoff_time }}</strong></span>
-                {% if is_past_cutoff %}
-                    <span class="badge badge-danger">Window Closed &bull; Absentees Logged</span>
-                {% else %}
-                    <span class="badge badge-success"><span class="pulse-dot"></span> Active Check-in Window</span>
-                {% endif %}
             </div>
             <p class="cutoff-notice-text">
                 Attendance marking is permitted until {{ cutoff_time }}. After cutoff, all remaining unmarked students are automatically logged as absent in daily attendance records.

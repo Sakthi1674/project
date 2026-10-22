@@ -26,12 +26,13 @@ class AttendanceService:
         cutoff_str = Config.get_cutoff_time()
         if enforce_cutoff and cls.is_past_cutoff(cutoff_str):
             cls.auto_mark_absentees_if_past_cutoff()
-            logger.warning(f"Attendance rejected for student #{student_id}: past cutoff time ({cutoff_str}).")
+            cutoff_12hr = cls.format_cutoff_time_12hr(cutoff_str)
+            logger.warning(f"Attendance rejected for student #{student_id}: past cutoff time ({cutoff_12hr}).")
             return {
                 "success": False,
                 "is_past_cutoff": True,
-                "cutoff_time": cutoff_str,
-                "message": f"Attendance cutoff time ({cutoff_str}) has passed. Attendance cannot be recorded for today."
+                "cutoff_time": cutoff_12hr,
+                "message": f"Attendance cutoff time ({cutoff_12hr}) has passed. Attendance cannot be recorded for today."
             }
 
         # 1. Fetch expected student from DB
@@ -119,12 +120,13 @@ class AttendanceService:
         cutoff_str = Config.get_cutoff_time()
         if enforce_cutoff and cls.is_past_cutoff(cutoff_str):
             cls.auto_mark_absentees_if_past_cutoff()
-            logger.warning(f"Attendance rejected for person #{person_id}: past cutoff time ({cutoff_str}).")
+            cutoff_12hr = cls.format_cutoff_time_12hr(cutoff_str)
+            logger.warning(f"Attendance rejected for person #{person_id}: past cutoff time ({cutoff_12hr}).")
             return {
                 "success": False,
                 "is_past_cutoff": True,
-                "cutoff_time": cutoff_str,
-                "message": f"Attendance cutoff time ({cutoff_str}) has passed. Attendance cannot be recorded for today."
+                "cutoff_time": cutoff_12hr,
+                "message": f"Attendance cutoff time ({cutoff_12hr}) has passed. Attendance cannot be recorded for today."
             }
 
         person = DatabaseService.get_person_by_id(person_id)
@@ -195,21 +197,34 @@ class AttendanceService:
 
     @classmethod
     def parse_cutoff_time(cls, cutoff_str):
-        """Parses HH:MM, HH.MM, or 12/24-hour time string to datetime.time object."""
+        """Parses HH:MM, HH.MM, or 12/24-hour time string (with or without AM/PM) to datetime.time object."""
         if not cutoff_str:
             return time(10, 30)
-        cutoff_str = str(cutoff_str).strip()
+        cutoff_str = str(cutoff_str).strip().upper()
         normalized = cutoff_str.replace(".", ":")
-        for fmt in ("%H:%M", "%I:%M %p", "%I:%M%p", "%H:%M:%S"):
+        for fmt in ("%I:%M %p", "%I:%M%p", "%H:%M", "%H:%M:%S", "%I %p"):
             try:
                 return datetime.strptime(normalized, fmt).time()
             except ValueError:
                 pass
         try:
             parts = normalized.split(":")
-            return time(int(parts[0]), int(parts[1]))
+            h = int(parts[0])
+            m = int(parts[1].split()[0])
+            if "PM" in normalized and h < 12:
+                h += 12
+            elif "AM" in normalized and h == 12:
+                h = 0
+            return time(h, m)
         except Exception:
             return time(10, 30)
+
+    @classmethod
+    def format_cutoff_time_12hr(cls, cutoff_str=None):
+        """Returns the cutoff time formatted with AM/PM (e.g., '10:30 AM')."""
+        cutoff_str = cutoff_str or Config.get_cutoff_time()
+        t = cls.parse_cutoff_time(cutoff_str)
+        return t.strftime("%I:%M %p")
 
     @classmethod
     def is_past_cutoff(cls, cutoff_str=None, current_time=None):

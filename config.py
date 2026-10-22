@@ -51,16 +51,16 @@ class Config:
     ADMIN_USERNAME = os.environ.get("ADMIN_USERNAME", "admin")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
-    # Attendance Cutoff Time (HH:MM format, e.g. '10:30')
+    # Attendance Cutoff Time (HH:MM AM/PM format, e.g. '10:30 AM')
     # After this time, unmarked students are marked ABSENT
-    ATTENDANCE_CUTOFF_TIME = os.environ.get("ATTENDANCE_CUTOFF_TIME", "10:30")
+    ATTENDANCE_CUTOFF_TIME = os.environ.get("ATTENDANCE_CUTOFF_TIME", "10:30 AM")
 
     @classmethod
     def get_cutoff_time(cls):
         """Dynamically re-reads ATTENDANCE_CUTOFF_TIME from .env or environment, normalizing format."""
         load_env_file()
         cutoff = os.environ.get("ATTENDANCE_CUTOFF_TIME", cls.ATTENDANCE_CUTOFF_TIME)
-        clean = cutoff.strip() if cutoff else "10:30"
+        clean = cutoff.strip() if cutoff else "10:30 AM"
         # Support user entering '10.30' with a dot
         if "." in clean and ":" not in clean:
             clean = clean.replace(".", ":")

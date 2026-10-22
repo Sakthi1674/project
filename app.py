@@ -60,10 +60,13 @@ def inject_globals():
         metrics = {"total_persons": 0, "present_today": 0, "total_departments": 0}
     
     cutoff_val = Config.get_cutoff_time()
+    cutoff_12hr = AttendanceService.format_cutoff_time_12hr(cutoff_val)
     is_past = AttendanceService.is_past_cutoff(cutoff_val)
     return {
         "metrics": metrics,
-        "cutoff_time": cutoff_val,
+        "cutoff_time": cutoff_12hr,
+        "cutoff_time_raw": cutoff_val,
+        "cutoff_time_12hr": cutoff_12hr,
         "is_past_cutoff": is_past,
         "current_date_today": date.today().isoformat(),
         "logged_in": session.get("logged_in", False),
@@ -81,15 +84,21 @@ def home():
         metrics = DatabaseService.get_dashboard_metrics()
         departments = DatabaseService.get_all_departments()
         cutoff_val = Config.get_cutoff_time()
+        cutoff_12hr = AttendanceService.format_cutoff_time_12hr(cutoff_val)
         return render_template(
             "home.html",
             metrics=metrics,
             departments=departments,
-            cutoff_time=cutoff_val
+            cutoff_time=cutoff_12hr
         )
     except Exception as e:
         logger.error(f"Home page load error: {e}")
-        return render_template("home.html", metrics={}, departments=[], cutoff_time=Config.get_cutoff_time())
+        return render_template(
+            "home.html",
+            metrics={},
+            departments=[],
+            cutoff_time=AttendanceService.format_cutoff_time_12hr(Config.get_cutoff_time())
+        )
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -649,12 +658,13 @@ def attendance_page():
         recent_logs = []
     model_exists = os.path.exists(Config.TRAINER_FILE)
     cutoff_val = Config.get_cutoff_time()
+    cutoff_12hr = AttendanceService.format_cutoff_time_12hr(cutoff_val)
     is_past = AttendanceService.is_past_cutoff(cutoff_val)
     return render_template(
         "attendance.html",
         recent_logs=recent_logs,
         model_exists=model_exists,
-        cutoff_time=cutoff_val,
+        cutoff_time=cutoff_12hr,
         is_past_cutoff=is_past
     )
 
@@ -664,11 +674,12 @@ def validate_student_qr():
     cutoff_str = Config.get_cutoff_time()
     if AttendanceService.is_past_cutoff(cutoff_str):
         AttendanceService.auto_mark_absentees_if_past_cutoff()
+        cutoff_12hr = AttendanceService.format_cutoff_time_12hr(cutoff_str)
         return jsonify({
             "success": False,
             "is_past_cutoff": True,
-            "cutoff_time": cutoff_str,
-            "message": f"Attendance window closed at {cutoff_str}. Attendance cannot be marked after the cutoff time."
+            "cutoff_time": cutoff_12hr,
+            "message": f"Attendance window closed at {cutoff_12hr}. Attendance cannot be marked after the cutoff time."
         }), 403
 
     data = request.get_json(silent=True) or {}
@@ -690,11 +701,12 @@ def verify_student_attendance():
     cutoff_str = Config.get_cutoff_time()
     if AttendanceService.is_past_cutoff(cutoff_str):
         AttendanceService.auto_mark_absentees_if_past_cutoff()
+        cutoff_12hr = AttendanceService.format_cutoff_time_12hr(cutoff_str)
         return jsonify({
             "success": False,
             "is_past_cutoff": True,
-            "cutoff_time": cutoff_str,
-            "message": f"Attendance window closed at {cutoff_str}. Attendance cannot be marked after the cutoff time."
+            "cutoff_time": cutoff_12hr,
+            "message": f"Attendance window closed at {cutoff_12hr}. Attendance cannot be marked after the cutoff time."
         }), 403
 
     data = request.get_json(silent=True) or {}
@@ -815,6 +827,7 @@ def report():
     records = AttendanceService.get_report(date_filter=date_filter, search=search_query)
 
     cutoff_val = Config.get_cutoff_time()
+    cutoff_12hr = AttendanceService.format_cutoff_time_12hr(cutoff_val)
     is_past_cutoff = AttendanceService.is_past_cutoff(cutoff_val)
 
     return render_template(
@@ -827,7 +840,7 @@ def report():
         overall_present=overall_present,
         overall_absent=overall_absent,
         overall_rate=overall_rate,
-        cutoff_time=cutoff_val,
+        cutoff_time=cutoff_12hr,
         is_past_cutoff=is_past_cutoff,
         is_today=(date_filter == date.today().isoformat()),
         departments_list=DatabaseService.get_departments_list()
